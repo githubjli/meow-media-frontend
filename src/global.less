@@ -1,14 +1,38 @@
-/* src/global.less */
-
-/* 1. 强制提升收缩按钮的层级，让它站在所有人的头顶 */
 .ant-pro-sider-collapsed-button {
   z-index: 9999 !important;
   display: flex !important;
-  /* 往右移动 2px，防止被侧边栏自己的边框切掉 */
   right: -14px !important;
 }
 
-/* 2. 确保侧边栏容器本身也不被盖住 */
 .ant-layout-sider {
   z-index: 1000 !important;
+}
+
+.ant-pro-layout .ant-layout-header {
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.ant-pro-layout .ant-pro-sider {
+  border-inline-end: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.ant-pro-base-menu-inline-item,
+.ant-pro-base-menu-vertical-item,
+.ant-menu-item {
+  margin-inline: 8px !important;
+  margin-block: 4px !important;
+  width: calc(100% - 16px) !important;
+  border-radius: 10px !important;
+}
+
+.ant-menu-light.ant-menu-root.ant-menu-inline .ant-menu-item-selected {
+  background: rgba(91, 209, 215, 0.14) !important;
+  color: #111827 !important;
+  font-weight: 600;
+}
+
+.ant-menu-light .ant-menu-item:hover,
+.ant-menu-light .ant-menu-submenu-title:hover {
+  color: #08979c !important;
 }
