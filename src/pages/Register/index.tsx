@@ -7,7 +7,7 @@ import { setStoredTokens } from '@/utils/auth';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { history, useModel } from '@umijs/max';
 import { Alert, Button, Card, Form, Input, Space, Typography } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const { Title, Text } = Typography;
 
@@ -25,14 +25,6 @@ export default function RegisterPage() {
       history.replace('/home');
     }
   }, [isCheckingAuth, isLoggedIn]);
-
-  const helperText = useMemo(
-    () =>
-      initialState?.authBaseUrl
-        ? `Connected to ${initialState.authBaseUrl}`
-        : 'Using the same origin for auth requests.',
-    [initialState?.authBaseUrl],
-  );
 
   const handleFinish = async (values: {
     email: string;
@@ -120,7 +112,9 @@ export default function RegisterPage() {
             </Text>
           </div>
 
-          <Text type="secondary">{helperText}</Text>
+          <Text type="secondary">
+            Your requests will use the app's local /api proxy.
+          </Text>
 
           {errorMessage ? (
             <Alert type="error" message={errorMessage} showIcon />
