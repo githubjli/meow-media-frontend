@@ -1,28 +1,117 @@
 import {
+  API_BASE_URL,
+  CurrentUser,
+  getCurrentUser,
+  refreshAccessToken,
+} from '@/services/auth';
+import {
+  clearStoredTokens,
+  getAccessToken,
+  getRefreshToken,
+  setStoredTokens,
+} from '@/utils/auth';
+import {
   CloudUploadOutlined,
-  SettingOutlined,
-  QuestionCircleOutlined,
+  GlobalOutlined,
+  LogoutOutlined,
   MoonOutlined,
+  QuestionCircleOutlined,
+  SettingOutlined,
   SunOutlined,
-  GlobalOutlined
+  UserOutlined,
 } from '@ant-design/icons';
-import { SelectLang, history } from '@umijs/max';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { Button, Space, Input, ConfigProvider, theme } from 'antd';
-import React, { useEffect } from 'react';
+import { SelectLang, history } from '@umijs/max';
+import {
+  Avatar,
+  Button,
+  ConfigProvider,
+  Dropdown,
+  Input,
+  Space,
+  Typography,
+  theme,
+} from 'antd';
+import { useEffect } from 'react';
 
-/**
- * 初始状态保持不变
- */
-export async function getInitialState(): Promise<{ name: string; darkTheme: boolean }> {
+const { Text } = Typography;
+
+type InitialState = {
+  name: string;
+  darkTheme: boolean;
+  currentUser?: CurrentUser | null;
+  authLoading?: boolean;
+  authBaseUrl: string;
+  fetchCurrentUser?: () => Promise<CurrentUser | null>;
+};
+
+const resolveCurrentUser = async (): Promise<CurrentUser | null> => {
+  const accessToken = getAccessToken();
+  const refreshToken = getRefreshToken();
+
+  if (!accessToken) {
+    return null;
+  }
+
+  try {
+    return await getCurrentUser(accessToken);
+  } catch (error) {
+    if (!refreshToken) {
+      clearStoredTokens();
+      return null;
+    }
+
+    try {
+      const refreshed = await refreshAccessToken(refreshToken);
+
+      if (!refreshed.access) {
+        clearStoredTokens();
+        return null;
+      }
+
+      setStoredTokens({
+        access: refreshed.access,
+        refresh: refreshed.refresh || refreshToken,
+      });
+
+      return await getCurrentUser(refreshed.access);
+    } catch (refreshError) {
+      clearStoredTokens();
+      return null;
+    }
+  }
+};
+
+export async function getInitialState(): Promise<InitialState> {
+  const currentUser = await resolveCurrentUser();
+
   return {
     name: 'Media Stream User',
-    darkTheme: false
+    darkTheme: false,
+    currentUser,
+    authLoading: false,
+    authBaseUrl: API_BASE_URL,
+    fetchCurrentUser: resolveCurrentUser,
   };
 }
 
-export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) => {
+export const layout: RunTimeLayoutConfig = ({
+  initialState,
+  setInitialState,
+}) => {
   const isDark = initialState?.darkTheme;
+  const currentUser = initialState?.currentUser;
+  const isLoggedIn = Boolean(currentUser?.email);
+
+  const handleLogout = async () => {
+    clearStoredTokens();
+    await setInitialState((prev) => ({
+      ...prev,
+      currentUser: null,
+      authLoading: false,
+    }));
+    history.push('/home');
+  };
 
   return {
     title: 'Media Stream',
@@ -30,15 +119,16 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     splitMenus: false,
     navTheme: isDark ? 'realDark' : 'light',
     colorPrimary: '#5bd1d7',
-
-    // 🚩 保持窄侧边栏配置
-    siderWidth: 160,
-    menuHeaderRender: () => <div style={{ height: 10 }} />,
-
-    // 1. 顶部左侧 Logo（保持你原本的设计）
+    siderWidth: 176,
+    menuHeaderRender: false,
     headerTitleRender: () => (
       <div
-        style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          cursor: 'pointer',
+        }}
         onClick={() => history.push('/')}
       >
         <img
@@ -46,62 +136,78 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
           alt="logo"
           style={{ height: 28 }}
         />
-        <span style={{ fontSize: 18, fontWeight: 'bold', color: isDark ? '#fff' : '#000' }}>
+        <span
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: isDark ? '#fff' : '#111827',
+            letterSpacing: '-0.01em',
+          }}
+        >
           Media Stream
         </span>
       </div>
     ),
-
-    // 🚩 彻底隐藏侧边栏默认 Header（防止 Logo 重复）
-    menuHeaderRender: false,
-
-    // 2. 顶部居中大搜索框（保持你原本的设计）
     headerContentRender: () => (
-      <div style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '0 24px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          width: '100%',
+          padding: '0 24px',
+        }}
+      >
         <Input.Search
           placeholder="Search videos, channels, and people"
           allowClear
-          style={{ maxWidth: 600, width: '100%' }}
+          style={{ maxWidth: 640, width: '100%' }}
           size="large"
           onSearch={(value) => console.log('Searching for:', value)}
         />
       </div>
     ),
-
-    // 3. 顶部右侧操作区（补回消失的按钮、明暗切换、登录注册）
     rightContentRender: () => (
-      <Space size={4} style={{ marginRight: 16, display: 'flex', alignItems: 'center' }}>
+      <Space
+        size={8}
+        style={{ marginRight: 8, display: 'flex', alignItems: 'center' }}
+      >
         <Button
           type="text"
-          icon={<CloudUploadOutlined style={{ fontSize: 20 }} />}
-          style={{ color: isDark ? '#fff' : '#595959' }}
-          onClick={() => window.dispatchEvent(new CustomEvent('open-upload-modal'))}
+          icon={<CloudUploadOutlined style={{ fontSize: 18 }} />}
+          style={{ color: isDark ? '#fff' : '#4b5563' }}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent('open-upload-modal'))
+          }
         />
         <Button
           type="text"
-          icon={<SettingOutlined style={{ fontSize: 20 }} />}
-          style={{ color: isDark ? '#fff' : '#595959' }}
+          icon={<SettingOutlined style={{ fontSize: 18 }} />}
+          style={{ color: isDark ? '#fff' : '#4b5563' }}
         />
         <Button
           type="text"
-          icon={<QuestionCircleOutlined style={{ fontSize: 20 }} />}
-          style={{ color: isDark ? '#fff' : '#595959' }}
+          icon={<QuestionCircleOutlined style={{ fontSize: 18 }} />}
+          style={{ color: isDark ? '#fff' : '#4b5563' }}
         />
-
         <SelectLang
           icon={
             <Button
               type="text"
-              icon={<GlobalOutlined style={{ fontSize: 20 }} />}
-              style={{ color: isDark ? '#fff' : '#595959', padding: 0 }}
+              icon={<GlobalOutlined style={{ fontSize: 18 }} />}
+              style={{ color: isDark ? '#fff' : '#4b5563', padding: 0 }}
             />
           }
         />
-
         <Button
           type="text"
-          icon={isDark ? <SunOutlined style={{ color: '#faad14' }} /> : <MoonOutlined />}
-          style={{ fontSize: 20, color: isDark ? '#faad14' : '#595959' }}
+          icon={
+            isDark ? (
+              <SunOutlined style={{ color: '#faad14' }} />
+            ) : (
+              <MoonOutlined />
+            )
+          }
+          style={{ fontSize: 18, color: isDark ? '#faad14' : '#4b5563' }}
           onClick={() => {
             setInitialState((pre) => ({
               ...pre!,
@@ -109,36 +215,84 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
             }));
           }}
         />
-
-        <Space size={8} style={{ marginLeft: 12 }}>
-          <Button type="text" style={{ color: '#5bd1d7', fontWeight: 'bold' }}>Log In</Button>
-          <Button
-            type="primary"
-            style={{
-              borderRadius: 6,
-              fontWeight: 'bold',
-              color: '#000',
-              backgroundColor: '#5bd1d7',
-              border: 'none'
+        {isLoggedIn ? (
+          <Dropdown
+            trigger={['click']}
+            menu={{
+              items: [
+                {
+                  key: 'logout',
+                  icon: <LogoutOutlined />,
+                  label: 'Log out',
+                  onClick: handleLogout,
+                },
+              ],
             }}
           >
-            Sign Up
-          </Button>
-        </Space>
+            <Space size={10} style={{ marginLeft: 8, cursor: 'pointer' }}>
+              <Avatar size={36} icon={<UserOutlined />} />
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  lineHeight: 1.2,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: isDark ? 'rgba(255,255,255,0.65)' : '#6b7280',
+                  }}
+                >
+                  Signed in as
+                </Text>
+                <Text style={{ fontWeight: 600, maxWidth: 180 }} ellipsis>
+                  {currentUser?.email}
+                </Text>
+              </div>
+            </Space>
+          </Dropdown>
+        ) : (
+          <Space size={8} style={{ marginLeft: 8 }}>
+            <Button
+              type="text"
+              style={{ color: '#08979c', fontWeight: 700 }}
+              onClick={() => history.push('/login')}
+            >
+              Log In
+            </Button>
+            <Button
+              type="primary"
+              style={{
+                borderRadius: 10,
+                fontWeight: 700,
+                color: '#000',
+                backgroundColor: '#5bd1d7',
+                border: 'none',
+                boxShadow: '0 8px 18px rgba(91, 209, 215, 0.24)',
+              }}
+              onClick={() => history.push('/register')}
+            >
+              Sign Up
+            </Button>
+          </Space>
+        )}
       </Space>
     ),
-
-    // 🚩 解决右侧留白问题的 Token 配置
     token: {
       pageContainer: {
-        paddingInlinePageContainerContent: 10,
-        paddingBlockPageContainerContent: 10,
+        paddingInlinePageContainerContent: 16,
+        paddingBlockPageContainerContent: 12,
+      },
+      header: {
+        colorBgHeader: isDark ? '#141414' : 'rgba(255, 255, 255, 0.92)',
       },
     },
-    // 4. 全局包裹器：明暗切换算法逻辑
     childrenRender: (children) => {
       useEffect(() => {
-        const favicon = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+        const favicon = document.querySelector(
+          "link[rel*='icon']",
+        ) as HTMLLinkElement;
         const iconPath = isDark ? '/favicon_white.svg' : '/favicon_black.svg';
         if (favicon) {
           favicon.href = iconPath;
@@ -149,7 +303,18 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
         <ConfigProvider
           theme={{
             algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-            token: { colorPrimary: '#5bd1d7' },
+            token: {
+              colorPrimary: '#5bd1d7',
+              borderRadius: 12,
+            },
+            components: {
+              Input: {
+                borderRadiusLG: 14,
+              },
+              Button: {
+                borderRadius: 10,
+              },
+            },
           }}
         >
           {children}

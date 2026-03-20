@@ -1,27 +1,100 @@
-import { Avatar, Space, Typography, Tag } from 'antd';
 import { CheckCircleFilled } from '@ant-design/icons';
 import { history } from '@umijs/max';
+import { Avatar, Space, Tag, Typography } from 'antd';
 
 const { Text, Title } = Typography;
 
 export default ({ data }: { data: any }) => (
-  <div 
+  <div
     onClick={() => history.push(`/room/${data.streamId}`)}
-    style={{ cursor: 'pointer', marginBottom: 20 }}
+    style={{
+      cursor: 'pointer',
+      borderRadius: 16,
+      padding: 8,
+      transition:
+        'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+    }}
+    onMouseEnter={(event) => {
+      event.currentTarget.style.transform = 'translateY(-2px)';
+      event.currentTarget.style.boxShadow =
+        '0 12px 28px rgba(15, 23, 42, 0.10)';
+      event.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.88)';
+    }}
+    onMouseLeave={(event) => {
+      event.currentTarget.style.transform = 'translateY(0)';
+      event.currentTarget.style.boxShadow = 'none';
+      event.currentTarget.style.backgroundColor = 'transparent';
+    }}
   >
-    <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', aspectRatio: '16/9', marginBottom: 12, background: '#000' }}>
-      <img src={data.thumbnail || `https://picsum.photos/seed/${data.streamId}/640/360`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    <div
+      style={{
+        position: 'relative',
+        borderRadius: 16,
+        overflow: 'hidden',
+        aspectRatio: '16/9',
+        marginBottom: 16,
+        background: '#0f172a',
+      }}
+    >
+      <img
+        src={
+          data.thumbnail ||
+          `https://picsum.photos/seed/${data.streamId}/640/360`
+        }
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          display: 'block',
+        }}
+      />
       {data.status === 'broadcasting' && (
-        <Tag color="red" style={{ position: 'absolute', top: 8, left: 8, border: 'none', fontWeight: 'bold' }}>LIVE</Tag>
+        <Tag
+          color="red"
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            border: 'none',
+            fontWeight: 700,
+            borderRadius: 999,
+            paddingInline: 10,
+          }}
+        >
+          LIVE
+        </Tag>
       )}
     </div>
-    <Space align="start" size={12}>
-      <Avatar src={`https://api.dicebear.com/7.x/identicon/svg?seed=${data.author}`} />
-      <div style={{ flex: 1 }}>
-        <Title level={5} style={{ margin: 0, fontSize: 14 }} ellipsis={{ rows: 2 }}>{data.name}</Title>
-        <Text type="secondary" style={{ fontSize: 12 }}>{data.author} <CheckCircleFilled style={{ color: '#5bd1d7', fontSize: 10 }} /></Text>
-        <br />
-        <Text type="secondary" style={{ fontSize: 12 }}>{data.views} views • {data.date || 'Live'}</Text>
+    <Space align="start" size={12} style={{ width: '100%' }}>
+      <Avatar
+        src={`https://api.dicebear.com/7.x/identicon/svg?seed=${data.author}`}
+        size={40}
+      />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <Title
+          level={5}
+          style={{ margin: '0 0 6px', fontSize: 15, lineHeight: 1.45 }}
+          ellipsis={{ rows: 2 }}
+        >
+          {data.name}
+        </Title>
+        <Text
+          type="secondary"
+          style={{
+            fontSize: 13,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          {data.author}{' '}
+          <CheckCircleFilled style={{ color: '#5bd1d7', fontSize: 11 }} />
+        </Text>
+        <div style={{ marginTop: 4 }}>
+          <Text type="secondary" style={{ fontSize: 12, lineHeight: 1.5 }}>
+            {data.views} views • {data.date || 'Live'}
+          </Text>
+        </div>
       </div>
     </Space>
   </div>
