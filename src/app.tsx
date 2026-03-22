@@ -1,28 +1,85 @@
+import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import {
+  listPublicCategories,
+  type PublicCategory,
+} from '@/services/publicCategories';
+import { clearStoredTokens } from '@/utils/auth';
+import {
+  AppstoreOutlined,
   CloudUploadOutlined,
-  SettingOutlined,
-  QuestionCircleOutlined,
+  GlobalOutlined,
+  LogoutOutlined,
   MoonOutlined,
+  PlaySquareOutlined,
+  QuestionCircleOutlined,
+  SettingOutlined,
   SunOutlined,
-  GlobalOutlined
+  UploadOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
-import { SelectLang, history } from '@umijs/max';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { Button, Space, Input, ConfigProvider, theme } from 'antd';
-import React, { useEffect } from 'react';
+import { SelectLang, history } from '@umijs/max';
+import {
+  Avatar,
+  Button,
+  ConfigProvider,
+  Dropdown,
+  Input,
+  Space,
+  Tag,
+  Typography,
+  theme,
+} from 'antd';
+import { useEffect } from 'react';
 
-/**
- * 初始状态保持不变
- */
-export async function getInitialState(): Promise<{ name: string; darkTheme: boolean }> {
+const { Text } = Typography;
+
+type InitialState = {
+  name: string;
+  darkTheme: boolean;
+  currentUser?: CurrentUser | null;
+  authLoading?: boolean;
+  fetchCurrentUser?: () => Promise<CurrentUser | null>;
+  publicCategories: PublicCategory[];
+};
+
+export async function getInitialState(): Promise<InitialState> {
+  const [currentUser, publicCategories] = await Promise.all([
+    resolveCurrentUser(),
+    listPublicCategories().catch(() => []),
+  ]);
+
   return {
     name: 'Media Stream User',
-    darkTheme: false
+    darkTheme: false,
+    currentUser,
+    authLoading: false,
+    fetchCurrentUser: resolveCurrentUser,
+    publicCategories,
   };
 }
 
-export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) => {
+export const layout: RunTimeLayoutConfig = ({
+  initialState,
+  setInitialState,
+}) => {
   const isDark = initialState?.darkTheme;
+  const currentUser = initialState?.currentUser;
+  const isLoggedIn = Boolean(currentUser?.email);
+
+  const handleUploadClick = () => {
+    history.push(isLoggedIn ? '/videos/upload' : '/login');
+  };
+
+  const handleLogout = async () => {
+    clearStoredTokens();
+    await setInitialState((prev) => ({
+      ...prev,
+      currentUser: null,
+      authLoading: false,
+    }));
+    history.push('/home');
+  };
 
   return {
     title: 'Media Stream',
@@ -30,15 +87,30 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     splitMenus: false,
     navTheme: isDark ? 'realDark' : 'light',
     colorPrimary: '#5bd1d7',
-
-    // 🚩 保持窄侧边栏配置
-    siderWidth: 160,
-    menuHeaderRender: () => <div style={{ height: 10 }} />,
-
-    // 1. 顶部左侧 Logo（保持你原本的设计）
+    siderWidth: 176,
+    menuHeaderRender: false,
+    menuDataRender: (menuData) => {
+      const stableKeys = new Set(['/home', '/browse', '/live']);
+      const stableItems = menuData.filter(
+        (item) => item.path && stableKeys.has(item.path),
+      );
+      const categoryItems = (initialState?.publicCategories || []).map(
+        (category) => ({
+          name: category.name,
+          path: `/categories/${category.slug}`,
+          icon: <AppstoreOutlined />,
+        }),
+      );
+      return [...stableItems, ...categoryItems];
+    },
     headerTitleRender: () => (
       <div
-        style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          cursor: 'pointer',
+        }}
         onClick={() => history.push('/')}
       >
         <img
@@ -46,62 +118,76 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
           alt="logo"
           style={{ height: 28 }}
         />
-        <span style={{ fontSize: 18, fontWeight: 'bold', color: isDark ? '#fff' : '#000' }}>
+        <span
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: isDark ? '#fff' : '#111827',
+            letterSpacing: '-0.01em',
+          }}
+        >
           Media Stream
         </span>
       </div>
     ),
-
-    // 🚩 彻底隐藏侧边栏默认 Header（防止 Logo 重复）
-    menuHeaderRender: false,
-
-    // 2. 顶部居中大搜索框（保持你原本的设计）
     headerContentRender: () => (
-      <div style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '0 24px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          width: '100%',
+          padding: '0 24px',
+        }}
+      >
         <Input.Search
           placeholder="Search videos, channels, and people"
           allowClear
-          style={{ maxWidth: 600, width: '100%' }}
+          style={{ maxWidth: 640, width: '100%' }}
           size="large"
           onSearch={(value) => console.log('Searching for:', value)}
         />
       </div>
     ),
-
-    // 3. 顶部右侧操作区（补回消失的按钮、明暗切换、登录注册）
     rightContentRender: () => (
-      <Space size={4} style={{ marginRight: 16, display: 'flex', alignItems: 'center' }}>
+      <Space
+        size={8}
+        style={{ marginRight: 8, display: 'flex', alignItems: 'center' }}
+      >
         <Button
           type="text"
-          icon={<CloudUploadOutlined style={{ fontSize: 20 }} />}
-          style={{ color: isDark ? '#fff' : '#595959' }}
-          onClick={() => window.dispatchEvent(new CustomEvent('open-upload-modal'))}
+          icon={<CloudUploadOutlined style={{ fontSize: 18 }} />}
+          style={{ color: isDark ? '#fff' : '#4b5563' }}
+          onClick={handleUploadClick}
         />
         <Button
           type="text"
-          icon={<SettingOutlined style={{ fontSize: 20 }} />}
-          style={{ color: isDark ? '#fff' : '#595959' }}
+          icon={<SettingOutlined style={{ fontSize: 18 }} />}
+          style={{ color: isDark ? '#fff' : '#4b5563' }}
         />
         <Button
           type="text"
-          icon={<QuestionCircleOutlined style={{ fontSize: 20 }} />}
-          style={{ color: isDark ? '#fff' : '#595959' }}
+          icon={<QuestionCircleOutlined style={{ fontSize: 18 }} />}
+          style={{ color: isDark ? '#fff' : '#4b5563' }}
         />
-
         <SelectLang
           icon={
             <Button
               type="text"
-              icon={<GlobalOutlined style={{ fontSize: 20 }} />}
-              style={{ color: isDark ? '#fff' : '#595959', padding: 0 }}
+              icon={<GlobalOutlined style={{ fontSize: 18 }} />}
+              style={{ color: isDark ? '#fff' : '#4b5563', padding: 0 }}
             />
           }
         />
-
         <Button
           type="text"
-          icon={isDark ? <SunOutlined style={{ color: '#faad14' }} /> : <MoonOutlined />}
-          style={{ fontSize: 20, color: isDark ? '#faad14' : '#595959' }}
+          icon={
+            isDark ? (
+              <SunOutlined style={{ color: '#faad14' }} />
+            ) : (
+              <MoonOutlined />
+            )
+          }
+          style={{ fontSize: 18, color: isDark ? '#faad14' : '#4b5563' }}
           onClick={() => {
             setInitialState((pre) => ({
               ...pre!,
@@ -109,36 +195,93 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
             }));
           }}
         />
-
-        <Space size={8} style={{ marginLeft: 12 }}>
-          <Button type="text" style={{ color: '#5bd1d7', fontWeight: 'bold' }}>Log In</Button>
-          <Button
-            type="primary"
-            style={{
-              borderRadius: 6,
-              fontWeight: 'bold',
-              color: '#000',
-              backgroundColor: '#5bd1d7',
-              border: 'none'
+        {isLoggedIn ? (
+          <Dropdown
+            trigger={['click']}
+            menu={{
+              items: [
+                {
+                  key: 'my-videos',
+                  icon: <PlaySquareOutlined />,
+                  label: 'My Videos',
+                  onClick: () => history.push('/videos/mine'),
+                },
+                {
+                  key: 'upload-video',
+                  icon: <UploadOutlined />,
+                  label: 'Upload Video',
+                  onClick: () => history.push('/videos/upload'),
+                },
+                {
+                  type: 'divider',
+                },
+                {
+                  key: 'logout',
+                  icon: <LogoutOutlined />,
+                  label: 'Log out',
+                  onClick: handleLogout,
+                },
+              ],
             }}
           >
-            Sign Up
-          </Button>
-        </Space>
+            <Space size={8} style={{ marginLeft: 6, cursor: 'pointer' }}>
+              <Avatar size={32} icon={<UserOutlined />} />
+              <Tag
+                bordered={false}
+                style={{
+                  marginInlineEnd: 0,
+                  borderRadius: 999,
+                  paddingInline: 10,
+                  maxWidth: 180,
+                }}
+              >
+                <Text style={{ fontWeight: 600, maxWidth: 150 }} ellipsis>
+                  {currentUser?.email}
+                </Text>
+              </Tag>
+            </Space>
+          </Dropdown>
+        ) : (
+          <Space size={8} style={{ marginLeft: 8 }}>
+            <Button
+              type="text"
+              style={{ color: '#08979c', fontWeight: 700 }}
+              onClick={() => history.push('/login')}
+            >
+              Log In
+            </Button>
+            <Button
+              type="primary"
+              style={{
+                borderRadius: 10,
+                fontWeight: 700,
+                color: '#000',
+                backgroundColor: '#5bd1d7',
+                border: 'none',
+                boxShadow: '0 8px 18px rgba(91, 209, 215, 0.24)',
+              }}
+              onClick={() => history.push('/register')}
+            >
+              Sign Up
+            </Button>
+          </Space>
+        )}
       </Space>
     ),
-
-    // 🚩 解决右侧留白问题的 Token 配置
     token: {
       pageContainer: {
-        paddingInlinePageContainerContent: 10,
-        paddingBlockPageContainerContent: 10,
+        paddingInlinePageContainerContent: 16,
+        paddingBlockPageContainerContent: 12,
+      },
+      header: {
+        colorBgHeader: isDark ? '#141414' : 'rgba(255, 255, 255, 0.92)',
       },
     },
-    // 4. 全局包裹器：明暗切换算法逻辑
     childrenRender: (children) => {
       useEffect(() => {
-        const favicon = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+        const favicon = document.querySelector(
+          "link[rel*='icon']",
+        ) as HTMLLinkElement;
         const iconPath = isDark ? '/favicon_white.svg' : '/favicon_black.svg';
         if (favicon) {
           favicon.href = iconPath;
@@ -149,7 +292,18 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
         <ConfigProvider
           theme={{
             algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-            token: { colorPrimary: '#5bd1d7' },
+            token: {
+              colorPrimary: '#5bd1d7',
+              borderRadius: 12,
+            },
+            components: {
+              Input: {
+                borderRadiusLG: 14,
+              },
+              Button: {
+                borderRadius: 10,
+              },
+            },
           }}
         >
           {children}
