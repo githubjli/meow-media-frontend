@@ -1,14 +1,110 @@
-/* src/global.less */
-
-/* 1. 强制提升收缩按钮的层级，让它站在所有人的头顶 */
 .ant-pro-sider-collapsed-button {
   z-index: 9999 !important;
   display: flex !important;
-  /* 往右移动 2px，防止被侧边栏自己的边框切掉 */
   right: -14px !important;
 }
 
-/* 2. 确保侧边栏容器本身也不被盖住 */
 .ant-layout-sider {
   z-index: 1000 !important;
+}
+
+.ant-pro-layout .ant-layout {
+  background: transparent;
+}
+
+.ant-pro-layout .ant-layout-header {
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.ant-pro-layout .ant-pro-sider {
+  border-inline-end: 1px solid rgba(15, 23, 42, 0.05);
+  background: transparent !important;
+}
+
+.ant-pro-layout .ant-pro-sider-logo {
+  padding-block: 14px 10px !important;
+}
+
+.ant-pro-layout .ant-layout-sider-children {
+  padding-inline: 8px;
+}
+
+.ant-pro-base-menu {
+  background: transparent !important;
+}
+
+.ant-pro-base-menu-item-icon {
+  min-width: 16px;
+  font-size: 15px;
+}
+
+.ant-menu-title-content {
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
+.ant-pro-sider-collapsed-button,
+.ant-pro-global-header-collapsed-button {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 12px !important;
+  background: rgba(15, 23, 42, 0.04) !important;
+  box-shadow: none !important;
+}
+
+.ant-pro-sider-collapsed-button:hover,
+.ant-pro-global-header-collapsed-button:hover {
+  background: rgba(53, 184, 190, 0.08) !important;
+}
+
+.ant-pro-base-menu-inline-item,
+.ant-pro-base-menu-vertical-item,
+.ant-menu-item {
+  margin-inline: 6px !important;
+  margin-block: 3px !important;
+  width: calc(100% - 12px) !important;
+  min-height: 40px !important;
+  line-height: 40px !important;
+  border-radius: 12px !important;
+}
+
+.ant-menu-light.ant-menu-root.ant-menu-inline .ant-menu-item-selected,
+.ant-menu-light .ant-menu-item-selected {
+  background: rgba(53, 184, 190, 0.08) !important;
+  color: #0f172a !important;
+  font-weight: 600;
+}
+
+.ant-menu-light .ant-menu-item:hover,
+.ant-menu-light .ant-menu-submenu-title:hover {
+  color: #0f766e !important;
+  background: rgba(15, 118, 110, 0.06) !important;
+}
+
+.ant-menu-dark,
+.ant-menu-dark .ant-menu-sub,
+.ant-pro-sider.ant-pro-sider-dark {
+  background: transparent !important;
+}
+
+.ant-menu-dark.ant-menu-root.ant-menu-inline .ant-menu-item-selected,
+.ant-menu-dark .ant-menu-item-selected {
+  background: rgba(53, 184, 190, 0.16) !important;
+  color: #f8fafc !important;
+}
+
+.ant-menu-dark .ant-menu-item:hover,
+.ant-menu-dark .ant-menu-submenu-title:hover {
+  background: rgba(148, 163, 184, 0.1) !important;
+  color: #f8fafc !important;
+}
+
+.ant-menu-inline .ant-menu-item,
+.ant-menu-inline .ant-menu-submenu-title {
+  padding-inline: 12px !important;
+}
+
+.ant-pro-page-container-children-container {
+  padding-block-start: 8px !important;
 }
