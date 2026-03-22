@@ -5,6 +5,7 @@ import {
 } from '@/services/publicCategories';
 import { clearStoredTokens } from '@/utils/auth';
 import {
+  AppstoreOutlined,
   CloudUploadOutlined,
   GlobalOutlined,
   LogoutOutlined,
@@ -97,7 +98,7 @@ export const layout: RunTimeLayoutConfig = ({
         (category) => ({
           name: category.name,
           path: `/categories/${category.slug}`,
-          icon: 'AppstoreOutlined',
+          icon: <AppstoreOutlined />,
         }),
       );
       return [...stableItems, ...categoryItems];
