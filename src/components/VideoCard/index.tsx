@@ -4,6 +4,33 @@ import { Avatar, Space, Tag, Typography } from 'antd';
 
 const { Text, Title, Paragraph } = Typography;
 
+const formatDuration = (value: any) => {
+  if (!value && value !== 0) {
+    return '8:24';
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  const totalSeconds = Number(value);
+  if (!Number.isFinite(totalSeconds) || totalSeconds < 0) {
+    return '8:24';
+  }
+
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(
+      seconds,
+    ).padStart(2, '0')}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+};
+
 export default ({ data }: { data: any }) => {
   const title = data.title || data.name;
   const description = data.description_preview || data.description;
@@ -11,6 +38,9 @@ export default ({ data }: { data: any }) => {
   const publishedLabel = data.created_at || data.date || 'Recently added';
   const viewsLabel = data.views || data.view_count;
   const categoryLabel = data.category_name || data.category_display;
+  const durationLabel = formatDuration(
+    data.duration_display || data.duration || data.length_seconds,
+  );
   const metaLine = [uploaderLabel, publishedLabel, viewsLabel]
     .filter(Boolean)
     .join(' • ');
@@ -28,13 +58,21 @@ export default ({ data }: { data: any }) => {
       onMouseEnter={(event) => {
         event.currentTarget.style.transform = 'translateY(-2px)';
         event.currentTarget.style.boxShadow =
-          '0 12px 24px rgba(15, 23, 42, 0.07)';
+          '0 16px 28px rgba(15, 23, 42, 0.10)';
         event.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.62)';
+        const image = event.currentTarget.querySelector('img');
+        if (image) {
+          (image as HTMLImageElement).style.transform = 'scale(1.04)';
+        }
       }}
       onMouseLeave={(event) => {
         event.currentTarget.style.transform = 'translateY(0)';
         event.currentTarget.style.boxShadow = 'none';
         event.currentTarget.style.backgroundColor = 'transparent';
+        const image = event.currentTarget.querySelector('img');
+        if (image) {
+          (image as HTMLImageElement).style.transform = 'scale(1)';
+        }
       }}
     >
       <div
@@ -43,7 +81,7 @@ export default ({ data }: { data: any }) => {
           borderRadius: 12,
           overflow: 'hidden',
           aspectRatio: '16/9',
-          marginBottom: 10,
+          marginBottom: 8,
           background: '#0f172a',
         }}
       >
@@ -58,6 +96,7 @@ export default ({ data }: { data: any }) => {
             height: '100%',
             objectFit: 'cover',
             display: 'block',
+            transition: 'transform 0.3s ease',
           }}
         />
         {data.status === 'broadcasting' && (
@@ -76,13 +115,29 @@ export default ({ data }: { data: any }) => {
             LIVE
           </Tag>
         )}
+        <div
+          style={{
+            position: 'absolute',
+            right: 8,
+            bottom: 8,
+            borderRadius: 8,
+            padding: '2px 6px',
+            background: 'rgba(15, 23, 42, 0.78)',
+            color: '#f8fafc',
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.01em',
+          }}
+        >
+          {durationLabel}
+        </div>
       </div>
       <div style={{ minWidth: 0 }}>
         {categoryLabel ? (
           <Tag
             bordered={false}
             style={{
-              margin: '0 0 6px',
+              margin: '0 0 5px',
               borderRadius: 999,
               background: 'rgba(15, 23, 42, 0.05)',
               color: '#667085',
@@ -94,7 +149,12 @@ export default ({ data }: { data: any }) => {
         ) : null}
         <Title
           level={5}
-          style={{ margin: '0 0 4px', fontSize: 14, lineHeight: 1.4 }}
+          style={{
+            margin: '0 0 3px',
+            fontSize: 14,
+            lineHeight: 1.4,
+            fontWeight: 700,
+          }}
           ellipsis={{ rows: 2 }}
         >
           {title}
@@ -103,19 +163,19 @@ export default ({ data }: { data: any }) => {
           <Paragraph
             type="secondary"
             ellipsis={{ rows: 2 }}
-            style={{ margin: '0 0 6px', fontSize: 12, lineHeight: 1.55 }}
+            style={{ margin: '0 0 5px', fontSize: 12, lineHeight: 1.5 }}
           >
             {description}
           </Paragraph>
         ) : null}
-        <Space align="center" size={8} style={{ width: '100%' }}>
+        <Space align="center" size={7} style={{ width: '100%' }}>
           <Avatar
             src={`https://api.dicebear.com/7.x/identicon/svg?seed=${uploaderLabel}`}
             size={28}
           />
           <Text
             type="secondary"
-            style={{ fontSize: 11.5, lineHeight: 1.5 }}
+            style={{ fontSize: 11.5, lineHeight: 1.45, flex: 1, minWidth: 0 }}
             ellipsis
           >
             {metaLine}
