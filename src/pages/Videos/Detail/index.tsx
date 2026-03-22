@@ -1,5 +1,18 @@
-import { deleteVideo, getVideoDetail, type VideoItem } from '@/services/videos';
-import { DeleteOutlined, InboxOutlined } from '@ant-design/icons';
+import {
+  deleteVideo,
+  getPreferredThumbnail,
+  getVideoDetail,
+  regenerateVideoThumbnail,
+  updateVideo,
+  VIDEO_CATEGORY_OPTIONS,
+  type VideoItem,
+} from '@/services/videos';
+import {
+  DeleteOutlined,
+  EditOutlined,
+  InboxOutlined,
+  PictureOutlined,
+} from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useModel, useParams } from '@umijs/max';
 import {
@@ -7,12 +20,16 @@ import {
   Button,
   Card,
   Empty,
+  Form,
+  Input,
+  message,
+  Modal,
   Popconfirm,
+  Select,
   Skeleton,
   Space,
   Tag,
   Typography,
-  message,
 } from 'antd';
 import { useEffect, useState } from 'react';
 
@@ -21,10 +38,32 @@ const { Title, Text, Paragraph } = Typography;
 export default function VideoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { initialState } = useModel('@@initialState');
+  const [form] = Form.useForm();
   const [video, setVideo] = useState<VideoItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+
+  const loadVideo = async () => {
+    if (!id) {
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      const data = await getVideoDetail(id);
+      setVideo(data);
+    } catch (error: any) {
+      setErrorMessage(error?.message || 'Unable to load this video.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -36,15 +75,7 @@ export default function VideoDetailPage() {
       return;
     }
 
-    setLoading(true);
-    setErrorMessage('');
-
-    getVideoDetail(id)
-      .then((data) => setVideo(data))
-      .catch((error: any) =>
-        setErrorMessage(error?.message || 'Unable to load this video.'),
-      )
-      .finally(() => setLoading(false));
+    loadVideo();
   }, [id, initialState?.authLoading, initialState?.currentUser?.email]);
 
   const handleDelete = async () => {
@@ -63,6 +94,61 @@ export default function VideoDetailPage() {
       setDeleting(false);
     }
   };
+
+  const openEditModal = () => {
+    if (!video) {
+      return;
+    }
+
+    form.setFieldsValue({
+      title: video.title || video.name || '',
+      description: video.description || '',
+      category: video.category || undefined,
+    });
+    setEditing(true);
+  };
+
+  const handleEditSubmit = async (values: {
+    title: string;
+    description?: string;
+    category?: string;
+  }) => {
+    if (!video) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updated = await updateVideo(video.id, values);
+      setVideo(updated);
+      message.success('Video details updated.');
+      setEditing(false);
+      form.resetFields();
+    } catch (error: any) {
+      message.error(error?.message || 'Unable to update this video.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRegenerateThumbnail = async () => {
+    if (!video) {
+      return;
+    }
+
+    setRegenerating(true);
+    try {
+      await regenerateVideoThumbnail(video.id);
+      await loadVideo();
+      message.success('Thumbnail regeneration started successfully.');
+    } catch (error: any) {
+      message.error(error?.message || 'Unable to regenerate the thumbnail.');
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  const thumbnail = getPreferredThumbnail(video);
 
   return (
     <PageContainer title={false}>
@@ -94,14 +180,27 @@ export default function VideoDetailPage() {
                 </Title>
                 <Space wrap>
                   <Tag color="processing">My video</Tag>
+                  {video.category_display ? (
+                    <Tag>{video.category_display}</Tag>
+                  ) : null}
                   {video.created_at ? (
                     <Text type="secondary">Uploaded {video.created_at}</Text>
                   ) : null}
                 </Space>
               </div>
-              <Space>
+              <Space wrap>
                 <Button onClick={() => history.push('/videos/mine')}>
                   Back
+                </Button>
+                <Button icon={<EditOutlined />} onClick={openEditModal}>
+                  Edit
+                </Button>
+                <Button
+                  icon={<PictureOutlined />}
+                  loading={regenerating}
+                  onClick={handleRegenerateThumbnail}
+                >
+                  Regenerate Thumbnail
                 </Button>
                 <Popconfirm
                   title="Delete this video?"
@@ -115,6 +214,42 @@ export default function VideoDetailPage() {
                   </Button>
                 </Popconfirm>
               </Space>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <Title level={4}>Thumbnail</Title>
+              <div
+                style={{
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  background: '#0f172a',
+                  aspectRatio: '16/9',
+                }}
+              >
+                {thumbnail ? (
+                  <img
+                    src={thumbnail}
+                    alt={video.title || `Video ${video.id}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text type="secondary">No thumbnail available yet</Text>
+                  </div>
+                )}
+              </div>
             </div>
 
             {video.file_url ? (
@@ -155,6 +290,9 @@ export default function VideoDetailPage() {
               <Text type="secondary">
                 File URL: {video.file_url || 'Not available yet'}
               </Text>
+              <Text type="secondary">
+                Thumbnail URL: {thumbnail || 'Not available yet'}
+              </Text>
               {video.owner_email ? (
                 <Text type="secondary">Owner: {video.owner_email}</Text>
               ) : null}
@@ -162,6 +300,43 @@ export default function VideoDetailPage() {
           </Card>
         )}
       </div>
+
+      <Modal
+        title="Edit video details"
+        open={editing}
+        onCancel={() => {
+          setEditing(false);
+          form.resetFields();
+        }}
+        onOk={() => form.submit()}
+        okText="Save changes"
+        confirmLoading={saving}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleEditSubmit}
+          requiredMark={false}
+        >
+          <Form.Item
+            label="Title"
+            name="title"
+            rules={[{ required: true, message: 'Please enter a title.' }]}
+          >
+            <Input placeholder="Enter video title" />
+          </Form.Item>
+          <Form.Item label="Description" name="description">
+            <Input.TextArea rows={4} placeholder="Optional description" />
+          </Form.Item>
+          <Form.Item label="Category" name="category">
+            <Select
+              allowClear
+              placeholder="Select a category"
+              options={VIDEO_CATEGORY_OPTIONS}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </PageContainer>
   );
 }

@@ -1,5 +1,19 @@
-import { deleteVideo, listMyVideos, type VideoItem } from '@/services/videos';
-import { DeleteOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  deleteVideo,
+  getPreferredThumbnail,
+  listMyVideos,
+  regenerateVideoThumbnail,
+  updateVideo,
+  VIDEO_CATEGORY_OPTIONS,
+  type VideoItem,
+} from '@/services/videos';
+import {
+  DeleteOutlined,
+  EditOutlined,
+  EyeOutlined,
+  PictureOutlined,
+  PlusOutlined,
+} from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useModel } from '@umijs/max';
 import {
@@ -7,13 +21,17 @@ import {
   Button,
   Card,
   Empty,
+  Form,
+  Input,
   List,
+  message,
+  Modal,
   Popconfirm,
+  Select,
   Space,
   Spin,
   Tag,
   Typography,
-  message,
 } from 'antd';
 import { useEffect, useState } from 'react';
 
@@ -21,10 +39,16 @@ const { Title, Text } = Typography;
 
 export default function MyVideosPage() {
   const { initialState } = useModel('@@initialState');
+  const [form] = Form.useForm();
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
+  const [regeneratingId, setRegeneratingId] = useState<string | number | null>(
+    null,
+  );
+  const [editingVideo, setEditingVideo] = useState<VideoItem | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const loadVideos = async () => {
     setLoading(true);
@@ -67,6 +91,55 @@ export default function MyVideosPage() {
     }
   };
 
+  const openEditModal = (video: VideoItem) => {
+    setEditingVideo(video);
+    form.setFieldsValue({
+      title: video.title || video.name || '',
+      description: video.description || '',
+      category: video.category || undefined,
+    });
+  };
+
+  const handleEditSubmit = async (values: {
+    title: string;
+    description?: string;
+    category?: string;
+  }) => {
+    if (!editingVideo) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updated = await updateVideo(editingVideo.id, values);
+      setVideos((current) =>
+        current.map((video) =>
+          video.id === editingVideo.id ? updated : video,
+        ),
+      );
+      message.success('Video details updated.');
+      setEditingVideo(null);
+      form.resetFields();
+    } catch (error: any) {
+      message.error(error?.message || 'Unable to update this video.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRegenerateThumbnail = async (id: string | number) => {
+    setRegeneratingId(id);
+    try {
+      await regenerateVideoThumbnail(id);
+      await loadVideos();
+      message.success('Thumbnail regeneration started successfully.');
+    } catch (error: any) {
+      message.error(error?.message || 'Unable to regenerate the thumbnail.');
+    } finally {
+      setRegeneratingId(null);
+    }
+  };
+
   return (
     <PageContainer title={false}>
       <div style={{ maxWidth: 980, margin: '0 auto', padding: '8px 0 24px' }}>
@@ -85,7 +158,8 @@ export default function MyVideosPage() {
                 My Videos
               </Title>
               <Text type="secondary">
-                Manage uploaded videos, review details, or remove old uploads.
+                Manage uploaded videos, refine metadata, and refresh thumbnail
+                covers.
               </Text>
             </div>
             <Button
@@ -123,68 +197,177 @@ export default function MyVideosPage() {
             <List
               itemLayout="vertical"
               dataSource={videos}
-              renderItem={(video) => (
-                <List.Item
-                  key={video.id}
-                  actions={[
-                    <Button
-                      key="view"
-                      type="link"
-                      icon={<EyeOutlined />}
-                      onClick={() => history.push(`/videos/${video.id}`)}
-                    >
-                      View
-                    </Button>,
-                    <Popconfirm
-                      key="delete"
-                      title="Delete this video?"
-                      description="This action cannot be undone."
-                      okText="Delete"
-                      cancelText="Cancel"
-                      onConfirm={() => handleDelete(video.id)}
-                    >
+              renderItem={(video) => {
+                const thumbnail = getPreferredThumbnail(video);
+
+                return (
+                  <List.Item
+                    key={video.id}
+                    actions={[
                       <Button
+                        key="view"
                         type="link"
-                        danger
-                        icon={<DeleteOutlined />}
-                        loading={deletingId === video.id}
+                        icon={<EyeOutlined />}
+                        onClick={() => history.push(`/videos/${video.id}`)}
                       >
-                        Delete
-                      </Button>
-                    </Popconfirm>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    title={
-                      <Space wrap>
-                        <span>
-                          {video.title || video.name || `Video #${video.id}`}
-                        </span>
-                        {video.file_url ? (
-                          <Tag color="processing">Ready</Tag>
+                        View
+                      </Button>,
+                      <Button
+                        key="edit"
+                        type="link"
+                        icon={<EditOutlined />}
+                        onClick={() => openEditModal(video)}
+                      >
+                        Edit
+                      </Button>,
+                      <Button
+                        key="thumbnail"
+                        type="link"
+                        icon={<PictureOutlined />}
+                        loading={regeneratingId === video.id}
+                        onClick={() => handleRegenerateThumbnail(video.id)}
+                      >
+                        Regenerate Thumbnail
+                      </Button>,
+                      <Popconfirm
+                        key="delete"
+                        title="Delete this video?"
+                        description="This action cannot be undone."
+                        okText="Delete"
+                        cancelText="Cancel"
+                        onConfirm={() => handleDelete(video.id)}
+                      >
+                        <Button
+                          type="link"
+                          danger
+                          icon={<DeleteOutlined />}
+                          loading={deletingId === video.id}
+                        >
+                          Delete
+                        </Button>
+                      </Popconfirm>,
+                    ]}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: 20,
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 220,
+                          maxWidth: '100%',
+                          borderRadius: 16,
+                          overflow: 'hidden',
+                          background: '#0f172a',
+                          aspectRatio: '16/9',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {thumbnail ? (
+                          <img
+                            src={thumbnail}
+                            alt={video.title || `Video ${video.id}`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              display: 'block',
+                            }}
+                          />
                         ) : (
-                          <Tag>Processing</Tag>
+                          <div
+                            style={{
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Text type="secondary">No thumbnail yet</Text>
+                          </div>
                         )}
-                      </Space>
-                    }
-                    description={
-                      video.description || 'No description provided.'
-                    }
-                  />
-                  <Space direction="vertical" size={4}>
-                    <Text type="secondary">
-                      File URL: {video.file_url || 'Not available yet'}
-                    </Text>
-                    <Text type="secondary">
-                      Created: {video.created_at || 'Recently uploaded'}
-                    </Text>
-                  </Space>
-                </List.Item>
-              )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Space wrap style={{ marginBottom: 8 }}>
+                          <Title level={4} style={{ margin: 0 }}>
+                            {video.title || video.name || `Video #${video.id}`}
+                          </Title>
+                          {video.file_url ? (
+                            <Tag color="processing">Ready</Tag>
+                          ) : (
+                            <Tag>Processing</Tag>
+                          )}
+                          {video.category_display ? (
+                            <Tag>{video.category_display}</Tag>
+                          ) : null}
+                        </Space>
+                        <Text
+                          type="secondary"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {video.description || 'No description provided.'}
+                        </Text>
+                        <Space direction="vertical" size={4}>
+                          <Text type="secondary">
+                            Created: {video.created_at || 'Recently uploaded'}
+                          </Text>
+                          <Text type="secondary">
+                            File URL: {video.file_url || 'Not available yet'}
+                          </Text>
+                          <Text type="secondary">
+                            Thumbnail:{' '}
+                            {thumbnail ? 'Available' : 'Not available yet'}
+                          </Text>
+                        </Space>
+                      </div>
+                    </div>
+                  </List.Item>
+                );
+              }}
             />
           )}
         </Card>
       </div>
+
+      <Modal
+        title="Edit video details"
+        open={Boolean(editingVideo)}
+        onCancel={() => {
+          setEditingVideo(null);
+          form.resetFields();
+        }}
+        onOk={() => form.submit()}
+        okText="Save changes"
+        confirmLoading={saving}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleEditSubmit}
+          requiredMark={false}
+        >
+          <Form.Item
+            label="Title"
+            name="title"
+            rules={[{ required: true, message: 'Please enter a title.' }]}
+          >
+            <Input placeholder="Enter video title" />
+          </Form.Item>
+          <Form.Item label="Description" name="description">
+            <Input.TextArea rows={4} placeholder="Optional description" />
+          </Form.Item>
+          <Form.Item label="Category" name="category">
+            <Select
+              allowClear
+              placeholder="Select a category"
+              options={VIDEO_CATEGORY_OPTIONS}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </PageContainer>
   );
 }

@@ -5,14 +5,24 @@ export type VideoItem = {
   title?: string;
   name?: string;
   description?: string;
+  category?: string;
+  category_display?: string;
   file?: string;
   file_url?: string;
   thumbnail?: string;
+  thumbnail_url?: string;
   created_at?: string;
   updated_at?: string;
   owner_email?: string;
   [key: string]: any;
 };
+
+export const VIDEO_CATEGORY_OPTIONS = [
+  { label: 'Tech', value: 'tech' },
+  { label: 'Education', value: 'education' },
+  { label: 'Entertainment', value: 'entertainment' },
+  { label: 'News', value: 'news' },
+];
 
 const withAuth = async (options: RequestInit = {}) => {
   const accessToken = await getValidAccessToken();
@@ -37,6 +47,9 @@ const normalizeVideoList = (payload: any): VideoItem[] => {
   return [];
 };
 
+export const getPreferredThumbnail = (video?: Partial<VideoItem> | null) =>
+  video?.thumbnail_url || video?.thumbnail || '';
+
 export async function listMyVideos(): Promise<VideoItem[]> {
   const payload = await requestJson<any>(
     '/api/videos/',
@@ -47,6 +60,31 @@ export async function listMyVideos(): Promise<VideoItem[]> {
 
 export async function getVideoDetail(id: string): Promise<VideoItem> {
   return requestJson(`/api/videos/${id}/`, await withAuth({ method: 'GET' }));
+}
+
+export async function updateVideo(
+  id: string | number,
+  payload: { title: string; description?: string; category?: string },
+): Promise<VideoItem> {
+  return requestJson(
+    `/api/videos/${id}/`,
+    await withAuth({
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }),
+  );
+}
+
+export async function regenerateVideoThumbnail(
+  id: string | number,
+): Promise<VideoItem | void> {
+  return requestJson(
+    `/api/videos/${id}/regenerate-thumbnail/`,
+    await withAuth({ method: 'POST' }),
+  );
 }
 
 export async function deleteVideo(id: string | number): Promise<void> {

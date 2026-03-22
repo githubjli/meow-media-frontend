@@ -48,6 +48,7 @@ export default ({ data }: { data: any }) => {
       >
         <img
           src={
+            data.thumbnail_url ||
             data.thumbnail ||
             `https://picsum.photos/seed/${data.id || data.streamId}/640/360`
           }
