@@ -9,6 +9,41 @@ import { useEffect, useMemo, useState } from 'react';
 import styles from './index.less';
 
 const { Title, Text } = Typography;
+const SECTION_SIZE = 4;
+const PRIMARY_CATEGORY_ORDER = ['technology', 'gaming', 'news', 'education'];
+
+const CATEGORY_ALIASES: Record<string, string> = {
+  tech: 'technology',
+  technology: 'technology',
+  game: 'gaming',
+  gaming: 'gaming',
+  edu: 'education',
+  education: 'education',
+  news: 'news',
+};
+
+const getCanonicalSlug = (slug?: string) =>
+  CATEGORY_ALIASES[String(slug || '').toLowerCase()] ||
+  String(slug || '').toLowerCase();
+
+const dedupeCategories = (items: PublicCategory[]) => {
+  const categoryMap = new Map<string, PublicCategory>();
+
+  items.forEach((category) => {
+    const canonicalSlug = getCanonicalSlug(category.slug);
+    const existing = categoryMap.get(canonicalSlug);
+
+    if (!existing || category.slug === canonicalSlug) {
+      categoryMap.set(canonicalSlug, {
+        ...category,
+        slug: canonicalSlug,
+        name: category.name,
+      });
+    }
+  });
+
+  return Array.from(categoryMap.values());
+};
 
 const toCardData = (video: PublicVideo) => ({
   ...video,
@@ -88,33 +123,82 @@ const ChannelRow = ({ title, path, items, description }: any) => (
 
 export default function HomePage() {
   const { initialState } = useModel('@@initialState');
-  const categories = initialState?.publicCategories || [];
-  const [videos, setVideos] = useState<PublicVideo[]>([]);
+  const rawCategories = initialState?.publicCategories || [];
+  const categories = useMemo(
+    () => dedupeCategories(rawCategories),
+    [rawCategories],
+  );
+  const [latestVideos, setLatestVideos] = useState<PublicVideo[]>([]);
+  const [sectionVideos, setSectionVideos] = useState<
+    Record<string, PublicVideo[]>
+  >({});
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
-  useEffect(() => {
-    listPublicVideos({ ordering: '-created_at', page_size: 24 })
-      .then((response) => setVideos(response.results))
-      .catch((error: any) =>
-        setErrorMessage(
-          error?.message || 'Unable to load public videos right now.',
-        ),
-      )
-      .finally(() => setLoading(false));
-  }, []);
+  const homepageCategories = useMemo(() => {
+    const categoryMap = new Map(
+      categories.map((category) => [category.slug, category]),
+    );
+    return PRIMARY_CATEGORY_ORDER.map((slug) => categoryMap.get(slug)).filter(
+      Boolean,
+    ) as PublicCategory[];
+  }, [categories]);
 
-  const latestVideos = videos.slice(0, 4);
-  const sections = useMemo(
-    () =>
-      categories.slice(0, 3).map((category) => ({
-        ...category,
-        items: videos
-          .filter((video) => video.category === category.slug)
-          .slice(0, 4),
-      })),
-    [categories, videos],
-  );
+  useEffect(() => {
+    let active = true;
+
+    const loadHomeData = async () => {
+      setLoading(true);
+      setErrorMessage('');
+
+      try {
+        const [latestResponse, ...sectionResponses] = await Promise.all([
+          listPublicVideos({
+            ordering: '-created_at',
+            page_size: SECTION_SIZE,
+          }),
+          ...homepageCategories.map((category) =>
+            listPublicVideos({
+              category: category.slug,
+              ordering: '-created_at',
+              page_size: SECTION_SIZE,
+            }),
+          ),
+        ]);
+
+        if (!active) {
+          return;
+        }
+
+        setLatestVideos(latestResponse.results.slice(0, SECTION_SIZE));
+        setSectionVideos(
+          homepageCategories.reduce<Record<string, PublicVideo[]>>(
+            (acc, category, index) => {
+              acc[category.slug] = sectionResponses[index]?.results || [];
+              return acc;
+            },
+            {},
+          ),
+        );
+      } catch (error: any) {
+        if (active) {
+          setErrorMessage(
+            error?.message || 'Unable to load public videos right now.',
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadHomeData();
+
+    return () => {
+      active = false;
+    };
+  }, [homepageCategories]);
 
   return (
     <PageContainer title={false} ghost contentWidth="Fluid">
@@ -132,7 +216,7 @@ export default function HomePage() {
               </Text>
             </div>
           </div>
-          <TagsBar tags={categories} />
+          <TagsBar tags={homepageCategories} />
         </Card>
 
         {errorMessage ? (
@@ -156,13 +240,13 @@ export default function HomePage() {
               description="Recently published public videos across the platform."
               items={latestVideos}
             />
-            {sections.map((section) => (
+            {homepageCategories.map((section) => (
               <ChannelRow
                 key={section.slug}
                 title={section.name}
                 path={`/categories/${section.slug}`}
                 description={`Browse the latest videos in ${section.name}.`}
-                items={section.items}
+                items={sectionVideos[section.slug] || []}
               />
             ))}
           </>
