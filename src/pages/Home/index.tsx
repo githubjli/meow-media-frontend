@@ -14,12 +14,15 @@ const toCardData = (video: PublicVideo) => ({
   ...video,
   routePath: `/browse/${video.id}`,
   name: video.title,
-  author: video.category_display || 'Public video',
+  author: video.owner_name || video.author || 'Media Stream',
   date: video.created_at || 'Recently added',
-  views: video.category_display || 'Public',
+  views: video.views || video.view_count || 'Public',
   thumbnail: video.thumbnail,
   thumbnail_url: video.thumbnail_url,
   description: video.description,
+  description_preview: video.description_preview || video.description,
+  category_display: video.category_name || video.category_display,
+  category_name: video.category_name || video.category_display,
 });
 
 const TagsBar = ({ tags }: { tags: PublicCategory[] }) => (
@@ -72,7 +75,7 @@ const ChannelRow = ({ title, path, items, description }: any) => (
     {items.length === 0 ? (
       <Empty description={`No videos available in ${title} yet.`} />
     ) : (
-      <Row gutter={[20, 24]}>
+      <Row gutter={[14, 18]}>
         {items.map((item: PublicVideo) => (
           <Col xs={24} sm={12} md={8} lg={6} xl={6} key={item.id}>
             <VideoCard data={toCardData(item)} />

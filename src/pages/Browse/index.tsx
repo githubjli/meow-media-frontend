@@ -191,7 +191,7 @@ export default function BrowsePage() {
           <Empty description="No public videos matched your filters." />
         ) : (
           <>
-            <Row gutter={[16, 20]}>
+            <Row gutter={[14, 18]}>
               {videos.map((video) => (
                 <Col xs={24} sm={12} md={8} lg={6} xl={6} key={video.id}>
                   <VideoCard data={toCardData(video)} />

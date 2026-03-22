@@ -5,17 +5,23 @@ import {
 } from '@/services/publicCategories';
 import { clearStoredTokens } from '@/utils/auth';
 import {
-  AppstoreOutlined,
+  BookOutlined,
   CloudUploadOutlined,
+  CompassOutlined,
+  FireOutlined,
   GlobalOutlined,
   LogoutOutlined,
   MoonOutlined,
+  NotificationOutlined,
   PlaySquareOutlined,
   QuestionCircleOutlined,
+  ReadOutlined,
   SettingOutlined,
   SunOutlined,
+  ThunderboltOutlined,
   UploadOutlined,
   UserOutlined,
+  VideoCameraOutlined,
 } from '@ant-design/icons';
 import type { RunTimeLayoutConfig } from '@umijs/max';
 import { SelectLang, history } from '@umijs/max';
@@ -33,6 +39,16 @@ import {
 import { useEffect } from 'react';
 
 const { Text } = Typography;
+
+const getCategoryIcon = (slug?: string) => {
+  const value = String(slug || '').toLowerCase();
+  if (value.includes('tech')) return <CompassOutlined />;
+  if (value.includes('news')) return <NotificationOutlined />;
+  if (value.includes('game')) return <FireOutlined />;
+  if (value.includes('edu') || value.includes('learn')) return <ReadOutlined />;
+  if (value.includes('live')) return <ThunderboltOutlined />;
+  return <BookOutlined />;
+};
 
 type InitialState = {
   name: string;
@@ -99,15 +115,22 @@ export const layout: RunTimeLayoutConfig = ({
     siderWidth: 188,
     menuHeaderRender: false,
     menuDataRender: (menuData) => {
-      const stableKeys = new Set(['/home', '/browse', '/live']);
-      const stableItems = menuData.filter(
-        (item) => item.path && stableKeys.has(item.path),
-      );
+      const stableItemMap = new Map([
+        ['/home', <VideoCameraOutlined />],
+        ['/browse', <CompassOutlined />],
+        ['/live', <ThunderboltOutlined />],
+      ]);
+      const stableItems = menuData
+        .filter((item) => item.path && stableItemMap.has(item.path))
+        .map((item) => ({
+          ...item,
+          icon: stableItemMap.get(item.path || ''),
+        }));
       const categoryItems = (initialState?.publicCategories || []).map(
         (category) => ({
           name: category.name,
           path: `/categories/${category.slug}`,
-          icon: <AppstoreOutlined />,
+          icon: getCategoryIcon(category.slug),
         }),
       );
       return [...stableItems, ...categoryItems];

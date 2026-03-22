@@ -4,6 +4,41 @@ import { Avatar, Tag, Typography } from 'antd';
 
 const { Text, Title, Paragraph } = Typography;
 
+const formatRelativeTime = (value: any) => {
+  if (!value) {
+    return 'Recently added';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+
+  const diffMs = Date.now() - parsed.getTime();
+  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) {
+    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+  }
+
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) {
+    return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
+  }
+
+  const diffYears = Math.floor(diffMonths / 12);
+  return `${diffYears} year${diffYears === 1 ? '' : 's'} ago`;
+};
+
 const formatDuration = (value: any) => {
   if (!value && value !== 0) {
     return '8:24';
@@ -35,7 +70,7 @@ export default ({ data }: { data: any }) => {
   const title = data.title || data.name;
   const description = data.description_preview || data.description;
   const uploaderLabel = data.author || data.owner_name || 'Media Stream';
-  const publishedLabel = data.created_at || data.date || 'Recently added';
+  const publishedLabel = formatRelativeTime(data.created_at || data.date);
   const viewsLabel = data.views || data.view_count;
   const categoryLabel = data.category_name || data.category_display;
   const durationLabel = formatDuration(
@@ -78,7 +113,7 @@ export default ({ data }: { data: any }) => {
           borderRadius: 12,
           overflow: 'hidden',
           aspectRatio: '16/9',
-          marginBottom: 7,
+          marginBottom: 6,
           background: '#0f172a',
         }}
       >
@@ -131,23 +166,25 @@ export default ({ data }: { data: any }) => {
       </div>
       <div style={{ minWidth: 0 }}>
         {categoryLabel ? (
-          <Tag
-            bordered={false}
+          <Text
+            type="secondary"
             style={{
-              margin: '0 0 5px',
-              borderRadius: 999,
-              background: 'rgba(15, 23, 42, 0.05)',
-              color: '#667085',
-              paddingInline: 8,
+              display: 'block',
+              marginBottom: 4,
+              fontSize: 10.5,
+              lineHeight: 1.3,
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase',
             }}
+            ellipsis
           >
             {categoryLabel}
-          </Tag>
+          </Text>
         ) : null}
         <Title
           level={5}
           style={{
-            margin: '0 0 2px',
+            margin: '0 0 1px',
             fontSize: 14,
             lineHeight: 1.4,
             fontWeight: 700,
@@ -160,7 +197,7 @@ export default ({ data }: { data: any }) => {
           <Paragraph
             type="secondary"
             ellipsis={{ rows: 2 }}
-            style={{ margin: '0 0 4px', fontSize: 12, lineHeight: 1.5 }}
+            style={{ margin: '0 0 3px', fontSize: 11.5, lineHeight: 1.48 }}
           >
             {description}
           </Paragraph>

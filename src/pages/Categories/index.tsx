@@ -21,12 +21,15 @@ const toCardData = (video: PublicVideo) => ({
   ...video,
   routePath: `/browse/${video.id}`,
   name: video.title,
-  author: video.category_display || 'Public video',
+  author: video.owner_name || video.author || 'Media Stream',
   date: video.created_at || 'Recently added',
-  views: video.category_display || 'Public',
+  views: video.views || video.view_count || 'Public',
   thumbnail: video.thumbnail,
   thumbnail_url: video.thumbnail_url,
   description: video.description,
+  description_preview: video.description_preview || video.description,
+  category_display: video.category_name || video.category_display,
+  category_name: video.category_name || video.category_display,
 });
 
 export default function CategoryBrowsePage() {
@@ -64,8 +67,8 @@ export default function CategoryBrowsePage() {
 
   return (
     <PageContainer title={false}>
-      <div style={{ padding: '8px 8px 24px' }}>
-        <Card bordered={false} style={{ borderRadius: 20, marginBottom: 24 }}>
+      <div style={{ padding: '8px 8px 20px' }}>
+        <Card bordered={false} style={{ borderRadius: 16, marginBottom: 20 }}>
           <Space direction="vertical" size={8}>
             <Title level={2} style={{ margin: 0 }}>
               {pageTitle}
@@ -99,7 +102,7 @@ export default function CategoryBrowsePage() {
         ) : videos.length === 0 ? (
           <Empty description={`No public videos found in ${pageTitle}.`} />
         ) : (
-          <Row gutter={[20, 24]}>
+          <Row gutter={[14, 18]}>
             {videos.map((video) => (
               <Col xs={24} sm={12} md={8} lg={6} key={video.id}>
                 <VideoCard data={toCardData(video)} />
