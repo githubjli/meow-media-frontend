@@ -1,6 +1,6 @@
 import { CheckCircleFilled } from '@ant-design/icons';
 import { history } from '@umijs/max';
-import { Avatar, Space, Tag, Typography } from 'antd';
+import { Avatar, Tag, Typography } from 'antd';
 
 const { Text, Title, Paragraph } = Typography;
 
@@ -52,23 +52,20 @@ export default ({ data }: { data: any }) => {
         cursor: 'pointer',
         borderRadius: 12,
         padding: 6,
-        transition:
-          'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
       }}
       onMouseEnter={(event) => {
-        event.currentTarget.style.transform = 'translateY(-2px)';
+        event.currentTarget.style.transform = 'translateY(-4px)';
         event.currentTarget.style.boxShadow =
-          '0 16px 28px rgba(15, 23, 42, 0.10)';
-        event.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.62)';
+          '0 18px 30px rgba(15, 23, 42, 0.10)';
         const image = event.currentTarget.querySelector('img');
         if (image) {
-          (image as HTMLImageElement).style.transform = 'scale(1.04)';
+          (image as HTMLImageElement).style.transform = 'scale(1.03)';
         }
       }}
       onMouseLeave={(event) => {
         event.currentTarget.style.transform = 'translateY(0)';
         event.currentTarget.style.boxShadow = 'none';
-        event.currentTarget.style.backgroundColor = 'transparent';
         const image = event.currentTarget.querySelector('img');
         if (image) {
           (image as HTMLImageElement).style.transform = 'scale(1)';
@@ -81,7 +78,7 @@ export default ({ data }: { data: any }) => {
           borderRadius: 12,
           overflow: 'hidden',
           aspectRatio: '16/9',
-          marginBottom: 8,
+          marginBottom: 7,
           background: '#0f172a',
         }}
       >
@@ -96,7 +93,7 @@ export default ({ data }: { data: any }) => {
             height: '100%',
             objectFit: 'cover',
             display: 'block',
-            transition: 'transform 0.3s ease',
+            transition: 'transform 0.2s ease',
           }}
         />
         {data.status === 'broadcasting' && (
@@ -150,7 +147,7 @@ export default ({ data }: { data: any }) => {
         <Title
           level={5}
           style={{
-            margin: '0 0 3px',
+            margin: '0 0 2px',
             fontSize: 14,
             lineHeight: 1.4,
             fontWeight: 700,
@@ -163,19 +160,33 @@ export default ({ data }: { data: any }) => {
           <Paragraph
             type="secondary"
             ellipsis={{ rows: 2 }}
-            style={{ margin: '0 0 5px', fontSize: 12, lineHeight: 1.5 }}
+            style={{ margin: '0 0 4px', fontSize: 12, lineHeight: 1.5 }}
           >
             {description}
           </Paragraph>
         ) : null}
-        <Space align="center" size={7} style={{ width: '100%' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            minWidth: 0,
+          }}
+        >
           <Avatar
             src={`https://api.dicebear.com/7.x/identicon/svg?seed=${uploaderLabel}`}
             size={28}
+            style={{ flexShrink: 0 }}
           />
           <Text
             type="secondary"
-            style={{ fontSize: 11.5, lineHeight: 1.45, flex: 1, minWidth: 0 }}
+            style={{
+              fontSize: 11.5,
+              lineHeight: 1.45,
+              flex: 1,
+              minWidth: 0,
+              display: 'block',
+            }}
             ellipsis
           >
             {metaLine}
@@ -183,7 +194,7 @@ export default ({ data }: { data: any }) => {
           <CheckCircleFilled
             style={{ color: '#35b8be', fontSize: 10, flexShrink: 0 }}
           />
-        </Space>
+        </div>
       </div>
     </div>
   );
