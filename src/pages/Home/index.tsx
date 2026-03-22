@@ -1,51 +1,54 @@
 import VideoCard from '@/components/VideoCard';
+import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
 import {
-  CodeOutlined,
-  ControlOutlined,
-  GlobalOutlined,
+  ClockCircleOutlined,
+  PlaySquareOutlined,
   ReadOutlined,
   RightOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history } from '@umijs/max';
-import { Button, Card, Col, Row, Typography } from 'antd';
-import { useState } from 'react';
+import { Alert, Button, Card, Col, Empty, Row, Spin, Typography } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
 import styles from './index.less';
 
 const { Title, Text } = Typography;
 
-const TAGS = [
-  'All',
-  'React',
-  'Streaming',
-  'Blockchain',
-  'Data Science',
-  'Gaming',
-  'AI',
-];
+const toCardData = (video: PublicVideo) => ({
+  ...video,
+  routePath: `/browse/${video.id}`,
+  name: video.title,
+  author: video.category_display || 'Public video',
+  date: video.created_at || 'Recently added',
+  views: video.category_display || 'Public',
+  thumbnail: video.thumbnail,
+  description: video.description,
+});
 
-const TagsBar = () => {
-  const [active, setActive] = useState('All');
-
-  return (
-    <div className={styles.tagsWrap}>
-      <div className={styles.tagsBar}>
-        {TAGS.map((tag) => (
-          <button
-            key={tag}
-            type="button"
-            onClick={() => setActive(tag)}
-            className={`${styles.tagChip} ${
-              active === tag ? styles.tagChipActive : ''
-            }`}
-          >
-            {tag}
-          </button>
-        ))}
-      </div>
+const TagsBar = ({
+  tags,
+}: {
+  tags: Array<{ label: string; value: string }>;
+}) => (
+  <div className={styles.tagsWrap}>
+    <div className={styles.tagsBar}>
+      {tags.map((tag) => (
+        <button
+          key={tag.value}
+          type="button"
+          onClick={() =>
+            history.push(
+              tag.value === 'all' ? '/browse' : `/categories/${tag.value}`,
+            )
+          }
+          className={styles.tagChip}
+        >
+          {tag.label}
+        </button>
+      ))}
     </div>
-  );
-};
+  </div>
+);
 
 const ChannelRow = ({ title, path, items, icon, description }: any) => (
   <section className={styles.sectionBlock}>
@@ -68,56 +71,64 @@ const ChannelRow = ({ title, path, items, icon, description }: any) => (
       </Button>
     </div>
 
-    <Row gutter={[20, 24]}>
-      {items.map((item: any) => (
-        <Col xs={24} sm={12} md={8} lg={6} xl={6} key={item.streamId}>
-          <VideoCard data={item} />
-        </Col>
-      ))}
-    </Row>
+    {items.length === 0 ? (
+      <Empty description={`No videos available in ${title} yet.`} />
+    ) : (
+      <Row gutter={[20, 24]}>
+        {items.map((item: PublicVideo) => (
+          <Col xs={24} sm={12} md={8} lg={6} xl={6} key={item.id}>
+            <VideoCard data={toCardData(item)} />
+          </Col>
+        ))}
+      </Row>
+    )}
   </section>
 );
 
-export default () => {
-  const mockData = {
-    tech: [
-      {
-        streamId: 'test',
-        name: 'Live: Infrastructure Monitor',
-        author: 'Director',
-        views: '1.2K',
-        status: 'broadcasting',
-        date: 'Live now',
-      },
-    ],
-    edu: [
-      {
-        streamId: 'edu-1',
-        name: 'PhD Thesis Defense Preparation',
-        author: 'Academic',
-        views: '5K',
-        date: '2 hours ago',
-      },
-    ],
-    game: [
-      {
-        streamId: 'game-1',
-        name: 'Wukong 4K HDR Gameplay',
-        author: 'Pro Gamer',
-        views: '250K',
-        date: 'Yesterday',
-      },
-    ],
-    news: [
-      {
-        streamId: 'news-1',
-        name: 'Platform 2.0 Roadmap',
-        author: 'Official',
-        views: '3K',
-        date: 'Today',
-      },
-    ],
-  };
+const matchCategory = (video: PublicVideo, target: string) => {
+  const value = `${video.category || ''} ${
+    video.category_display || ''
+  }`.toLowerCase();
+  return value.includes(target.toLowerCase());
+};
+
+export default function HomePage() {
+  const [videos, setVideos] = useState<PublicVideo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    listPublicVideos({ ordering: '-created_at', page_size: 24 })
+      .then((response) => setVideos(response.results))
+      .catch((error: any) =>
+        setErrorMessage(
+          error?.message || 'Unable to load public videos right now.',
+        ),
+      )
+      .finally(() => setLoading(false));
+  }, []);
+
+  const categoryTags = useMemo(() => {
+    const seen = new Map<string, { label: string; value: string }>();
+    seen.set('all', { label: 'All Videos', value: 'all' });
+    videos.forEach((video) => {
+      if (video.category) {
+        seen.set(video.category, {
+          value: video.category,
+          label: video.category_display || video.category,
+        });
+      }
+    });
+    return Array.from(seen.values()).slice(0, 6);
+  }, [videos]);
+
+  const latestVideos = videos.slice(0, 4);
+  const techVideos = videos
+    .filter((video) => matchCategory(video, 'tech'))
+    .slice(0, 4);
+  const entertainmentVideos = videos
+    .filter((video) => matchCategory(video, 'entertainment'))
+    .slice(0, 4);
 
   return (
     <PageContainer title={false} ghost contentWidth="Fluid">
@@ -125,48 +136,58 @@ export default () => {
         <Card bordered={false} className={styles.heroCard}>
           <div className={styles.heroHeader}>
             <div>
-              <Text className={styles.heroEyebrow}>Featured categories</Text>
+              <Text className={styles.heroEyebrow}>Public library</Text>
               <Title level={2} className={styles.heroTitle}>
-                Discover live channels and curated media picks.
+                Browse the latest public videos by topic.
               </Title>
               <Text className={styles.heroDescription}>
-                Browse trending streams, sharp educational content, gaming
-                highlights, and platform updates in one place.
+                Explore fresh uploads, jump into category pages, or open the
+                full browse experience for search, sorting, and filters.
               </Text>
             </div>
           </div>
-          <TagsBar />
+          <TagsBar tags={categoryTags} />
         </Card>
 
-        <ChannelRow
-          title="Technology"
-          path="/tech"
-          icon={<CodeOutlined />}
-          description="Infrastructure, developer tooling, and live product demos."
-          items={mockData.tech}
-        />
-        <ChannelRow
-          title="Education"
-          path="/edu"
-          icon={<ReadOutlined />}
-          description="Learning sessions, explainers, and academic broadcasts."
-          items={mockData.edu}
-        />
-        <ChannelRow
-          title="Gaming"
-          path="/game"
-          icon={<ControlOutlined />}
-          description="Gameplay streams, highlight reels, and creator moments."
-          items={mockData.game}
-        />
-        <ChannelRow
-          title="News"
-          path="/news"
-          icon={<GlobalOutlined />}
-          description="Platform announcements, updates, and current coverage."
-          items={mockData.news}
-        />
+        {errorMessage ? (
+          <Alert
+            type="error"
+            showIcon
+            message={errorMessage}
+            style={{ marginBottom: 16 }}
+          />
+        ) : null}
+
+        {loading ? (
+          <div style={{ padding: '40px 0', textAlign: 'center' }}>
+            <Spin />
+          </div>
+        ) : (
+          <>
+            <ChannelRow
+              title="Latest"
+              path="/browse"
+              icon={<ClockCircleOutlined />}
+              description="Recently published public videos across the platform."
+              items={latestVideos}
+            />
+            <ChannelRow
+              title="Tech"
+              path="/categories/tech"
+              icon={<ReadOutlined />}
+              description="Technology-focused uploads, demos, and explainers."
+              items={techVideos}
+            />
+            <ChannelRow
+              title="Entertainment"
+              path="/categories/entertainment"
+              icon={<PlaySquareOutlined />}
+              description="Watchable highlights, pop culture, and casual viewing picks."
+              items={entertainmentVideos}
+            />
+          </>
+        )}
       </div>
     </PageContainer>
   );
-};
+}

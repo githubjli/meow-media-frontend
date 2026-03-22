@@ -34,7 +34,19 @@ export default defineConfig({
     { path: '/videos/upload', component: './Videos/Upload', hideInMenu: true },
     { path: '/videos/mine', component: './Videos/Mine', hideInMenu: true },
     { path: '/videos/:id', component: './Videos/Detail', hideInMenu: true },
+    { path: '/browse/:id', component: './PublicVideoDetail', hideInMenu: true },
+    {
+      path: '/categories/:category',
+      component: './Categories',
+      hideInMenu: true,
+    },
     { name: 'Home', path: '/home', icon: 'HomeOutlined', component: './Home' },
+    {
+      name: 'Browse',
+      path: '/browse',
+      icon: 'AppstoreOutlined',
+      component: './Browse',
+    },
     {
       name: 'Education',
       path: '/edu',
