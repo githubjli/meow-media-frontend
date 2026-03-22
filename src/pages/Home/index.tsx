@@ -1,140 +1,170 @@
-import { Typography, Space, Button, Row, Col, Modal, Form, Input, Upload, message } from 'antd';
-import { PageContainer } from '@ant-design/pro-components';
-import {
-  CodeOutlined,
-  ReadOutlined,
-  ControlOutlined,
-  GlobalOutlined,
-  RightOutlined,
-  InboxOutlined
-} from '@ant-design/icons';
-import { history } from '@umijs/max';
 import VideoCard from '@/components/VideoCard';
-import React, { useState, useEffect } from 'react';
+import { type PublicCategory } from '@/services/publicCategories';
+import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
+import { AppstoreOutlined, RightOutlined } from '@ant-design/icons';
+import { PageContainer } from '@ant-design/pro-components';
+import { history, useModel } from '@umijs/max';
+import { Alert, Button, Card, Col, Empty, Row, Spin, Typography } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import styles from './index.less';
 
-const { Title } = Typography;
-const { Dragger } = Upload; // 🚩 这里已经定义了 Dragger
+const { Title, Text } = Typography;
 
-// --- Tags Bar ---
-const TagsBar = () => {
-  const [active, setActive] = useState('All');
-  const tags = ['All', 'React', 'Streaming', 'Blockchain', 'Data Science', 'Gaming', 'AI'];
-  return (
-    <div style={{ overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: 24, display: 'flex', gap: 12, scrollbarWidth: 'none' }}>
-      {tags.map(t => (
-        <div
-          key={t}
-          onClick={() => setActive(t)}
-          style={{
-            padding: '6px 16px',
-            borderRadius: 8,
-            background: active === t ? '#000' : '#f2f2f2',
-            color: active === t ? '#fff' : '#000',
-            cursor: 'pointer',
-            fontWeight: 500,
-            transition: '0.2s'
-          }}
+const toCardData = (video: PublicVideo) => ({
+  ...video,
+  routePath: `/browse/${video.id}`,
+  name: video.title,
+  author: video.category_display || 'Public video',
+  date: video.created_at || 'Recently added',
+  views: video.category_display || 'Public',
+  thumbnail: video.thumbnail,
+  thumbnail_url: video.thumbnail_url,
+  description: video.description,
+});
+
+const TagsBar = ({ tags }: { tags: PublicCategory[] }) => (
+  <div className={styles.tagsWrap}>
+    <div className={styles.tagsBar}>
+      <button
+        type="button"
+        onClick={() => history.push('/browse')}
+        className={styles.tagChip}
+      >
+        All Videos
+      </button>
+      {tags.map((tag) => (
+        <button
+          key={tag.slug}
+          type="button"
+          onClick={() => history.push(`/categories/${tag.slug}`)}
+          className={styles.tagChip}
         >
-          {t}
-        </div>
+          {tag.name}
+        </button>
       ))}
     </div>
-  );
-};
-
-// --- Channel Row (Unified Layout with Channels) ---
-const ChannelRow = ({ title, path, items, icon }: any) => (
-  <div style={{ marginBottom: 40 }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-      <Space size={10}>
-        <Title level={2} style={{ margin: 0, fontSize: 20, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ display: 'flex' }}>{icon}</span>
-          {title}
-        </Title>
-      </Space>
-      <Button type="link" onClick={() => history.push(path)} style={{ color: '#8c8c8c' }}>
-        Show more <RightOutlined style={{ fontSize: 10 }} />
-      </Button>
-    </div>
-    <Row gutter={[24, 24]}>
-      {items.map((item: any) => (
-        <Col xs={24} sm={12} md={8} lg={6} xl={6} key={item.streamId}>
-          <VideoCard data={item} />
-        </Col>
-      ))}
-    </Row>
   </div>
 );
 
-export default () => {
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
+const ChannelRow = ({ title, path, items, description }: any) => (
+  <section className={styles.sectionBlock}>
+    <div className={styles.sectionHeader}>
+      <div className={styles.sectionTitleWrap}>
+        <span className={styles.sectionIcon}>
+          <AppstoreOutlined />
+        </span>
+        <div>
+          <Title level={3} className={styles.sectionTitle}>
+            {title}
+          </Title>
+          <Text className={styles.sectionDescription}>{description}</Text>
+        </div>
+      </div>
+      <Button
+        type="link"
+        onClick={() => history.push(path)}
+        className={styles.sectionAction}
+      >
+        Show more <RightOutlined style={{ fontSize: 10 }} />
+      </Button>
+    </div>
 
-  // 🚩 重要：监听来自 app.tsx 顶部按钮的点击事件
+    {items.length === 0 ? (
+      <Empty description={`No videos available in ${title} yet.`} />
+    ) : (
+      <Row gutter={[20, 24]}>
+        {items.map((item: PublicVideo) => (
+          <Col xs={24} sm={12} md={8} lg={6} xl={6} key={item.id}>
+            <VideoCard data={toCardData(item)} />
+          </Col>
+        ))}
+      </Row>
+    )}
+  </section>
+);
+
+export default function HomePage() {
+  const { initialState } = useModel('@@initialState');
+  const categories = initialState?.publicCategories || [];
+  const [videos, setVideos] = useState<PublicVideo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+
   useEffect(() => {
-    const handleOpen = () => setIsUploadOpen(true);
-    window.addEventListener('open-upload-modal', handleOpen);
-    return () => window.removeEventListener('open-upload-modal', handleOpen);
+    listPublicVideos({ ordering: '-created_at', page_size: 24 })
+      .then((response) => setVideos(response.results))
+      .catch((error: any) =>
+        setErrorMessage(
+          error?.message || 'Unable to load public videos right now.',
+        ),
+      )
+      .finally(() => setLoading(false));
   }, []);
 
-  const mockData = {
-    tech: [{ streamId: 'test', name: 'Live: Infrastructure Monitor', author: 'Director', views: '1.2K', status: 'broadcasting' }],
-    edu: [{ streamId: 'edu-1', name: 'PhD Thesis Defense Preparation', author: 'Academic', views: '5K' }],
-    game: [{ streamId: 'game-1', name: 'Wukong 4K HDR Gameplay', author: 'Pro Gamer', views: '250K' }],
-    news: [{ streamId: 'news-1', name: 'Platform 2.0 Roadmap', author: 'Official', views: '3K' }]
-  };
+  const latestVideos = videos.slice(0, 4);
+  const sections = useMemo(
+    () =>
+      categories.slice(0, 3).map((category) => ({
+        ...category,
+        items: videos
+          .filter((video) => video.category === category.slug)
+          .slice(0, 4),
+      })),
+    [categories, videos],
+  );
 
   return (
     <PageContainer title={false} ghost contentWidth="Fluid">
-      <div style={{ padding: '0 8px' }}>
-        <TagsBar />
+      <div className={styles.pageShell}>
+        <Card bordered={false} className={styles.heroCard}>
+          <div className={styles.heroHeader}>
+            <div>
+              <Text className={styles.heroEyebrow}>Public library</Text>
+              <Title level={2} className={styles.heroTitle}>
+                Browse the latest public videos by topic.
+              </Title>
+              <Text className={styles.heroDescription}>
+                Explore fresh uploads, jump into category pages, or open the
+                full browse experience for search, sorting, and filters.
+              </Text>
+            </div>
+          </div>
+          <TagsBar tags={categories} />
+        </Card>
 
-        <ChannelRow title="Technology" path="/tech" icon={<CodeOutlined />} items={mockData.tech} />
-        <ChannelRow title="Education" path="/edu" icon={<ReadOutlined />} items={mockData.edu} />
-        <ChannelRow title="Gaming" path="/game" icon={<ControlOutlined />} items={mockData.game} />
-        <ChannelRow title="News" path="/news" icon={<GlobalOutlined />} items={mockData.news} />
+        {errorMessage ? (
+          <Alert
+            type="error"
+            showIcon
+            message={errorMessage}
+            style={{ marginBottom: 16 }}
+          />
+        ) : null}
 
-        {/* 🚩 找回的 Upload Modal */}
-        <Modal
-          title={<Title level={4}>Upload Content</Title>}
-          open={isUploadOpen}
-          onCancel={() => setIsUploadOpen(false)}
-          footer={null}
-          width={560}
-          centered
-        >
-          <Form layout="vertical" onFinish={() => { message.success('Success! Processing video...'); setIsUploadOpen(false); }}>
-            <Form.Item label="Video File">
-              {/* 🚩 使用统一的 Dragger 标签，解决 Syntax Error */}
-              <Dragger
-                accept="video/*"
-                maxCount={1}
-                customRequest={({onSuccess}) => setTimeout(() => onSuccess?.("ok"), 1000)}
-              >
-                <p className="ant-upload-drag-icon"><InboxOutlined style={{ color: '#5bd1d7' }} /></p>
-                <p className="ant-upload-text">Click or drag file to upload</p>
-                <p className="ant-upload-hint">Support high quality MP4, WebM formats</p>
-              </Dragger>
-            </Form.Item>
-            <Form.Item label="Title" name="title" rules={[{ required: true }]}>
-              <Input placeholder="Enter video title" />
-            </Form.Item>
-            <Form.Item label="Channel">
-              <Space wrap>
-                {['Tech', 'Edu', 'Game', 'News'].map(c => <Button key={c} shape="round">{c}</Button>)}
-              </Space>
-            </Form.Item>
-            <Button
-              type="primary"
-              block
-              size="large"
-              htmlType="submit"
-              style={{ background: '#5bd1d7', color: '#000', fontWeight: 'bold', border: 'none', marginTop: 12 }}
-            >
-              Publish
-            </Button>
-          </Form>
-        </Modal>
+        {loading ? (
+          <div style={{ padding: '40px 0', textAlign: 'center' }}>
+            <Spin />
+          </div>
+        ) : (
+          <>
+            <ChannelRow
+              title="Latest"
+              path="/browse"
+              description="Recently published public videos across the platform."
+              items={latestVideos}
+            />
+            {sections.map((section) => (
+              <ChannelRow
+                key={section.slug}
+                title={section.name}
+                path={`/categories/${section.slug}`}
+                description={`Browse the latest videos in ${section.name}.`}
+                items={section.items}
+              />
+            ))}
+          </>
+        )}
       </div>
     </PageContainer>
   );
-};
+}
