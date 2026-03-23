@@ -1,17 +1,74 @@
-import { EyeOutlined } from '@ant-design/icons';
+import {
+  CopyOutlined,
+  EyeOutlined,
+  PlayCircleOutlined,
+  PoweroffOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { useLocation, useParams } from '@umijs/max';
-import { Avatar, Card, Empty, Skeleton, Space, Tag, Typography } from 'antd';
+import { useParams } from '@umijs/max';
+import {
+  Alert,
+  Avatar,
+  Button,
+  Card,
+  Col,
+  Empty,
+  Row,
+  Skeleton,
+  Space,
+  Statistic,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as vjs_module from 'video.js';
 import 'video.js/dist/video-js.css';
 
-import { listVideoComments, type CommentItem } from '@/services/engagement';
-import { getLiveBroadcast, type LiveBroadcast } from '@/services/live';
+import {
+  endLiveBroadcast,
+  getLiveBroadcast,
+  startLiveBroadcast,
+  type LiveBroadcast,
+} from '@/services/live';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
-const getLocationQuery = (search: string) => new URLSearchParams(search);
+const getStatusColor = (status?: string) => {
+  switch (String(status || '').toLowerCase()) {
+    case 'live':
+    case 'started':
+    case 'broadcasting':
+      return 'error';
+    case 'ended':
+    case 'finished':
+      return 'default';
+    default:
+      return 'processing';
+  }
+};
+
+const canStart = (status?: string) =>
+  !['live', 'started', 'broadcasting'].includes(
+    String(status || '').toLowerCase(),
+  );
+const canEnd = (status?: string) =>
+  !['ended', 'finished'].includes(String(status || '').toLowerCase());
+
+const copyValue = async (value: string, label: string) => {
+  if (!value) {
+    message.warning(`${label} is not available yet.`);
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(value);
+    message.success(`${label} copied.`);
+  } catch (error) {
+    message.info(`Copy ${label.toLowerCase()} manually.`);
+  }
+};
 
 export default function LiveRoomPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,84 +81,59 @@ export default function LiveRoomPage() {
   const playerRef = useRef<any>(null);
   const [broadcast, setBroadcast] = useState<LiveBroadcast | null>(null);
   const [loading, setLoading] = useState(true);
-  const [comments, setComments] = useState<CommentItem[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<'start' | 'end' | null>(
+    null,
+  );
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const hlsUrl = broadcast?.hlsUrl || `/live-api/live/streams/${id}.m3u8`;
-  const title = broadcast?.name || query.get('title') || `Live Session ${id}`;
-  const category = broadcast?.category || query.get('category') || 'Live';
-  const viewerLabel =
-    typeof broadcast?.viewerCount === 'number'
-      ? `${broadcast.viewerCount.toLocaleString()} watching`
-      : 'Viewer count unavailable';
+  const playbackUrl = broadcast?.playback_url || '';
+  const title = broadcast?.title || broadcast?.name || 'Live Stream';
+  const creatorName =
+    broadcast?.creator?.name ||
+    broadcast?.creator?.username ||
+    broadcast?.creator?.email ||
+    'Creator';
+  const viewerCount = broadcast?.viewer_count ?? broadcast?.viewerCount ?? 0;
 
-  useEffect(() => {
+  const detailItems = useMemo(
+    () => [
+      { label: 'Stream Key', value: broadcast?.stream_key || '' },
+      { label: 'RTMP Server URL', value: broadcast?.rtmp_url || '' },
+      { label: 'Playback URL', value: playbackUrl },
+    ],
+    [broadcast?.stream_key, broadcast?.rtmp_url, playbackUrl],
+  );
+
+  const loadBroadcast = async (showLoader = false) => {
     if (!id) {
       return;
     }
 
-    let active = true;
-    const load = async () => {
-      try {
-        const data = await getLiveBroadcast(id);
-        if (active) {
-          setBroadcast(data);
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
-
-    load();
-    const interval = window.setInterval(load, 15000);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [id]);
-
-  useEffect(() => {
-    if (!id) {
-      return;
+    if (showLoader) {
+      setLoading(true);
     }
 
-    let active = true;
-    setCommentsLoading(true);
+    try {
+      const data = await getLiveBroadcast(id);
+      setBroadcast(data);
+      setErrorMessage('');
+    } catch (error: any) {
+      setErrorMessage(error?.message || 'Unable to load the live room.');
+      setBroadcast(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    listVideoComments(id, { page: 1, page_size: 8 })
-      .then((data) => {
-        if (active) {
-          setComments(data.results || []);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setComments([]);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setCommentsLoading(false);
-        }
-      });
-
-    const interval = window.setInterval(() => {
-      listVideoComments(id, { page: 1, page_size: 8 })
-        .then((data) => active && setComments(data.results || []))
-        .catch(() => active && setComments([]));
-    }, 12000);
-
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
+  useEffect(() => {
+    loadBroadcast(true);
+    const interval = window.setInterval(() => loadBroadcast(false), 15000);
+    return () => window.clearInterval(interval);
   }, [id]);
 
   useEffect(() => {
     const videojs: any = (vjs_module as any).default || vjs_module;
-    if (!videoRef.current || !id || typeof videojs !== 'function') {
+    if (!videoRef.current || !playbackUrl || typeof videojs !== 'function') {
       return;
     }
 
@@ -116,10 +148,13 @@ export default function LiveRoomPage() {
     videoRef.current.appendChild(element);
 
     playerRef.current = videojs(element, {
-      autoplay: true,
+      autoplay: false,
       controls: true,
+      responsive: true,
+      fluid: true,
       preload: 'auto',
-      sources: [{ src: hlsUrl, type: 'application/x-mpegURL' }],
+      liveui: true,
+      sources: [{ src: playbackUrl, type: 'application/x-mpegURL' }],
     });
 
     return () => {
@@ -128,7 +163,29 @@ export default function LiveRoomPage() {
         playerRef.current = null;
       }
     };
-  }, [hlsUrl, id]);
+  }, [playbackUrl]);
+
+  const handleAction = async (type: 'start' | 'end') => {
+    if (!id) {
+      return;
+    }
+
+    setActionLoading(type);
+    try {
+      const next =
+        type === 'start'
+          ? await startLiveBroadcast(id)
+          : await endLiveBroadcast(id);
+      setBroadcast(next);
+      message.success(
+        type === 'start' ? 'Live stream started.' : 'Live stream ended.',
+      );
+    } catch (error: any) {
+      message.error(error?.message || `Unable to ${type} live stream.`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   return (
     <PageContainer title={false}>
@@ -137,95 +194,178 @@ export default function LiveRoomPage() {
           <Card bordered={false} style={{ borderRadius: 20 }}>
             <Skeleton active paragraph={{ rows: 10 }} />
           </Card>
-        ) : (
-          <Space direction="vertical" size={16} style={{ width: '100%' }}>
+        ) : errorMessage ? (
+          <Alert type="error" showIcon message={errorMessage} />
+        ) : broadcast ? (
+          <Space direction="vertical" size={20} style={{ width: '100%' }}>
             <Card bordered={false} style={{ borderRadius: 20 }}>
-              <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                <Space wrap>
-                  <Tag color="error">LIVE</Tag>
-                  <Tag>{category}</Tag>
-                  <Tag icon={<EyeOutlined />}>{viewerLabel}</Tag>
-                </Space>
-                <Title level={2} style={{ margin: 0 }}>
-                  {title}
-                </Title>
-                <Text type="secondary">
-                  Live broadcast mode with HLS playback and a lightweight
-                  companion chat panel.
-                </Text>
-              </Space>
+              <Row gutter={[20, 20]} align="middle">
+                <Col xs={24} lg={16}>
+                  <Space
+                    direction="vertical"
+                    size={12}
+                    style={{ width: '100%' }}
+                  >
+                    <Space wrap>
+                      <Tag color={getStatusColor(broadcast.status)}>
+                        {(broadcast.status || 'Created').toUpperCase()}
+                      </Tag>
+                      {broadcast.category ? (
+                        <Tag>{broadcast.category}</Tag>
+                      ) : null}
+                      <Tag icon={<EyeOutlined />}>
+                        {viewerCount.toLocaleString()} viewers
+                      </Tag>
+                    </Space>
+                    <Title level={2} style={{ margin: 0 }}>
+                      {title}
+                    </Title>
+                    <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                      {broadcast.description ||
+                        'Professional live room with Django-managed stream lifecycle and Ant Media playback.'}
+                    </Paragraph>
+                    <Space align="center" size={12}>
+                      <Avatar
+                        icon={<UserOutlined />}
+                        src={broadcast.creator?.avatar_url}
+                      />
+                      <div>
+                        <Text strong style={{ display: 'block' }}>
+                          {creatorName}
+                        </Text>
+                        <Text type="secondary">Stream host</Text>
+                      </div>
+                    </Space>
+                  </Space>
+                </Col>
+                <Col xs={24} lg={8}>
+                  <Space
+                    wrap
+                    style={{ justifyContent: 'flex-end', width: '100%' }}
+                  >
+                    <Button
+                      type="primary"
+                      icon={<PlayCircleOutlined />}
+                      loading={actionLoading === 'start'}
+                      disabled={!canStart(broadcast.status)}
+                      onClick={() => handleAction('start')}
+                    >
+                      Start Live
+                    </Button>
+                    <Button
+                      danger
+                      icon={<PoweroffOutlined />}
+                      loading={actionLoading === 'end'}
+                      disabled={!canEnd(broadcast.status)}
+                      onClick={() => handleAction('end')}
+                    >
+                      End Live
+                    </Button>
+                    <Button
+                      icon={<CopyOutlined />}
+                      onClick={() => copyValue(playbackUrl, 'Playback URL')}
+                    >
+                      Copy Playback URL
+                    </Button>
+                  </Space>
+                </Col>
+              </Row>
             </Card>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1.6fr) minmax(320px, 0.8fr)',
-                gap: 20,
-              }}
-            >
-              <Card
-                bordered={false}
-                style={{ borderRadius: 20, overflow: 'hidden' }}
-              >
-                <div
-                  style={{
-                    borderRadius: 16,
-                    overflow: 'hidden',
-                    background: '#000',
-                  }}
+            <Row gutter={[20, 20]}>
+              <Col xs={24} xl={16}>
+                <Card
+                  bordered={false}
+                  style={{ borderRadius: 20, overflow: 'hidden' }}
                 >
-                  <div ref={videoRef} key={id} />
-                </div>
-              </Card>
-
-              <Card
-                bordered={false}
-                style={{ borderRadius: 20 }}
-                title="Live Chat"
-              >
-                <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                  <Text type="secondary">
-                    Temporary chat panel using the existing comments UI until
-                    real-time messaging is added.
-                  </Text>
-                  {commentsLoading ? (
-                    <Skeleton active paragraph={{ rows: 6 }} title={false} />
-                  ) : comments.length > 0 ? (
-                    comments.map((comment) => (
-                      <div
-                        key={comment.id}
-                        style={{
-                          padding: '12px 14px',
-                          borderRadius: 14,
-                          background: 'rgba(15, 23, 42, 0.03)',
-                          border: '1px solid rgba(15, 23, 42, 0.06)',
-                        }}
-                      >
-                        <Space align="start" size={12}>
-                          <Avatar src={comment.user?.avatar_url}>
-                            {String(comment.user?.name || 'V')
-                              .charAt(0)
-                              .toUpperCase()}
-                          </Avatar>
-                          <div style={{ minWidth: 0 }}>
-                            <Text strong style={{ display: 'block' }}>
-                              {comment.user?.name || 'Viewer'}
-                            </Text>
-                            <Text type="secondary">{comment.content}</Text>
-                          </div>
-                        </Space>
-                      </div>
-                    ))
+                  {playbackUrl ? (
+                    <div
+                      style={{
+                        borderRadius: 16,
+                        overflow: 'hidden',
+                        background: '#000',
+                        minHeight: 420,
+                      }}
+                    >
+                      <div ref={videoRef} key={playbackUrl} />
+                    </div>
                   ) : (
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description="Chat will appear here when comments are available."
-                    />
+                    <Empty description="Playback URL is not available yet. Start your encoder and refresh this room once Django provides the playback endpoint." />
                   )}
+                </Card>
+              </Col>
+
+              <Col xs={24} xl={8}>
+                <Space direction="vertical" size={20} style={{ width: '100%' }}>
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20 }}
+                    title="Stream details"
+                  >
+                    <Space
+                      direction="vertical"
+                      size={16}
+                      style={{ width: '100%' }}
+                    >
+                      {detailItems.map((item) => (
+                        <div key={item.label}>
+                          <Text
+                            strong
+                            style={{ display: 'block', marginBottom: 6 }}
+                          >
+                            {item.label}
+                          </Text>
+                          <Space
+                            align="start"
+                            style={{
+                              width: '100%',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <Text code style={{ wordBreak: 'break-all' }}>
+                              {item.value || 'Not available'}
+                            </Text>
+                            <Button
+                              size="small"
+                              icon={<CopyOutlined />}
+                              onClick={() => copyValue(item.value, item.label)}
+                            >
+                              Copy
+                            </Button>
+                          </Space>
+                        </div>
+                      ))}
+                    </Space>
+                  </Card>
+
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20 }}
+                    title="Viewer & chat"
+                  >
+                    <Space
+                      direction="vertical"
+                      size={12}
+                      style={{ width: '100%' }}
+                    >
+                      <Statistic title="Current viewers" value={viewerCount} />
+                      <Text type="secondary">
+                        Real-time viewer analytics and live chat can be
+                        connected here once the backend messaging layer is
+                        ready.
+                      </Text>
+                      <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description="Chat placeholder"
+                      />
+                    </Space>
+                  </Card>
                 </Space>
-              </Card>
-            </div>
+              </Col>
+            </Row>
           </Space>
+        ) : (
+          <Empty description="Live room unavailable." />
         )}
       </div>
     </PageContainer>

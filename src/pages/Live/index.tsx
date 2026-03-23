@@ -1,8 +1,9 @@
-import { VideoCameraOutlined } from '@ant-design/icons';
+import { EyeOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history } from '@umijs/max';
 import {
   Alert,
+  Avatar,
   Button,
   Card,
   Col,
@@ -19,12 +20,18 @@ import { getLiveList, type LiveBroadcast } from '@/services/live';
 
 const { Title, Text } = Typography;
 
-const getViewerLabel = (item: LiveBroadcast) => {
-  if (typeof item.viewerCount === 'number') {
-    return `${item.viewerCount.toLocaleString()} watching`;
+const getStatusColor = (status?: string) => {
+  switch (String(status || '').toLowerCase()) {
+    case 'live':
+    case 'started':
+    case 'broadcasting':
+      return 'error';
+    case 'ended':
+    case 'finished':
+      return 'default';
+    default:
+      return 'processing';
   }
-
-  return 'Viewer count unavailable';
 };
 
 export default function ExploreLivePage() {
@@ -71,14 +78,14 @@ export default function ExploreLivePage() {
           >
             <div>
               <Tag color="error" style={{ marginBottom: 12 }}>
-                LIVE NOW
+                LIVE CONTROL ROOM
               </Tag>
               <Title level={2} style={{ margin: 0 }}>
-                Explore Live
+                Explore Live Streams
               </Title>
               <Text type="secondary">
-                Drop into real-time sessions, market updates, creator rooms, and
-                community broadcasts.
+                Browse live events created through Django, then open each room
+                to manage stream state and Ant Media playback.
               </Text>
             </div>
             <Button
@@ -106,60 +113,92 @@ export default function ExploreLivePage() {
           </Card>
         ) : streams.length === 0 ? (
           <Card bordered={false} style={{ borderRadius: 20 }}>
-            <Empty description="No one is live right now.">
+            <Empty description="No live streams are available yet.">
               <Button
                 type="primary"
                 onClick={() => history.push('/live/create')}
               >
-                Start the first stream
+                Create the first stream
               </Button>
             </Empty>
           </Card>
         ) : (
           <Row gutter={[20, 20]}>
-            {streams.map((item) => (
-              <Col xs={24} sm={12} xl={8} key={item.streamId}>
-                <Card
-                  hoverable
-                  bordered={false}
-                  style={{ borderRadius: 18 }}
-                  cover={
-                    <div
-                      style={{
-                        aspectRatio: '16 / 9',
-                        background: 'linear-gradient(135deg, #09121a, #143240)',
-                        display: 'grid',
-                        placeItems: 'center',
-                        color: '#fff',
-                      }}
-                    >
-                      <Space direction="vertical" align="center" size={8}>
-                        <Tag color="error">LIVE</Tag>
-                        <Title level={4} style={{ margin: 0, color: '#fff' }}>
-                          {item.name || item.streamId}
-                        </Title>
-                      </Space>
-                    </div>
-                  }
-                  onClick={() => history.push(`/live/${item.streamId}`)}
-                >
-                  <Space
-                    direction="vertical"
-                    size={8}
-                    style={{ width: '100%' }}
+            {streams.map((item) => {
+              const creatorName =
+                item.creator?.name ||
+                item.creator?.username ||
+                item.creator?.email ||
+                'Creator';
+              const viewerCount = item.viewer_count ?? item.viewerCount ?? 0;
+
+              return (
+                <Col xs={24} sm={12} xl={8} key={String(item.id)}>
+                  <Card
+                    hoverable
+                    bordered={false}
+                    style={{ borderRadius: 18 }}
+                    cover={
+                      <div
+                        style={{
+                          aspectRatio: '16 / 9',
+                          background:
+                            'linear-gradient(135deg, #09121a, #143240)',
+                          display: 'grid',
+                          placeItems: 'center',
+                          color: '#fff',
+                          padding: 20,
+                        }}
+                      >
+                        <Space direction="vertical" align="center" size={8}>
+                          <Tag color={getStatusColor(item.status)}>
+                            {(item.status || 'created').toUpperCase()}
+                          </Tag>
+                          <Title
+                            level={4}
+                            style={{
+                              margin: 0,
+                              color: '#fff',
+                              textAlign: 'center',
+                            }}
+                          >
+                            {item.title || item.name || `Stream ${item.id}`}
+                          </Title>
+                        </Space>
+                      </div>
+                    }
+                    onClick={() => history.push(`/live/${item.id}`)}
                   >
-                    <Text strong>{item.name || item.streamId}</Text>
-                    <Text type="secondary">
-                      {item.category || 'Live broadcast'}
-                    </Text>
-                    <Space wrap>
-                      <Tag color="error">LIVE</Tag>
-                      <Tag>{getViewerLabel(item)}</Tag>
+                    <Space
+                      direction="vertical"
+                      size={10}
+                      style={{ width: '100%' }}
+                    >
+                      <Text strong>
+                        {item.title || item.name || `Stream ${item.id}`}
+                      </Text>
+                      <Text type="secondary">
+                        {item.category || 'Live broadcast'}
+                      </Text>
+                      <Space align="center">
+                        <Avatar size="small" src={item.creator?.avatar_url}>
+                          {creatorName.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Text type="secondary">{creatorName}</Text>
+                      </Space>
+                      <Space wrap>
+                        <Tag color={getStatusColor(item.status)}>
+                          {(item.status || 'created').toUpperCase()}
+                        </Tag>
+                        <Tag icon={<EyeOutlined />}>
+                          {viewerCount.toLocaleString()} viewers
+                        </Tag>
+                      </Space>
                     </Space>
-                  </Space>
-                </Card>
-              </Col>
-            ))}
+                  </Card>
+                </Col>
+              );
+            })}
           </Row>
         )}
       </div>
