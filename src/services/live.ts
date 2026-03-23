@@ -16,6 +16,8 @@ export type LiveBroadcast = {
   rtmp_url?: string;
   playback_url?: string;
   thumbnail_url?: string;
+  preview_image_url?: string;
+  snapshot_url?: string;
   creator?: {
     id?: number | string;
     name?: string;
@@ -64,6 +66,9 @@ const normalizeBroadcast = (item: any): LiveBroadcast => ({
   rtmp_url: item?.rtmp_url || item?.rtmpUrl || '',
   playback_url: item?.playback_url || item?.playbackUrl || '',
   thumbnail_url: item?.thumbnail_url || item?.thumbnailUrl || '',
+  preview_image_url:
+    item?.preview_image_url || item?.previewImageUrl || item?.poster_url || '',
+  snapshot_url: item?.snapshot_url || item?.snapshotUrl || '',
   creator: item?.creator
     ? {
         ...item.creator,
