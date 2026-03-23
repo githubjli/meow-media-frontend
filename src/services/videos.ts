@@ -17,6 +17,13 @@ export type VideoItem = {
   [key: string]: any;
 };
 
+export type VideoListResponse = {
+  count: number;
+  next?: string | null;
+  previous?: string | null;
+  results: VideoItem[];
+};
+
 const withAuth = async (options: RequestInit = {}) => {
   const accessToken = await getValidAccessToken();
   return {
@@ -40,6 +47,24 @@ const normalizeVideoList = (payload: any): VideoItem[] => {
   return [];
 };
 
+const normalizeVideoListResponse = (payload: any): VideoListResponse => {
+  if (Array.isArray(payload)) {
+    return {
+      count: payload.length,
+      next: null,
+      previous: null,
+      results: payload,
+    };
+  }
+
+  return {
+    count: payload?.count || 0,
+    next: payload?.next || null,
+    previous: payload?.previous || null,
+    results: Array.isArray(payload?.results) ? payload.results : [],
+  };
+};
+
 export const getPreferredThumbnail = (video?: Partial<VideoItem> | null) =>
   video?.thumbnail_url || video?.thumbnail || '';
 
@@ -49,6 +74,26 @@ export async function listMyVideos(): Promise<VideoItem[]> {
     await withAuth({ method: 'GET' }),
   );
   return normalizeVideoList(payload);
+}
+
+export async function listAllVideos(
+  params?: Record<string, string | number | undefined>,
+): Promise<VideoListResponse> {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      searchParams.set(key, String(value));
+    }
+  });
+
+  const query = searchParams.toString();
+  const payload = await requestJson<any>(
+    `/api/videos/${query ? `?${query}` : ''}`,
+    await withAuth({ method: 'GET' }),
+  );
+
+  return normalizeVideoListResponse(payload);
 }
 
 export async function getVideoDetail(id: string): Promise<VideoItem> {

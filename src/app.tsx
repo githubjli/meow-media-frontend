@@ -50,6 +50,15 @@ const getCategoryIcon = (slug?: string) => {
   return <BookOutlined />;
 };
 
+const isAdminUser = (user?: CurrentUser | null) =>
+  Boolean(
+    user &&
+      (user.is_admin ||
+        user.is_staff ||
+        user.is_superuser ||
+        user.role === 'admin'),
+  );
+
 type InitialState = {
   name: string;
   darkTheme: boolean;
@@ -82,6 +91,7 @@ export const layout: RunTimeLayoutConfig = ({
   const isDark = initialState?.darkTheme;
   const currentUser = initialState?.currentUser;
   const isLoggedIn = Boolean(currentUser?.email);
+  const isAdmin = isAdminUser(currentUser);
   const utilityButtonStyle = {
     width: 40,
     height: 40,
@@ -119,12 +129,15 @@ export const layout: RunTimeLayoutConfig = ({
         ['/home', <VideoCameraOutlined />],
         ['/browse', <CompassOutlined />],
         ['/live', <ThunderboltOutlined />],
+        ['/admin/videos', <SettingOutlined />],
       ]);
       const stableItems = menuData
         .filter((item) => item.path && stableItemMap.has(item.path))
+        .filter((item) => item.path !== '/admin/videos' || isAdmin)
         .map((item) => ({
           ...item,
           icon: stableItemMap.get(item.path || ''),
+          name: item.path === '/admin/videos' ? 'All Videos' : item.name,
         }));
       const categoryItems = (initialState?.publicCategories || []).map(
         (category) => ({
@@ -248,6 +261,16 @@ export const layout: RunTimeLayoutConfig = ({
                   label: 'Upload Video',
                   onClick: () => history.push('/videos/upload'),
                 },
+                ...(isAdmin
+                  ? [
+                      {
+                        key: 'all-videos',
+                        icon: <SettingOutlined />,
+                        label: 'All Videos',
+                        onClick: () => history.push('/admin/videos'),
+                      } as const,
+                    ]
+                  : []),
                 {
                   type: 'divider',
                 },
