@@ -73,6 +73,11 @@ const copyValue = async (value: string, label: string) => {
 export default function LiveRoomPage() {
   const { initialState } = useModel('@@initialState');
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const query = useMemo(
+    () => getLocationQuery(location.search),
+    [location.search],
+  );
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const [broadcast, setBroadcast] = useState<LiveBroadcast | null>(null);
