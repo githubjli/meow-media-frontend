@@ -1,126 +1,390 @@
-import { useParams, history } from '@umijs/max';
-import { Row, Col, Avatar, Typography, Space, Button, Divider, Card, Tag, message } from 'antd';
-import { ArrowLeftOutlined, UserOutlined, HeartOutlined, ShareAltOutlined, CheckCircleFilled } from '@ant-design/icons';
-import React, { useEffect, useRef } from 'react';
+import {
+  CopyOutlined,
+  EyeOutlined,
+  PlayCircleOutlined,
+  PoweroffOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
+import { PageContainer } from '@ant-design/pro-components';
+import { history, useModel, useParams } from '@umijs/max';
+import {
+  Alert,
+  Avatar,
+  Button,
+  Card,
+  Col,
+  Empty,
+  Row,
+  Skeleton,
+  Space,
+  Statistic,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as vjs_module from 'video.js';
 import 'video.js/dist/video-js.css';
 
-const { Title, Text } = Typography;
+import {
+  endLiveBroadcast,
+  getLiveBroadcast,
+  startLiveBroadcast,
+  type LiveBroadcast,
+} from '@/services/live';
 
-export default () => {
+const { Title, Text, Paragraph } = Typography;
+
+const getStatusColor = (status?: string) => {
+  switch (String(status || '').toLowerCase()) {
+    case 'live':
+    case 'started':
+    case 'broadcasting':
+      return 'error';
+    case 'ended':
+    case 'finished':
+      return 'default';
+    default:
+      return 'processing';
+  }
+};
+
+const canStart = (status?: string) =>
+  !['live', 'started', 'broadcasting'].includes(
+    String(status || '').toLowerCase(),
+  );
+const canEnd = (status?: string) =>
+  !['ended', 'finished'].includes(String(status || '').toLowerCase());
+
+const copyValue = async (value: string, label: string) => {
+  if (!value) {
+    message.warning(`${label} is not available yet.`);
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(value);
+    message.success(`${label} copied.`);
+  } catch (error) {
+    message.info(`Copy ${label.toLowerCase()} manually.`);
+  }
+};
+
+export default function LiveRoomPage() {
+  const { initialState } = useModel('@@initialState');
   const { id } = useParams<{ id: string }>();
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
-  
-  // 🚩 使用全路径进行测试。如果依然跨域，建议在 .umirc.ts 走代理请求该地址
-  //const hlsUrl = `https://streaming-api-live.pttblockchain.online/live/streams/${id}.m3u8`;
-  const hlsUrl = `/live-api/live/streams/${id}.m3u8`;
+  const [broadcast, setBroadcast] = useState<LiveBroadcast | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<'start' | 'end' | null>(
+    null,
+  );
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const isLoggedIn = Boolean(initialState?.currentUser?.email);
+  const playbackUrl = broadcast?.playback_url || '';
+  const title = broadcast?.title || broadcast?.name || 'Live Stream';
+  const creatorName =
+    broadcast?.creator?.name ||
+    broadcast?.creator?.username ||
+    broadcast?.creator?.email ||
+    'Creator';
+  const viewerCount = broadcast?.viewer_count ?? broadcast?.viewerCount ?? 0;
+
+  const detailItems = useMemo(
+    () => [
+      { label: 'Stream Key', value: broadcast?.stream_key || '' },
+      { label: 'RTMP Server URL', value: broadcast?.rtmp_url || '' },
+      { label: 'Playback URL', value: playbackUrl },
+    ],
+    [broadcast?.stream_key, broadcast?.rtmp_url, playbackUrl],
+  );
+
+  const loadBroadcast = async (showLoader = false) => {
+    if (!id) {
+      return;
+    }
+
+    if (showLoader) {
+      setLoading(true);
+    }
+
+    try {
+      const data = await getLiveBroadcast(id);
+      setBroadcast(data);
+      setErrorMessage('');
+    } catch (error: any) {
+      setErrorMessage(error?.message || 'Unable to load the live room.');
+      setBroadcast(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBroadcast(true);
+    const interval = window.setInterval(() => loadBroadcast(false), 15000);
+    return () => window.clearInterval(interval);
+  }, [id]);
 
   useEffect(() => {
     const videojs: any = (vjs_module as any).default || vjs_module;
+    if (!videoRef.current || !playbackUrl || typeof videojs !== 'function') {
+      return;
+    }
 
-    const initPlayer = () => {
-      if (!videoRef.current || typeof videojs !== 'function') return;
+    if (playerRef.current) {
+      playerRef.current.dispose();
+      playerRef.current = null;
+    }
+    videoRef.current.innerHTML = '';
 
-      // 1. 彻底销毁旧实例并清空容器
-      if (playerRef.current) {
-        playerRef.current.dispose();
-        playerRef.current = null;
-      }
-      videoRef.current.innerHTML = '';
+    const element = document.createElement('video-js');
+    element.className = 'vjs-big-play-centered vjs-fluid';
+    videoRef.current.appendChild(element);
 
-      // 2. 创建 video 标签并设置 crossOrigin 属性
-      const v = document.createElement("video-js");
-      v.className = 'vjs-big-play-centered vjs-fluid';
-      // 🚩 关键：告知浏览器该媒体请求需要跨域凭据
-      v.setAttribute('crossorigin', 'anonymous');
-      videoRef.current.appendChild(v);
-
-      try {
-        // 3. 实例化播放器
-        const player = playerRef.current = videojs(v, {
-          autoplay: true,
-          controls: true,
-          preload: 'auto',
-          sources: [{ src: hlsUrl, type: 'application/x-mpegURL' }],
-          // 🚩 针对 CORS 的深度配置
-          html5: {
-            vhs: { 
-              overrideNative: true, // 强制使用 VHS，避免原生浏览器的 CORS 处理差异
-              withCredentials: false // 如果服务器设置了 Access-Control-Allow-Origin: *，这里必须为 false
-            },
-            nativeAudioTracks: false,
-            nativeVideoTracks: false,
-          },
-        });
-
-        // 4. 诊断监听
-        player.on('loadstart', () => console.log('🚀 尝试拉取流:', hlsUrl));
-        player.on('playing', () => {
-          console.log('✅ 播放成功');
-          message.success('Connected to stream');
-        });
-
-        player.on('error', () => {
-          const error = player.error();
-          console.error('❌ 播放器报错:', error.code, error.message);
-          
-          // 🚩 针对图 2775 现象的针对性提示
-          if (error.code === 2 || error.code === 0) {
-            message.error('网络错误或跨域拦截 (CORS)，请检查服务器 web.xml 配置', 5);
-          } else if (error.code === 4) {
-            message.error('媒体解码失败，请确认流状态是否正常', 5);
-          }
-        });
-
-      } catch (err) {
-        console.error('播放器初始化异常:', err);
-      }
-    };
-
-    const timer = setTimeout(initPlayer, 200);
+    playerRef.current = videojs(element, {
+      autoplay: false,
+      controls: true,
+      responsive: true,
+      fluid: true,
+      preload: 'auto',
+      liveui: true,
+      sources: [{ src: playbackUrl, type: 'application/x-mpegURL' }],
+    });
 
     return () => {
-      clearTimeout(timer);
       if (playerRef.current) {
         playerRef.current.dispose();
         playerRef.current = null;
       }
     };
-  }, [id, hlsUrl]);
+  }, [playbackUrl]);
+
+  const getReturnUrl = () => {
+    if (typeof window === 'undefined') {
+      return id ? `/live/${id}` : '/live';
+    }
+
+    return `${window.location.pathname}${window.location.search}`;
+  };
+
+  const navigateToLogin = () => {
+    history.push(`/login?redirect=${encodeURIComponent(getReturnUrl())}`);
+  };
+
+  const handleAction = async (type: 'start' | 'end') => {
+    if (!id) {
+      return;
+    }
+
+    if (!isLoggedIn) {
+      message.info('Please log in to manage this live stream.');
+      navigateToLogin();
+      return;
+    }
+
+    setActionLoading(type);
+    try {
+      const next =
+        type === 'start'
+          ? await startLiveBroadcast(id)
+          : await endLiveBroadcast(id);
+      setBroadcast(next);
+      message.success(
+        type === 'start' ? 'Live stream started.' : 'Live stream ended.',
+      );
+    } catch (error: any) {
+      message.error(error?.message || `Unable to ${type} live stream.`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const startButtonLabel = isLoggedIn ? 'Start Live' : 'Log in to Start';
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1600, margin: '0 auto' }}>
-      <Row gutter={[24, 24]}>
-        <Col xs={24} lg={17}>
-          <div style={{ borderRadius: 16, overflow: 'hidden', background: '#000', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
-            <div ref={videoRef} key={id} />
-          </div>
-
-          <Card bordered={false} style={{ marginTop: 24, borderRadius: 12 }}>
-            <Space align="start" size={16}>
-              <Avatar size={48} style={{ backgroundColor: '#5bd1d7' }}>ED</Avatar>
-              <div>
-                <Title level={4} style={{ margin: 0 }}>{id}: Technical Analysis</Title>
-                <Text type="secondary">Broadcast via Ant Media Server <CheckCircleFilled style={{ color: '#5bd1d7', fontSize: 12 }} /></Text>
-                <div style={{ marginTop: 8 }}>
-                  <Tag color="error">LIVE</Tag>
-                  <Tag color="processing">HLS</Tag>
-                </div>
-              </div>
-            </Space>
+    <PageContainer title={false}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '8px 0 24px' }}>
+        {loading ? (
+          <Card bordered={false} style={{ borderRadius: 20 }}>
+            <Skeleton active paragraph={{ rows: 10 }} />
           </Card>
-        </Col>
+        ) : errorMessage ? (
+          <Alert type="error" showIcon message={errorMessage} />
+        ) : broadcast ? (
+          <Space direction="vertical" size={20} style={{ width: '100%' }}>
+            <Card bordered={false} style={{ borderRadius: 20 }}>
+              <Row gutter={[20, 20]} align="middle">
+                <Col xs={24} lg={16}>
+                  <Space
+                    direction="vertical"
+                    size={12}
+                    style={{ width: '100%' }}
+                  >
+                    <Space wrap>
+                      <Tag color={getStatusColor(broadcast.status)}>
+                        {(broadcast.status || 'Created').toUpperCase()}
+                      </Tag>
+                      {broadcast.category ? (
+                        <Tag>{broadcast.category}</Tag>
+                      ) : null}
+                      <Tag icon={<EyeOutlined />}>
+                        {viewerCount.toLocaleString()} viewers
+                      </Tag>
+                    </Space>
+                    <Title level={2} style={{ margin: 0 }}>
+                      {title}
+                    </Title>
+                    <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                      {broadcast.description ||
+                        'Professional live room with Django-managed stream lifecycle and Ant Media playback.'}
+                    </Paragraph>
+                    <Space align="center" size={12}>
+                      <Avatar
+                        icon={<UserOutlined />}
+                        src={broadcast.creator?.avatar_url}
+                      />
+                      <div>
+                        <Text strong style={{ display: 'block' }}>
+                          {creatorName}
+                        </Text>
+                        <Text type="secondary">Stream host</Text>
+                      </div>
+                    </Space>
+                  </Space>
+                </Col>
+                <Col xs={24} lg={8}>
+                  <Space
+                    wrap
+                    style={{ justifyContent: 'flex-end', width: '100%' }}
+                  >
+                    <Button
+                      type="primary"
+                      icon={<PlayCircleOutlined />}
+                      loading={actionLoading === 'start'}
+                      disabled={!canStart(broadcast.status)}
+                      onClick={() => handleAction('start')}
+                    >
+                      {startButtonLabel}
+                    </Button>
+                    <Button
+                      danger
+                      icon={<PoweroffOutlined />}
+                      loading={actionLoading === 'end'}
+                      disabled={!canEnd(broadcast.status)}
+                      onClick={() => handleAction('end')}
+                    >
+                      End Live
+                    </Button>
+                    <Button
+                      icon={<CopyOutlined />}
+                      onClick={() => copyValue(playbackUrl, 'Playback URL')}
+                    >
+                      Copy Playback URL
+                    </Button>
+                  </Space>
+                </Col>
+              </Row>
+            </Card>
 
-        <Col xs={24} lg={7}>
-          <Title level={5}>Global Node Status</Title>
-          <Card size="small" style={{ borderRadius: 12 }}>
-             <Text type="secondary">Checking stream integrity...</Text>
-             <Divider style={{ margin: '12px 0' }} />
-             <Text size="small" style={{ fontSize: 11, color: '#999' }}>Endpoint: {hlsUrl}</Text>
-          </Card>
-        </Col>
-      </Row>
-    </div>
+            <Row gutter={[20, 20]}>
+              <Col xs={24} xl={16}>
+                <Card
+                  bordered={false}
+                  style={{ borderRadius: 20, overflow: 'hidden' }}
+                >
+                  {playbackUrl ? (
+                    <div
+                      style={{
+                        borderRadius: 16,
+                        overflow: 'hidden',
+                        background: '#000',
+                        minHeight: 420,
+                      }}
+                    >
+                      <div ref={videoRef} key={playbackUrl} />
+                    </div>
+                  ) : (
+                    <Empty description="Playback URL is not available yet. Start your encoder and refresh this room once Django provides the playback endpoint." />
+                  )}
+                </Card>
+              </Col>
+
+              <Col xs={24} xl={8}>
+                <Space direction="vertical" size={20} style={{ width: '100%' }}>
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20 }}
+                    title="Stream details"
+                  >
+                    <Space
+                      direction="vertical"
+                      size={16}
+                      style={{ width: '100%' }}
+                    >
+                      {detailItems.map((item) => (
+                        <div key={item.label}>
+                          <Text
+                            strong
+                            style={{ display: 'block', marginBottom: 6 }}
+                          >
+                            {item.label}
+                          </Text>
+                          <Space
+                            align="start"
+                            style={{
+                              width: '100%',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <Text code style={{ wordBreak: 'break-all' }}>
+                              {item.value || 'Not available'}
+                            </Text>
+                            <Button
+                              size="small"
+                              icon={<CopyOutlined />}
+                              onClick={() => copyValue(item.value, item.label)}
+                            >
+                              Copy
+                            </Button>
+                          </Space>
+                        </div>
+                      ))}
+                    </Space>
+                  </Card>
+
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20 }}
+                    title="Viewer & chat"
+                  >
+                    <Space
+                      direction="vertical"
+                      size={12}
+                      style={{ width: '100%' }}
+                    >
+                      <Statistic title="Current viewers" value={viewerCount} />
+                      <Text type="secondary">
+                        Real-time viewer analytics and live chat can be
+                        connected here once the backend messaging layer is
+                        ready.
+                      </Text>
+                      <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description="Chat placeholder"
+                      />
+                    </Space>
+                  </Card>
+                </Space>
+              </Col>
+            </Row>
+          </Space>
+        ) : (
+          <Empty description="Live room unavailable." />
+        )}
+      </div>
+    </PageContainer>
   );
-};
+}
