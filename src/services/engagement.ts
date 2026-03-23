@@ -30,12 +30,35 @@ const withOptionalAuth = (options: RequestInit = {}) => {
 };
 
 const normalizeCommentList = (payload: any): CommentListResponse => {
+  const normalizeComment = (comment: any): CommentItem => ({
+    ...comment,
+    id: comment?.id,
+    video_id: comment?.video_id || comment?.video,
+    parent_id: comment?.parent_id ?? comment?.parent ?? null,
+    content: comment?.content || '',
+    created_at: comment?.created_at,
+    updated_at: comment?.updated_at,
+    like_count: comment?.like_count,
+    reply_count: comment?.reply_count,
+    viewer_has_liked: comment?.viewer_has_liked,
+    user: {
+      id: comment?.user?.id,
+      name:
+        comment?.user?.name ||
+        comment?.user?.username ||
+        comment?.user?.email ||
+        'Viewer',
+      avatar_url: comment?.user?.avatar_url,
+      ...comment?.user,
+    },
+  });
+
   if (Array.isArray(payload)) {
     return {
       count: payload.length,
       next: null,
       previous: null,
-      results: payload,
+      results: payload.map(normalizeComment),
     };
   }
 
@@ -43,7 +66,9 @@ const normalizeCommentList = (payload: any): CommentListResponse => {
     count: payload?.count || 0,
     next: payload?.next || null,
     previous: payload?.previous || null,
-    results: Array.isArray(payload?.results) ? payload.results : [],
+    results: Array.isArray(payload?.results)
+      ? payload.results.map(normalizeComment)
+      : [],
   };
 };
 
@@ -115,11 +140,34 @@ export async function createVideoComment(
   videoId: string | number,
   payload: { content: string },
 ): Promise<CommentItem> {
-  return requestJson(
+  const response = await requestJson<any>(
     `/api/videos/${videoId}/comments/`,
     await withAuth({
       method: 'POST',
       body: JSON.stringify(payload),
     }),
   );
+
+  return {
+    ...response,
+    id: response?.id,
+    video_id: response?.video_id || response?.video || videoId,
+    parent_id: response?.parent_id ?? response?.parent ?? null,
+    content: response?.content || '',
+    created_at: response?.created_at,
+    updated_at: response?.updated_at,
+    like_count: response?.like_count,
+    reply_count: response?.reply_count,
+    viewer_has_liked: response?.viewer_has_liked,
+    user: {
+      id: response?.user?.id,
+      name:
+        response?.user?.name ||
+        response?.user?.username ||
+        response?.user?.email ||
+        'You',
+      avatar_url: response?.user?.avatar_url,
+      ...response?.user,
+    },
+  };
 }

@@ -29,6 +29,7 @@ import {
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import {
+  createVideoComment,
   getVideoInteractionSummary,
   likeVideo,
   listVideoComments,
@@ -42,6 +43,7 @@ import {
   type PublicVideo,
 } from '@/services/publicVideos';
 import type {
+  CommentItem,
   CommentListResponse,
   VideoInteractionSummary,
 } from '@/types/engagement';
@@ -171,6 +173,9 @@ export default function PublicVideoDetailPage() {
   const [interactionLoading, setInteractionLoading] = useState(true);
   const [comments, setComments] = useState<CommentListResponse | null>(null);
   const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentsError, setCommentsError] = useState('');
+  const [commentsSubmitting, setCommentsSubmitting] = useState(false);
+  const [commentInput, setCommentInput] = useState('');
   const [likeSubmitting, setLikeSubmitting] = useState(false);
   const [subscribeSubmitting, setSubscribeSubmitting] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -304,32 +309,10 @@ export default function PublicVideoDetailPage() {
     if (!video?.id) {
       setComments(null);
       setCommentsLoading(false);
+      setCommentsError('');
       return;
     }
-
-    let active = true;
-    setCommentsLoading(true);
-
-    listVideoComments(video.id, { page: 1, page_size: COMMENT_PAGE_SIZE })
-      .then((data) => {
-        if (active) {
-          setComments(data);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setComments(null);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setCommentsLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
+    loadComments(true);
   }, [video?.id]);
 
   const isAuthenticated = Boolean(initialState?.currentUser?.email);
@@ -372,6 +355,53 @@ export default function PublicVideoDetailPage() {
 
   const navigateToAuth = (path: '/login' | '/register') => {
     history.push(`${path}?redirect=${encodeURIComponent(getReturnUrl())}`);
+  };
+
+  const loadComments = async (reset = false) => {
+    if (!video?.id) {
+      return;
+    }
+
+    setCommentsLoading(true);
+    if (reset) {
+      setCommentsError('');
+    }
+
+    try {
+      const nextPage = comments?.next
+        ? new URL(
+            comments.next,
+            typeof window !== 'undefined'
+              ? window.location.origin
+              : 'http://localhost',
+          ).searchParams.get('page') || 1
+        : 1;
+
+      const payload = await listVideoComments(video.id, {
+        page_size: COMMENT_PAGE_SIZE,
+        page: reset || !comments?.next ? 1 : nextPage,
+      });
+
+      setComments((current) =>
+        reset || !current
+          ? payload
+          : {
+              ...payload,
+              results: [...current.results, ...payload.results],
+            },
+      );
+    } catch (error: any) {
+      if (reset) {
+        setComments(null);
+      }
+      setCommentsError(error?.message || 'Comments are unavailable right now.');
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const handleLoadMoreComments = async () => {
+    await loadComments(false);
   };
 
   const handleShare = async () => {
@@ -473,6 +503,99 @@ export default function PublicVideoDetailPage() {
       message.error(error?.message || 'Unable to update subscription status.');
     } finally {
       setSubscribeSubmitting(false);
+    }
+  };
+
+  const handleSubmitComment = async () => {
+    if (!video?.id) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    const content = commentInput.trim();
+    if (!content) {
+      return;
+    }
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticComment: CommentItem = {
+      id: tempId,
+      video_id: video.id,
+      parent_id: null,
+      content,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      like_count: 0,
+      reply_count: 0,
+      viewer_has_liked: false,
+      user: {
+        id: initialState?.currentUser?.id || 'me',
+        name:
+          initialState?.currentUser?.username ||
+          initialState?.currentUser?.email ||
+          'You',
+        avatar_url: initialState?.currentUser?.avatar_url,
+      },
+    };
+
+    const previousInput = commentInput;
+    setCommentInput('');
+    setCommentsError('');
+    setComments((current) => ({
+      count: (current?.count || 0) + 1,
+      next: current?.next || null,
+      previous: current?.previous || null,
+      results: [optimisticComment, ...(current?.results || [])],
+    }));
+    setInteractionSummary((current) => ({
+      ...(current || { video_id: video.id }),
+      comment_count: (current?.comment_count || 0) + 1,
+    }));
+
+    setCommentsSubmitting(true);
+    try {
+      const created = await createVideoComment(video.id, { content });
+      setComments((current) => {
+        if (!current) {
+          return {
+            count: 1,
+            next: null,
+            previous: null,
+            results: [created],
+          };
+        }
+
+        return {
+          ...current,
+          results: current.results.map((comment) =>
+            comment.id === tempId ? created : comment,
+          ),
+        };
+      });
+    } catch (error: any) {
+      setCommentInput(previousInput);
+      setComments((current) =>
+        current
+          ? {
+              ...current,
+              count: Math.max(current.count - 1, 0),
+              results: current.results.filter(
+                (comment) => comment.id !== tempId,
+              ),
+            }
+          : current,
+      );
+      setInteractionSummary((current) => ({
+        ...(current || { video_id: video.id }),
+        comment_count: Math.max((current?.comment_count || 1) - 1, 0),
+      }));
+      setCommentsError(error?.message || 'Unable to publish your comment.');
+    } finally {
+      setCommentsSubmitting(false);
     }
   };
 
@@ -806,26 +929,18 @@ export default function PublicVideoDetailPage() {
                             </Title>
                             <Text type="secondary">{commentLabel}</Text>
                           </div>
-                          <Button
-                            type="primary"
-                            onClick={() =>
-                              isAuthenticated
-                                ? message.info('Comment composer coming next.')
-                                : openAuthModal()
-                            }
-                          >
-                            Add comment
-                          </Button>
                         </Space>
 
                         <Input.TextArea
                           rows={3}
-                          readOnly
-                          value=""
+                          value={commentInput}
                           placeholder={
                             isAuthenticated
-                              ? 'Comment composer will be added here next.'
+                              ? 'Add a public comment'
                               : 'Log in to join the conversation.'
+                          }
+                          onChange={(event) =>
+                            setCommentInput(event.target.value)
                           }
                           onClick={() => {
                             if (!isAuthenticated) {
@@ -833,12 +948,41 @@ export default function PublicVideoDetailPage() {
                             }
                           }}
                         />
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                          }}
+                        >
+                          <Button
+                            type="primary"
+                            loading={commentsSubmitting}
+                            disabled={isAuthenticated && !commentInput.trim()}
+                            onClick={handleSubmitComment}
+                          >
+                            Comment
+                          </Button>
+                        </div>
 
-                        {commentsLoading ? (
+                        {commentsError && commentPreview.length > 0 ? (
+                          <Alert
+                            type="warning"
+                            showIcon
+                            message={commentsError}
+                          />
+                        ) : null}
+
+                        {commentsLoading && commentPreview.length === 0 ? (
                           <Skeleton
                             active
                             paragraph={{ rows: 3 }}
                             title={false}
+                          />
+                        ) : commentsError && commentPreview.length === 0 ? (
+                          <Alert
+                            type="warning"
+                            showIcon
+                            message={commentsError}
                           />
                         ) : commentPreview.length > 0 ? (
                           <Space
@@ -856,22 +1000,51 @@ export default function PublicVideoDetailPage() {
                                   border: '1px solid rgba(15, 23, 42, 0.06)',
                                 }}
                               >
-                                <Text
-                                  strong
-                                  style={{ display: 'block', marginBottom: 4 }}
-                                >
-                                  {comment.user?.username ||
-                                    comment.user?.email ||
-                                    'Viewer'}
-                                </Text>
-                                <Text
-                                  type="secondary"
-                                  style={{ display: 'block' }}
-                                >
-                                  {comment.content}
-                                </Text>
+                                <Space align="start" size={12}>
+                                  <Avatar src={comment.user?.avatar_url}>
+                                    {String(comment.user?.name || 'V')
+                                      .charAt(0)
+                                      .toUpperCase()}
+                                  </Avatar>
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    <Text
+                                      strong
+                                      style={{
+                                        display: 'block',
+                                        marginBottom: 2,
+                                      }}
+                                    >
+                                      {comment.user?.name || 'Viewer'}
+                                    </Text>
+                                    <Text
+                                      type="secondary"
+                                      style={{
+                                        display: 'block',
+                                        marginBottom: 6,
+                                        fontSize: 12,
+                                      }}
+                                    >
+                                      {formatDate(comment.created_at)}
+                                    </Text>
+                                    <Text
+                                      type="secondary"
+                                      style={{ display: 'block' }}
+                                    >
+                                      {comment.content}
+                                    </Text>
+                                  </div>
+                                </Space>
                               </div>
                             ))}
+                            {comments?.next ? (
+                              <Button
+                                onClick={handleLoadMoreComments}
+                                loading={commentsLoading}
+                                style={{ alignSelf: 'flex-start' }}
+                              >
+                                Load more
+                              </Button>
+                            ) : null}
                           </Space>
                         ) : (
                           <Empty
