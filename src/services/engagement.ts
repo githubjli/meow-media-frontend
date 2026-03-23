@@ -1,36 +1,11 @@
 import { getValidAccessToken, requestJson } from '@/services/auth';
+import { getAccessToken } from '@/utils/auth';
 
-export type VideoInteractionSummary = {
-  video_id: number | string;
-  like_count?: number;
-  comment_count?: number;
-  subscriber_count?: number;
-  viewer_has_liked?: boolean;
-  viewer_is_subscribed?: boolean;
-  [key: string]: any;
-};
-
-export type CommentItem = {
-  id: number | string;
-  video: number | string;
-  content: string;
-  created_at?: string;
-  updated_at?: string;
-  user?: {
-    id?: number | string;
-    email?: string;
-    username?: string;
-    [key: string]: any;
-  };
-  [key: string]: any;
-};
-
-export type CommentListResponse = {
-  count: number;
-  next?: string | null;
-  previous?: string | null;
-  results: CommentItem[];
-};
+import type {
+  CommentItem,
+  CommentListResponse,
+  VideoInteractionSummary,
+} from '@/types/engagement';
 
 const withAuth = async (options: RequestInit = {}) => {
   const accessToken = await getValidAccessToken();
@@ -39,6 +14,17 @@ const withAuth = async (options: RequestInit = {}) => {
     headers: {
       ...(options.headers || {}),
       Authorization: `Bearer ${accessToken}`,
+    },
+  };
+};
+
+const withOptionalAuth = (options: RequestInit = {}) => {
+  const accessToken = getAccessToken();
+  return {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
   };
 };
@@ -65,8 +51,8 @@ export async function getVideoInteractionSummary(
   videoId: string | number,
 ): Promise<VideoInteractionSummary> {
   return requestJson(
-    `/api/videos/${videoId}/engagement/`,
-    await withAuth({ method: 'GET' }),
+    `/api/public/videos/${videoId}/interaction-summary/`,
+    withOptionalAuth({ method: 'GET' }),
   );
 }
 
@@ -118,8 +104,8 @@ export async function listVideoComments(
 
   const query = searchParams.toString();
   const payload = await requestJson<any>(
-    `/api/videos/${videoId}/comments/${query ? `?${query}` : ''}`,
-    await withAuth({ method: 'GET' }),
+    `/api/public/videos/${videoId}/comments/${query ? `?${query}` : ''}`,
+    withOptionalAuth({ method: 'GET' }),
   );
 
   return normalizeCommentList(payload);

@@ -8,14 +8,17 @@ import {
   UserAddOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useParams } from '@umijs/max';
+import { history, useModel, useParams } from '@umijs/max';
 import {
   Alert,
   Avatar,
   Button,
   Card,
   Col,
+  Divider,
   Empty,
+  Input,
+  Modal,
   Row,
   Skeleton,
   Space,
@@ -28,19 +31,24 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   getVideoInteractionSummary,
   likeVideo,
+  listVideoComments,
   subscribeChannel,
   unlikeVideo,
   unsubscribeChannel,
-  type VideoInteractionSummary,
 } from '@/services/engagement';
 import {
   getPublicVideoDetail,
   listPublicVideos,
   type PublicVideo,
 } from '@/services/publicVideos';
+import type {
+  CommentListResponse,
+  VideoInteractionSummary,
+} from '@/types/engagement';
 
 const { Title, Text, Paragraph } = Typography;
 const RECOMMENDATION_LIMIT = 6;
+const COMMENT_PAGE_SIZE = 10;
 
 const formatDate = (value?: string) => {
   if (!value) {
@@ -59,12 +67,11 @@ const formatDate = (value?: string) => {
   });
 };
 
-const getAuthorLabel = (video?: PublicVideo | null) =>
+const getCreatorLabel = (video?: PublicVideo | null) =>
   video?.owner_name ||
   video?.channel_name ||
   video?.author ||
-  video?.category_display ||
-  'Media Stream';
+  'Creator unavailable';
 
 const getThumbnail = (video: PublicVideo) =>
   video.thumbnail_url ||
@@ -78,7 +85,7 @@ const getRecommendationMeta = (video: PublicVideo) =>
 
 const RecommendationItem = ({ video }: { video: PublicVideo }) => {
   const title = video.title || `Video #${video.id}`;
-  const authorLabel = getAuthorLabel(video);
+  const authorLabel = getCreatorLabel(video);
 
   return (
     <div
@@ -135,10 +142,9 @@ const RecommendationItem = ({ video }: { video: PublicVideo }) => {
           {title}
         </Title>
         <Space size={8} align="center" style={{ marginBottom: 6 }}>
-          <Avatar
-            size={24}
-            src={`https://api.dicebear.com/7.x/identicon/svg?seed=${authorLabel}`}
-          />
+          <Avatar size={24} src={video.owner_avatar_url}>
+            {authorLabel.charAt(0).toUpperCase()}
+          </Avatar>
           <Text type="secondary" style={{ fontSize: 12 }} ellipsis>
             {authorLabel}
           </Text>
@@ -152,6 +158,7 @@ const RecommendationItem = ({ video }: { video: PublicVideo }) => {
 };
 
 export default function PublicVideoDetailPage() {
+  const { initialState } = useModel('@@initialState');
   const { id } = useParams<{ id: string }>();
   const [video, setVideo] = useState<PublicVideo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -161,9 +168,12 @@ export default function PublicVideoDetailPage() {
   const [recommendationsError, setRecommendationsError] = useState('');
   const [interactionSummary, setInteractionSummary] =
     useState<VideoInteractionSummary | null>(null);
-  const [interactionLoading, setInteractionLoading] = useState(false);
+  const [interactionLoading, setInteractionLoading] = useState(true);
+  const [comments, setComments] = useState<CommentListResponse | null>(null);
+  const [commentsLoading, setCommentsLoading] = useState(true);
   const [likeSubmitting, setLikeSubmitting] = useState(false);
   const [subscribeSubmitting, setSubscribeSubmitting] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -290,13 +300,46 @@ export default function PublicVideoDetailPage() {
     };
   }, [video?.id]);
 
+  useEffect(() => {
+    if (!video?.id) {
+      setComments(null);
+      setCommentsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setCommentsLoading(true);
+
+    listVideoComments(video.id, { page: 1, page_size: COMMENT_PAGE_SIZE })
+      .then((data) => {
+        if (active) {
+          setComments(data);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setComments(null);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setCommentsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [video?.id]);
+
+  const isAuthenticated = Boolean(initialState?.currentUser?.email);
   const viewsLabel =
     video?.views || video?.view_count
       ? String(video.views || video.view_count)
       : 'Views unavailable';
   const videoId = String(video?.id || '');
   const channelId = video?.owner_id;
-  const creatorName = video?.owner_name || getAuthorLabel(video);
+  const creatorName = video?.owner_name || 'Creator unavailable';
   const likeCount = interactionSummary?.like_count;
   const commentCount = interactionSummary?.comment_count;
   const subscriberCount = interactionSummary?.subscriber_count;
@@ -316,6 +359,20 @@ export default function PublicVideoDetailPage() {
     typeof commentCount === 'number'
       ? `${commentCount.toLocaleString()} comments`
       : 'Comments unavailable';
+  const commentPreview = comments?.results || [];
+
+  const getReturnUrl = () =>
+    typeof window === 'undefined'
+      ? `/browse/${videoId}`
+      : `${window.location.pathname}${window.location.search}`;
+
+  const openAuthModal = () => {
+    setAuthModalOpen(true);
+  };
+
+  const navigateToAuth = (path: '/login' | '/register') => {
+    history.push(`${path}?redirect=${encodeURIComponent(getReturnUrl())}`);
+  };
 
   const handleShare = async () => {
     const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
@@ -336,21 +393,42 @@ export default function PublicVideoDetailPage() {
       return;
     }
 
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    const previousSummary = interactionSummary;
+    const optimisticLiked = !isLiked;
+
+    setInteractionSummary((current) => ({
+      ...(current || { video_id: video.id }),
+      viewer_has_liked: optimisticLiked,
+      like_count:
+        typeof current?.like_count === 'number'
+          ? Math.max(current.like_count + (optimisticLiked ? 1 : -1), 0)
+          : current?.like_count,
+    }));
+
     setLikeSubmitting(true);
     try {
-      const nextSummary = isLiked
-        ? await unlikeVideo(video.id).then(() => ({
-            ...(interactionSummary || { video_id: video.id }),
-            like_count: Math.max((interactionSummary?.like_count || 1) - 1, 0),
+      const nextSummary = optimisticLiked
+        ? await likeVideo(video.id)
+        : await unlikeVideo(video.id).then(() => ({
+            ...(previousSummary || { video_id: video.id }),
             viewer_has_liked: false,
-          }))
-        : await likeVideo(video.id);
+            like_count:
+              typeof previousSummary?.like_count === 'number'
+                ? Math.max(previousSummary.like_count - 1, 0)
+                : previousSummary?.like_count,
+          }));
 
       setInteractionSummary((current) => ({
         ...(current || {}),
         ...nextSummary,
       }));
     } catch (error: any) {
+      setInteractionSummary(previousSummary);
       message.error(error?.message || 'Unable to update like status.');
     } finally {
       setLikeSubmitting(false);
@@ -359,27 +437,39 @@ export default function PublicVideoDetailPage() {
 
   const handleSubscribe = async () => {
     if (!channelId) {
-      message.info('Creator subscription is not available for this video.');
+      message.info('Creator information is unavailable for this video.');
       return;
     }
 
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    const previousSummary = interactionSummary;
+    const optimisticSubscribed = !isSubscribed;
+
+    setInteractionSummary((current) => ({
+      ...(current || { video_id: videoId }),
+      viewer_is_subscribed: optimisticSubscribed,
+      subscriber_count:
+        typeof current?.subscriber_count === 'number'
+          ? Math.max(
+              current.subscriber_count + (optimisticSubscribed ? 1 : -1),
+              0,
+            )
+          : current?.subscriber_count,
+    }));
+
     setSubscribeSubmitting(true);
     try {
-      if (isSubscribed) {
-        await unsubscribeChannel(channelId);
-      } else {
+      if (optimisticSubscribed) {
         await subscribeChannel(channelId);
+      } else {
+        await unsubscribeChannel(channelId);
       }
-
-      setInteractionSummary((current) => ({
-        ...(current || { video_id: videoId }),
-        viewer_is_subscribed: !isSubscribed,
-        subscriber_count:
-          typeof current?.subscriber_count === 'number'
-            ? Math.max(current.subscriber_count + (isSubscribed ? -1 : 1), 0)
-            : current?.subscriber_count,
-      }));
     } catch (error: any) {
+      setInteractionSummary(previousSummary);
       message.error(error?.message || 'Unable to update subscription status.');
     } finally {
       setSubscribeSubmitting(false);
@@ -404,7 +494,7 @@ export default function PublicVideoDetailPage() {
         onClick: handleShare,
       },
     ],
-    [handleShare, isLiked, likeLabel, likeSubmitting],
+    [isLiked, likeLabel, likeSubmitting],
   );
 
   const metadataItems = useMemo(() => {
@@ -524,7 +614,7 @@ export default function PublicVideoDetailPage() {
                     type="secondary"
                     style={{ display: 'block', marginBottom: 16, fontSize: 14 }}
                   >
-                    Published content with quick context, simple interactions,
+                    Published content with creator context, engagement signals,
                     and related videos nearby.
                   </Text>
 
@@ -638,7 +728,9 @@ export default function PublicVideoDetailPage() {
                         size={16}
                         style={{ flex: 1, minWidth: 280 }}
                       >
-                        <Avatar size={64} src={video.owner_avatar_url} />
+                        <Avatar size={64} src={video.owner_avatar_url}>
+                          {creatorName.charAt(0).toUpperCase()}
+                        </Avatar>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <Space wrap size={[8, 8]} style={{ marginBottom: 4 }}>
                             <Title level={4} style={{ margin: 0 }}>
@@ -660,8 +752,8 @@ export default function PublicVideoDetailPage() {
                           </Text>
                           <Text type="secondary" style={{ display: 'block' }}>
                             {video.owner_name
-                              ? 'Video owner information from the published video record.'
-                              : 'Creator information is limited for this video.'}
+                              ? 'Creator profile pulled from the published video record.'
+                              : 'Creator details are not available for this video yet.'}
                           </Text>
                         </div>
                       </Space>
@@ -683,6 +775,112 @@ export default function PublicVideoDetailPage() {
                       {video.description ||
                         'No description has been added for this video yet. Check the recommendation panel for more public content to explore.'}
                     </Paragraph>
+
+                    <Divider style={{ margin: '4px 0' }} />
+
+                    <Card
+                      size="small"
+                      bordered={false}
+                      style={{
+                        borderRadius: 16,
+                        background: 'rgba(15, 23, 42, 0.03)',
+                      }}
+                      styles={{ body: { padding: 18 } }}
+                    >
+                      <Space
+                        direction="vertical"
+                        size={14}
+                        style={{ width: '100%' }}
+                      >
+                        <Space
+                          wrap
+                          align="center"
+                          style={{
+                            width: '100%',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <div>
+                            <Title level={5} style={{ margin: 0 }}>
+                              Comments
+                            </Title>
+                            <Text type="secondary">{commentLabel}</Text>
+                          </div>
+                          <Button
+                            type="primary"
+                            onClick={() =>
+                              isAuthenticated
+                                ? message.info('Comment composer coming next.')
+                                : openAuthModal()
+                            }
+                          >
+                            Add comment
+                          </Button>
+                        </Space>
+
+                        <Input.TextArea
+                          rows={3}
+                          readOnly
+                          value=""
+                          placeholder={
+                            isAuthenticated
+                              ? 'Comment composer will be added here next.'
+                              : 'Log in to join the conversation.'
+                          }
+                          onClick={() => {
+                            if (!isAuthenticated) {
+                              openAuthModal();
+                            }
+                          }}
+                        />
+
+                        {commentsLoading ? (
+                          <Skeleton
+                            active
+                            paragraph={{ rows: 3 }}
+                            title={false}
+                          />
+                        ) : commentPreview.length > 0 ? (
+                          <Space
+                            direction="vertical"
+                            size={12}
+                            style={{ width: '100%' }}
+                          >
+                            {commentPreview.slice(0, 3).map((comment) => (
+                              <div
+                                key={comment.id}
+                                style={{
+                                  padding: '12px 14px',
+                                  borderRadius: 14,
+                                  background: '#fff',
+                                  border: '1px solid rgba(15, 23, 42, 0.06)',
+                                }}
+                              >
+                                <Text
+                                  strong
+                                  style={{ display: 'block', marginBottom: 4 }}
+                                >
+                                  {comment.user?.username ||
+                                    comment.user?.email ||
+                                    'Viewer'}
+                                </Text>
+                                <Text
+                                  type="secondary"
+                                  style={{ display: 'block' }}
+                                >
+                                  {comment.content}
+                                </Text>
+                              </div>
+                            ))}
+                          </Space>
+                        ) : (
+                          <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description="No comments yet."
+                          />
+                        )}
+                      </Space>
+                    </Card>
                   </Space>
                 </Card>
               </Space>
@@ -728,6 +926,26 @@ export default function PublicVideoDetailPage() {
           </Row>
         )}
       </div>
+      <Modal
+        open={authModalOpen}
+        onCancel={() => setAuthModalOpen(false)}
+        footer={null}
+        centered
+        title="Continue with your account"
+      >
+        <Space direction="vertical" size={16} style={{ width: '100%' }}>
+          <Text type="secondary">
+            Log in or create an account to like videos, subscribe to creators,
+            and join the comments.
+          </Text>
+          <Space size={12}>
+            <Button type="primary" onClick={() => navigateToAuth('/login')}>
+              Log In
+            </Button>
+            <Button onClick={() => navigateToAuth('/register')}>Sign Up</Button>
+          </Space>
+        </Space>
+      </Modal>
     </PageContainer>
   );
 }
