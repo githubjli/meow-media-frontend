@@ -11,7 +11,6 @@ import {
   Row,
   Skeleton,
   Space,
-  Tag,
   Typography,
 } from 'antd';
 import { useEffect, useState } from 'react';
@@ -26,7 +25,6 @@ const getStatusPresentation = (status?: string) => {
   if (['live', 'started', 'broadcasting', 'publishing'].includes(value)) {
     return {
       label: 'LIVE',
-      color: 'error' as const,
       heroBackground: 'linear-gradient(135deg, #230507, #63171d 55%, #2d0b0f)',
       accent: '#ff6b72',
       description: 'On air now',
@@ -38,7 +36,6 @@ const getStatusPresentation = (status?: string) => {
   if (['ready', 'created', 'prepared'].includes(value)) {
     return {
       label: 'ready',
-      color: 'warning' as const,
       heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f 55%, #201b17)',
       accent: '#efbc5c',
       description: 'Ready to go live',
@@ -50,7 +47,6 @@ const getStatusPresentation = (status?: string) => {
   if (['waiting', 'pending', 'starting'].includes(value)) {
     return {
       label: 'waiting',
-      color: 'warning' as const,
       heroBackground: 'linear-gradient(135deg, #1f1405, #5f4011 55%, #281a07)',
       accent: '#ffcf70',
       description: 'Stream warming up',
@@ -62,7 +58,6 @@ const getStatusPresentation = (status?: string) => {
   if (['ended', 'finished', 'completed', 'stopped'].includes(value)) {
     return {
       label: 'ended',
-      color: 'default' as const,
       heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f 55%, #171310)',
       accent: '#cbbbaa',
       description: 'Broadcast ended',
@@ -73,7 +68,6 @@ const getStatusPresentation = (status?: string) => {
 
   return {
     label: 'waiting',
-    color: 'warning' as const,
     heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f)',
     accent: '#b8872e',
     description: 'Checking stream status',
@@ -139,9 +133,6 @@ export default function ExploreLivePage() {
             wrap
           >
             <div>
-              <Tag color="error" style={{ marginBottom: 12 }}>
-                LIVE CONTROL ROOM
-              </Tag>
               <Title level={2} style={{ margin: 0 }}>
                 Explore Live Streams
               </Title>
@@ -194,26 +185,31 @@ export default function ExploreLivePage() {
               const posterUrl = getPosterUrl(item);
 
               return (
-                <Col xs={24} sm={12} xl={8} key={String(item.id)}>
+                <Col xs={24} sm={12} md={8} lg={6} xl={6} key={String(item.id)}>
                   <Card
                     hoverable
                     bordered={false}
                     style={{
                       borderRadius: 14,
                       overflow: 'hidden',
-                      border: '1px solid rgba(184, 135, 46, 0.16)',
+                      padding: 8,
+                      boxShadow: 'none',
+                      border: '1px solid rgba(184, 135, 46, 0.18)',
                       background: '#fffdf8',
                     }}
+                    bodyStyle={{ padding: 0 }}
                     cover={
                       <div
                         style={{
-                          aspectRatio: '16 / 9',
+                          aspectRatio: '16 / 8',
                           background: posterUrl
-                            ? `linear-gradient(180deg, rgba(31, 26, 22, 0.08), rgba(31, 26, 22, 0.55)), url(${posterUrl}) center / cover no-repeat`
+                            ? `linear-gradient(180deg, rgba(31, 26, 22, 0.08), rgba(31, 26, 22, 0.5)), url(${posterUrl}) center / cover no-repeat`
                             : status.heroBackground,
                           display: 'flex',
                           color: '#fff',
-                          padding: 12,
+                          borderRadius: 12,
+                          marginBottom: 8,
+                          padding: '8px 10px',
                           position: 'relative',
                         }}
                       >
@@ -221,31 +217,32 @@ export default function ExploreLivePage() {
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: 7,
-                            padding: '5px 10px',
+                            gap: 6,
+                            padding: '2px 7px',
                             borderRadius: 999,
-                            background: status.badgeBackground,
-                            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
+                            background: 'rgba(31, 26, 22, 0.56)',
                           }}
                         >
                           <span
                             style={{
-                              width: 8,
-                              height: 8,
+                              width: 7,
+                              height: 7,
                               borderRadius: '50%',
                               background: status.accent,
                               boxShadow: status.pulse
-                                ? `0 0 0 4px ${status.accent}33`
+                                ? `0 0 0 3px ${status.accent}33`
                                 : 'none',
                             }}
                           />
                           <Text
                             style={{
                               color: '#fff',
-                              fontWeight: 700,
-                              fontSize: 11,
-                              letterSpacing: '0.04em',
-                              textTransform: status.label === 'LIVE' ? 'uppercase' : 'none',
+                              fontWeight: 600,
+                              fontSize: 10.5,
+                              lineHeight: 1,
+                              letterSpacing: '0.02em',
+                              textTransform:
+                                status.label === 'LIVE' ? 'uppercase' : 'none',
                             }}
                           >
                             {status.label}
@@ -255,7 +252,7 @@ export default function ExploreLivePage() {
                     }
                     onClick={() => history.push(`/live/${item.id}`)}
                   >
-                    <div style={{ marginBottom: 6 }}>
+                    <div style={{ marginBottom: 8 }}>
                       <Text
                         style={{
                           display: 'block',
@@ -272,7 +269,7 @@ export default function ExploreLivePage() {
                         level={5}
                         style={{
                           margin: 0,
-                          fontSize: 15,
+                          fontSize: 14,
                           lineHeight: 1.38,
                           color: '#2C2C2C',
                         }}
@@ -282,7 +279,10 @@ export default function ExploreLivePage() {
                       </Title>
                     </div>
 
-                    <Space direction="vertical" size={8} style={{ width: '100%' }}
+                    <Space
+                      direction="vertical"
+                      size={7}
+                      style={{ width: '100%' }}
                     >
                       <Space
                         align="center"
@@ -295,28 +295,35 @@ export default function ExploreLivePage() {
                           <Avatar size="small" src={item.creator?.avatar_url}>
                             {creatorName.charAt(0).toUpperCase()}
                           </Avatar>
-                          <Text type="secondary">{creatorName}</Text>
+                          <Text type="secondary" style={{ fontSize: 11 }}>
+                            {creatorName}
+                          </Text>
                         </Space>
-                        <Tag
-                          icon={<EyeOutlined />}
-                          style={{ borderRadius: 999, marginInlineEnd: 0 }}
-                        >
-                          {viewerCount.toLocaleString()} viewers
-                        </Tag>
-                      </Space>
-                      <Space align="center" wrap>
-                        <Tag
+                        <Text
+                          type="secondary"
                           style={{
-                            borderRadius: 999,
-                            marginInlineEnd: 0,
-                            borderColor: 'rgba(184, 135, 46, 0.32)',
-                            color: '#745F40',
-                            background: 'rgba(239, 188, 92, 0.16)',
+                            fontSize: 11,
+                            display: 'inline-flex',
+                            gap: 4,
                           }}
                         >
+                          <EyeOutlined />
+                          {viewerCount.toLocaleString()} viewers
+                        </Text>
+                      </Space>
+                      <Space align="center" size={6}>
+                        <span
+                          style={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: '50%',
+                            background: status.accent,
+                            display: 'inline-block',
+                          }}
+                        />
+                        <Text type="secondary" style={{ fontSize: 11 }}>
                           {status.description}
-                        </Tag>
-                        <Text type="secondary">{status.label}</Text>
+                        </Text>
                       </Space>
                     </Space>
                   </Card>
