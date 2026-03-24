@@ -84,16 +84,17 @@
 
 .ant-menu-light.ant-menu-root.ant-menu-inline .ant-menu-item-selected,
 .ant-menu-light .ant-menu-item-selected {
-  background: rgba(239, 188, 92, 0.2) !important;
+  background: rgba(239, 188, 92, 0.12) !important;
   color: #2c2c2c !important;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(184, 135, 46, 0.26);
+  box-shadow: none !important;
+  border-left: 3px solid #efbc5c;
 }
 
 .ant-menu-light .ant-menu-item:hover,
 .ant-menu-light .ant-menu-submenu-title:hover {
   color: #745f40 !important;
-  background: rgba(239, 188, 92, 0.11) !important;
+  background: rgba(239, 188, 92, 0.08) !important;
 }
 
 .ant-menu-dark,
@@ -104,14 +105,27 @@
 
 .ant-menu-dark.ant-menu-root.ant-menu-inline .ant-menu-item-selected,
 .ant-menu-dark .ant-menu-item-selected {
-  background: rgba(239, 188, 92, 0.2) !important;
+  background: rgba(239, 188, 92, 0.12) !important;
   color: #fff5df !important;
+  box-shadow: none !important;
+  border-left: 3px solid #efbc5c;
 }
 
 .ant-menu-dark .ant-menu-item:hover,
 .ant-menu-dark .ant-menu-submenu-title:hover {
-  background: rgba(148, 163, 184, 0.08) !important;
+  background: rgba(239, 188, 92, 0.08) !important;
   color: #f8fafc !important;
+}
+
+.ant-pro-menu-item-selected,
+.ant-menu-item-selected {
+  background: rgba(239, 188, 92, 0.12) !important;
+  box-shadow: none !important;
+}
+
+.ant-pro-sider-collapsed .ant-pro-menu-item-selected,
+.ant-pro-sider-collapsed .ant-menu-item-selected {
+  border-left: none !important;
 }
 
 .ant-menu-inline .ant-menu-item,
