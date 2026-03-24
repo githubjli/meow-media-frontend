@@ -27,6 +27,23 @@ export default defineConfig({
     fixedHeader: false,
     contentWidth: 'Fluid',
   },
+  links: [
+    { rel: 'icon', href: '/favicon.ico' },
+    {
+      rel: 'icon',
+      type: 'image/png',
+      sizes: '32x32',
+      href: '/favicon-32x32.png',
+    },
+    {
+      rel: 'icon',
+      type: 'image/png',
+      sizes: '16x16',
+      href: '/favicon-16x16.png',
+    },
+    { rel: 'icon', type: 'image/svg+xml', href: '/assets/meow-main-logo.svg' },
+    { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+  ],
   routes: [
     { path: '/', redirect: '/home' },
     { path: '/login', component: './Login', hideInMenu: true },

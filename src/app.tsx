@@ -39,6 +39,12 @@ import {
 import { useEffect } from 'react';
 
 const { Text } = Typography;
+const LANGUAGE_LABELS: Record<string, string> = {
+  'en-US': 'English',
+  'zh-CN': '中文',
+  'th-TH': 'ไทย',
+  'my-MM': 'မြန်မာ',
+};
 
 const getCategoryIcon = (slug?: string) => {
   const value = String(slug || '').toLowerCase();
@@ -339,12 +345,15 @@ export const layout: RunTimeLayoutConfig = ({
           style={utilityButtonStyle}
         />
         <SelectLang
-          postLocalesData={() => [
-            { name: 'English', value: 'en-US' },
-            { name: '中文', value: 'zh-CN' },
-            { name: 'ไทย', value: 'th-TH' },
-            { name: 'မြန်မာ', value: 'my-MM' },
-          ]}
+          postLocalesData={(data) =>
+            data
+              .filter((item) => LANGUAGE_LABELS[item.value])
+              .map((item) => ({
+                ...item,
+                name: LANGUAGE_LABELS[item.value],
+                label: LANGUAGE_LABELS[item.value],
+              }))
+          }
           icon={
             <Button
               type="text"
@@ -481,7 +490,7 @@ export const layout: RunTimeLayoutConfig = ({
         const favicon = document.querySelector(
           "link[rel*='icon']",
         ) as HTMLLinkElement;
-        const iconPath = isDark ? '/favicon_white.svg' : '/favicon_black.svg';
+        const iconPath = '/favicon.ico';
         if (favicon) {
           favicon.href = iconPath;
         }
