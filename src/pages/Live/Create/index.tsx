@@ -463,7 +463,7 @@ export default function LiveCreatePage() {
                 <div>
                   <Text
                     style={{
-                      color: '#13a8a8',
+                      color: '#B8872E',
                       fontWeight: 700,
                       letterSpacing: '0.08em',
                     }}
@@ -633,7 +633,7 @@ export default function LiveCreatePage() {
                         <>
                           <div
                             style={{
-                              background: '#09131c',
+                              background: '#1F1A16',
                               borderRadius: 18,
                               minHeight: 360,
                               overflow: 'hidden',
@@ -662,7 +662,7 @@ export default function LiveCreatePage() {
                                 size={12}
                               >
                                 <VideoCameraOutlined
-                                  style={{ fontSize: 42, color: '#5bd1d7' }}
+                                  style={{ fontSize: 42, color: '#EFBC5C' }}
                                 />
                                 <Text style={{ color: '#fff' }}>
                                   {createdLive
