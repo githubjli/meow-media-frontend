@@ -1,26 +1,27 @@
 .pageShell {
-  padding: 8px 8px 24px;
+  padding: 10px 8px 24px;
 }
 
 .heroCard {
-  margin-bottom: 32px;
-  border-radius: 20px;
+  margin-bottom: 28px;
+  border-radius: 22px;
+  border: 1px solid rgba(184, 135, 46, 0.2);
   background: linear-gradient(
-    180deg,
-    rgba(91, 209, 215, 0.14) 0%,
-    rgba(91, 209, 215, 0.04) 100%
+    160deg,
+    rgba(255, 252, 243, 1) 0%,
+    rgba(239, 188, 92, 0.18) 100%
   );
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 24px rgba(116, 95, 64, 0.08);
 }
 
 .heroHeader {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .heroEyebrow {
   display: inline-block;
   margin-bottom: 8px;
-  color: #13a8a8;
+  color: #948261;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -28,17 +29,18 @@
 }
 
 .heroTitle {
-  margin: 0 0 12px !important;
+  margin: 0 0 10px !important;
   font-size: 32px !important;
-  line-height: 1.2 !important;
+  line-height: 1.18 !important;
+  color: #2c2c2c !important;
 }
 
 .heroDescription {
   display: block;
-  max-width: 720px;
-  color: rgba(0, 0, 0, 0.65);
-  font-size: 15px;
-  line-height: 1.7;
+  max-width: 700px;
+  color: #745f40;
+  font-size: 14px;
+  line-height: 1.75;
 }
 
 .tagsWrap {
@@ -53,28 +55,29 @@
 
 .tagsBar {
   display: inline-flex;
-  gap: 12px;
+  gap: 10px;
   min-width: 100%;
 }
 
 .tagChip {
-  border: 1px solid transparent;
+  border: 1px solid rgba(184, 135, 46, 0.25);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
-  color: rgba(0, 0, 0, 0.72);
+  background: rgba(255, 252, 243, 0.92);
+  color: #745f40;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 20px;
-  padding: 10px 16px;
+  padding: 8px 14px;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .tagChip:hover {
-  border-color: rgba(91, 209, 215, 0.4);
-  color: #111827;
+  border-color: rgba(184, 135, 46, 0.45);
+  color: #2c2c2c;
   transform: translateY(-1px);
+  background: #fff7e8;
 }
 
 .tagChipActive {
@@ -84,7 +87,7 @@
 }
 
 .sectionBlock {
-  margin-bottom: 40px;
+  margin-bottom: 34px;
 }
 
 .sectionHeader {
@@ -92,7 +95,7 @@
   display: flex;
   gap: 16px;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .sectionTitleWrap {
@@ -103,35 +106,37 @@
 
 .sectionIcon {
   align-items: center;
-  background: rgba(91, 209, 215, 0.12);
+  background: rgba(239, 188, 92, 0.2);
+  border: 1px solid rgba(184, 135, 46, 0.24);
   border-radius: 14px;
-  color: #08979c;
+  color: #745f40;
   display: inline-flex;
-  font-size: 20px;
-  height: 44px;
+  font-size: 18px;
+  height: 42px;
   justify-content: center;
-  width: 44px;
+  width: 42px;
 }
 
 .sectionTitle {
   margin: 0 0 4px !important;
-  font-size: 22px !important;
+  font-size: 21px !important;
   line-height: 1.3 !important;
+  color: #2c2c2c !important;
 }
 
 .sectionDescription {
-  color: rgba(0, 0, 0, 0.52);
-  font-size: 14px;
+  color: #948261;
+  font-size: 13px;
 }
 
 .sectionAction {
-  color: rgba(0, 0, 0, 0.52) !important;
+  color: #745f40 !important;
   font-weight: 600;
   padding-inline: 0 !important;
 }
 
 .sectionAction:hover {
-  color: #08979c !important;
+  color: #b8872e !important;
 }
 
 @media (max-width: 768px) {
