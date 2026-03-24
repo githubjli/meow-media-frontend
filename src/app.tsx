@@ -5,17 +5,23 @@ import {
 } from '@/services/publicCategories';
 import { clearStoredTokens } from '@/utils/auth';
 import {
+  AlertOutlined,
   BookOutlined,
+  CarOutlined,
+  CoffeeOutlined,
   CloudUploadOutlined,
   CompassOutlined,
   FireOutlined,
+  HomeOutlined,
   LogoutOutlined,
   MoonOutlined,
   NotificationOutlined,
+  PlayCircleOutlined,
   PlaySquareOutlined,
   QuestionCircleOutlined,
   ReadOutlined,
   SettingOutlined,
+  ShopOutlined,
   SunOutlined,
   ThunderboltOutlined,
   UploadOutlined,
@@ -66,13 +72,54 @@ const getCategoryIcon = (slug?: string) => {
   return <BookOutlined />;
 };
 
-const SIDEBAR_CATEGORY_FALLBACKS = [
+const getCommerceIcon = (slug?: string) => {
+  const value = String(slug || '').toLowerCase();
+  if (value === 'food') return <CoffeeOutlined />;
+  if (value === 'shops') return <ShopOutlined />;
+  if (value === 'real-estate') return <HomeOutlined />;
+  if (value === 'vehicles') return <CarOutlined />;
+  if (value === 'creators') return <UserOutlined />;
+  return <ShopOutlined />;
+};
+
+const getLiveChildIcon = (path: string, slug?: string) => {
+  if (path === '/live') return <PlayCircleOutlined />;
+  if (path === '/live/create') return <VideoCameraOutlined />;
+
+  const value = String(slug || '').toLowerCase();
+  if (value === 'selling') return <ShopOutlined />;
+  if (value === 'news') return <NotificationOutlined />;
+  if (value === 'reporting') return <AlertOutlined />;
+  if (value === 'food') return <CoffeeOutlined />;
+  return <ThunderboltOutlined />;
+};
+
+const CONTENT_CATEGORY_FALLBACKS = [
   { key: 'nav.category.technology', slug: 'technology' },
   { key: 'nav.category.education', slug: 'education' },
   { key: 'nav.category.gaming', slug: 'gaming' },
-  { key: 'nav.category.news', slug: 'news' },
   { key: 'nav.category.entertainment', slug: 'entertainment' },
-  { key: 'nav.category.other', slug: 'other' },
+  { label: 'Travel', slug: 'travel' },
+  { label: 'Finance', slug: 'finance' },
+  { label: 'Movies', slug: 'movies' },
+  { label: 'Beauty', slug: 'beauty' },
+];
+
+const COMMERCE_CATEGORY_ITEMS = [
+  { label: 'Food', slug: 'food' },
+  { label: 'Shops', slug: 'shops' },
+  { label: 'Real Estate', slug: 'real-estate' },
+  { label: 'Vehicles', slug: 'vehicles' },
+  { label: 'Creators', slug: 'creators' },
+];
+
+const LIVE_SECTION_ITEMS = [
+  { key: 'nav.exploreLive', path: '/live', slug: 'live' },
+  { key: 'nav.goLive', path: '/live/create', slug: 'live-create' },
+  { label: 'Selling', path: '/categories/live-selling', slug: 'selling' },
+  { label: 'News', path: '/categories/live-news', slug: 'news' },
+  { label: 'Reporting', path: '/categories/live-reporting', slug: 'reporting' },
+  { label: 'Food', path: '/categories/live-food', slug: 'food' },
 ];
 
 const normalizeCategoryKey = (value?: string) => {
@@ -231,7 +278,7 @@ export const layout: RunTimeLayoutConfig = ({
         ]),
       );
 
-      const categoryItems = SIDEBAR_CATEGORY_FALLBACKS.map(
+      const categoryItems = CONTENT_CATEGORY_FALLBACKS.map(
         (fallbackCategory) => {
           const matchedCategory = apiCategories.get(
             normalizeCategoryKey(fallbackCategory.slug),
@@ -239,7 +286,9 @@ export const layout: RunTimeLayoutConfig = ({
           const slug = matchedCategory?.slug || fallbackCategory.slug;
           const name =
             matchedCategory?.name ||
-            intl.formatMessage({ id: fallbackCategory.key });
+            (fallbackCategory.key
+              ? intl.formatMessage({ id: fallbackCategory.key })
+              : fallbackCategory.label);
 
           return {
             name,
@@ -250,26 +299,31 @@ export const layout: RunTimeLayoutConfig = ({
         },
       );
 
+      const commerceItem = {
+        name: 'Commerce',
+        path: '/categories/food',
+        icon: <ShopOutlined />,
+        className: 'sidebar-menu-item sidebar-menu-item-category',
+        children: COMMERCE_CATEGORY_ITEMS.map((item) => ({
+          name: item.label,
+          path: `/categories/${item.slug}`,
+          icon: getCommerceIcon(item.slug),
+          className: 'sidebar-menu-item sidebar-menu-item-category',
+        })),
+      };
+
       const liveItem = {
         ...(stableItemByPath.get('/live') || {}),
         path: '/live',
         name: intl.formatMessage({ id: 'nav.live' }),
         icon: stableItemMap.get('/live'),
         className: 'sidebar-menu-item sidebar-menu-item-live',
-        children: [
-          {
-            name: intl.formatMessage({ id: 'nav.exploreLive' }),
-            path: '/live',
-            icon: <VideoCameraOutlined />,
-            className: 'sidebar-menu-item sidebar-menu-item-live-child',
-          },
-          {
-            name: intl.formatMessage({ id: 'nav.goLive' }),
-            path: '/live/create',
-            icon: <UploadOutlined />,
-            className: 'sidebar-menu-item sidebar-menu-item-live-child',
-          },
-        ],
+        children: LIVE_SECTION_ITEMS.map((item) => ({
+          name: item.key ? intl.formatMessage({ id: item.key }) : item.label,
+          path: item.path,
+          icon: getLiveChildIcon(item.path, item.slug),
+          className: 'sidebar-menu-item sidebar-menu-item-live-child',
+        })),
       };
 
       return [
@@ -277,6 +331,8 @@ export const layout: RunTimeLayoutConfig = ({
         ...adminItems,
         { type: 'divider', key: 'sidebar-divider-primary' } as any,
         ...categoryItems,
+        { type: 'divider', key: 'sidebar-divider-commerce' } as any,
+        commerceItem,
         { type: 'divider', key: 'sidebar-divider-live' } as any,
         liveItem,
       ];
