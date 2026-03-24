@@ -42,3 +42,9 @@ Video endpoints:
 - App should run locally after changes
 - Do not break existing routes
 - Summarize changed files and test steps
+
+## Ant Design icon safety
+
+- Every used Ant Design icon must be explicitly imported.
+- Never introduce JSX icon usage without verifying imports.
+- Always run a compile check before committing.
