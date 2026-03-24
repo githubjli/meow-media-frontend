@@ -11,6 +11,9 @@ export default {
   'nav.goLive': '去开播',
   'nav.uploadVideo': '上传视频',
   'nav.myVideos': '我的视频',
+  'nav.language': '语言',
+  'nav.settings': '设置',
+  'nav.help': '帮助',
   'nav.logOut': '退出登录',
   'nav.logIn': '登录',
   'nav.signUp': '注册',
@@ -34,7 +37,8 @@ export default {
 
   'home.hero.eyebrow': '公共片库',
   'home.hero.title': '发现新内容、直播时刻与最新发布。',
-  'home.hero.description': '浏览平台最新上传内容，关注你喜欢的主题，并一键进入直播。',
+  'home.hero.description':
+    '浏览平台最新上传内容，关注你喜欢的主题，并一键进入直播。',
   'home.latest.description': '查看平台最新公开发布的视频。',
   'home.category.description': '浏览 {category} 的最新视频。',
   'home.error': '暂时无法加载公开视频。',

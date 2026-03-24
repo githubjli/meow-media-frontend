@@ -6,17 +6,16 @@ import {
 import { clearStoredTokens } from '@/utils/auth';
 import {
   BookOutlined,
-  CloudUploadOutlined,
+  CheckOutlined,
   CompassOutlined,
   FireOutlined,
+  GlobalOutlined,
+  HelpCircleOutlined,
   LogoutOutlined,
-  MoonOutlined,
   NotificationOutlined,
   PlaySquareOutlined,
-  QuestionCircleOutlined,
   ReadOutlined,
   SettingOutlined,
-  SunOutlined,
   ThunderboltOutlined,
   UploadOutlined,
   UserOutlined,
@@ -31,13 +30,10 @@ import {
   Dropdown,
   Input,
   Space,
-  Tag,
-  Typography,
   theme,
 } from 'antd';
 import { useEffect } from 'react';
 
-const { Text } = Typography;
 const LANGUAGE_LABELS: Record<string, string> = {
   'en-US': 'English',
   'zh-CN': '中文',
@@ -130,15 +126,7 @@ export const layout: RunTimeLayoutConfig = ({
   const currentUser = initialState?.currentUser;
   const isLoggedIn = Boolean(currentUser?.email);
   const isAdmin = isAdminUser(currentUser);
-  const utilityButtonStyle = {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: isDark ? '#E4D5C5' : '#4b5563',
-  } as const;
+  const activeLocale = resolveSupportedLocale(intl.locale);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -352,46 +340,10 @@ export const layout: RunTimeLayoutConfig = ({
         >
           {intl.formatMessage({ id: 'nav.goLive' })}
         </Button>
-        <Button
-          type="text"
-          icon={<CloudUploadOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-          onClick={handleUploadClick}
-        />
-        <Button
-          type="text"
-          icon={<SettingOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-        />
-        <Button
-          type="text"
-          icon={<QuestionCircleOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-        />
-        <Button
-          type="text"
-          icon={
-            isDark ? (
-              <SunOutlined style={{ color: '#faad14' }} />
-            ) : (
-              <MoonOutlined />
-            )
-          }
-          style={{
-            ...utilityButtonStyle,
-            fontSize: 18,
-            color: isDark ? '#EFBC5C' : '#4b5563',
-          }}
-          onClick={() => {
-            setInitialState((pre) => ({
-              ...pre!,
-              darkTheme: !pre?.darkTheme,
-            }));
-          }}
-        />
         {isLoggedIn ? (
           <Dropdown
             trigger={['click']}
+            overlayClassName="user-menu-dropdown"
             menu={{
               items: [
                 {
@@ -412,38 +364,41 @@ export const layout: RunTimeLayoutConfig = ({
                   label: intl.formatMessage({ id: 'nav.goLive' }),
                   onClick: handleGoLiveClick,
                 },
-                ...(isAdmin
-                  ? [
-                      {
-                        key: 'all-videos',
-                        icon: <SettingOutlined />,
-                        label: intl.formatMessage({ id: 'nav.allVideos' }),
-                        onClick: () => history.push('/admin/videos'),
-                      } as const,
-                    ]
-                  : []),
                 {
                   type: 'divider',
                 },
                 {
-                  key: 'lang-en-us',
-                  label: LANGUAGE_LABELS['en-US'],
-                  onClick: () => setLocale('en-US', true),
+                  key: 'language',
+                  icon: <GlobalOutlined />,
+                  label: intl.formatMessage({ id: 'nav.language' }),
+                  children: ['en-US', 'zh-CN', 'th-TH', 'my-MM'].map(
+                    (localeKey) => ({
+                      key: `lang-${localeKey.toLowerCase()}`,
+                      label: (
+                        <span className="user-menu-language-item">
+                          {LANGUAGE_LABELS[localeKey]}
+                          {activeLocale === localeKey ? (
+                            <CheckOutlined className="user-menu-language-check" />
+                          ) : null}
+                        </span>
+                      ),
+                      className:
+                        activeLocale === localeKey
+                          ? 'user-menu-language-active'
+                          : undefined,
+                      onClick: () => setLocale(localeKey, true),
+                    }),
+                  ),
                 },
                 {
-                  key: 'lang-zh-cn',
-                  label: LANGUAGE_LABELS['zh-CN'],
-                  onClick: () => setLocale('zh-CN', true),
+                  key: 'settings',
+                  icon: <SettingOutlined />,
+                  label: intl.formatMessage({ id: 'nav.settings' }),
                 },
                 {
-                  key: 'lang-th-th',
-                  label: LANGUAGE_LABELS['th-TH'],
-                  onClick: () => setLocale('th-TH', true),
-                },
-                {
-                  key: 'lang-my-mm',
-                  label: LANGUAGE_LABELS['my-MM'],
-                  onClick: () => setLocale('my-MM', true),
+                  key: 'help',
+                  icon: <HelpCircleOutlined />,
+                  label: intl.formatMessage({ id: 'nav.help' }),
                 },
                 {
                   type: 'divider',
@@ -459,19 +414,6 @@ export const layout: RunTimeLayoutConfig = ({
           >
             <Space size={8} style={{ marginLeft: 6, cursor: 'pointer' }}>
               <Avatar size={32} icon={<UserOutlined />} />
-              <Tag
-                bordered={false}
-                style={{
-                  marginInlineEnd: 0,
-                  borderRadius: 999,
-                  paddingInline: 10,
-                  maxWidth: 180,
-                }}
-              >
-                <Text style={{ fontWeight: 600, maxWidth: 150 }} ellipsis>
-                  {currentUser?.email}
-                </Text>
-              </Tag>
             </Space>
           </Dropdown>
         ) : (
