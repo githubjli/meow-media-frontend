@@ -81,6 +81,7 @@ const getPosterUrl = (item: LiveBroadcast) =>
 
 export default function ExploreLivePage() {
   const { initialState } = useModel('@@initialState');
+  const isDark = Boolean(initialState?.darkTheme);
   const [streams, setStreams] = useState<LiveBroadcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -183,25 +184,34 @@ export default function ExploreLivePage() {
               const viewerCount = item.viewer_count ?? item.viewerCount ?? 0;
               const status = getStatusPresentation(item.status);
               const posterUrl = getPosterUrl(item);
+              const cardBackground = isDark ? '#2F2923' : '#fffdf8';
+              const cardBorder = isDark
+                ? '1px solid rgba(255,255,255,0.08)'
+                : '1px solid rgba(184, 135, 46, 0.18)';
+              const titleColor = isDark ? '#F5F1EA' : '#2c2c2c';
+              const metaColor = isDark ? '#CBBBAA' : '#948261';
+              const thumbBackground = isDark ? '#211c18' : '#2c2c2c';
 
               return (
                 <Col xs={24} sm={12} md={8} lg={6} xl={6} key={String(item.id)}>
                   <Card
-                    hoverable
                     bordered={false}
                     style={{
                       borderRadius: 14,
                       overflow: 'hidden',
                       padding: 8,
                       boxShadow: 'none',
-                      border: '1px solid rgba(184, 135, 46, 0.18)',
-                      background: '#fffdf8',
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                      border: cardBorder,
+                      background: cardBackground,
                     }}
                     bodyStyle={{ padding: 0 }}
                     cover={
                       <div
                         style={{
-                          aspectRatio: '16 / 8',
+                          aspectRatio: '16 / 9',
+                          backgroundColor: thumbBackground,
                           background: posterUrl
                             ? `linear-gradient(180deg, rgba(31, 26, 22, 0.08), rgba(31, 26, 22, 0.5)), url(${posterUrl}) center / cover no-repeat`
                             : status.heroBackground,
@@ -251,6 +261,16 @@ export default function ExploreLivePage() {
                       </div>
                     }
                     onClick={() => history.push(`/live/${item.id}`)}
+                    onMouseEnter={(event) => {
+                      event.currentTarget.style.transform = 'translateY(-2px)';
+                      event.currentTarget.style.boxShadow = isDark
+                        ? '0 10px 24px rgba(0, 0, 0, 0.34)'
+                        : '0 10px 22px rgba(116, 95, 64, 0.12)';
+                    }}
+                    onMouseLeave={(event) => {
+                      event.currentTarget.style.transform = 'translateY(0)';
+                      event.currentTarget.style.boxShadow = 'none';
+                    }}
                   >
                     <div style={{ marginBottom: 8 }}>
                       <Text
@@ -260,7 +280,7 @@ export default function ExploreLivePage() {
                           fontSize: 10.5,
                           letterSpacing: '0.02em',
                           textTransform: 'uppercase',
-                          color: '#948261',
+                          color: metaColor,
                         }}
                       >
                         {item.category || 'Live broadcast'}
@@ -271,7 +291,7 @@ export default function ExploreLivePage() {
                           margin: 0,
                           fontSize: 14,
                           lineHeight: 1.38,
-                          color: '#2C2C2C',
+                          color: titleColor,
                         }}
                         ellipsis={{ rows: 2 }}
                       >
@@ -305,6 +325,7 @@ export default function ExploreLivePage() {
                             fontSize: 11,
                             display: 'inline-flex',
                             gap: 4,
+                            color: metaColor,
                           }}
                         >
                           <EyeOutlined />
@@ -321,7 +342,10 @@ export default function ExploreLivePage() {
                             display: 'inline-block',
                           }}
                         />
-                        <Text type="secondary" style={{ fontSize: 11 }}>
+                        <Text
+                          type="secondary"
+                          style={{ fontSize: 11, color: metaColor }}
+                        >
                           {status.description}
                         </Text>
                       </Space>
