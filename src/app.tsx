@@ -6,14 +6,16 @@ import {
 import { clearStoredTokens } from '@/utils/auth';
 import {
   BookOutlined,
+  CheckOutlined,
   CloudUploadOutlined,
   CompassOutlined,
   FireOutlined,
+  GlobalOutlined,
+  HelpCircleOutlined,
   LogoutOutlined,
   MoonOutlined,
   NotificationOutlined,
   PlaySquareOutlined,
-  QuestionCircleOutlined,
   ReadOutlined,
   SettingOutlined,
   SunOutlined,
@@ -130,6 +132,7 @@ export const layout: RunTimeLayoutConfig = ({
   const currentUser = initialState?.currentUser;
   const isLoggedIn = Boolean(currentUser?.email);
   const isAdmin = isAdminUser(currentUser);
+  const activeLocale = resolveSupportedLocale(intl.locale);
   const utilityButtonStyle = {
     width: 40,
     height: 40,
@@ -360,16 +363,6 @@ export const layout: RunTimeLayoutConfig = ({
         />
         <Button
           type="text"
-          icon={<SettingOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-        />
-        <Button
-          type="text"
-          icon={<QuestionCircleOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-        />
-        <Button
-          type="text"
           icon={
             isDark ? (
               <SunOutlined style={{ color: '#faad14' }} />
@@ -392,6 +385,7 @@ export const layout: RunTimeLayoutConfig = ({
         {isLoggedIn ? (
           <Dropdown
             trigger={['click']}
+            overlayClassName="user-menu-dropdown"
             menu={{
               items: [
                 {
@@ -412,38 +406,41 @@ export const layout: RunTimeLayoutConfig = ({
                   label: intl.formatMessage({ id: 'nav.goLive' }),
                   onClick: handleGoLiveClick,
                 },
-                ...(isAdmin
-                  ? [
-                      {
-                        key: 'all-videos',
-                        icon: <SettingOutlined />,
-                        label: intl.formatMessage({ id: 'nav.allVideos' }),
-                        onClick: () => history.push('/admin/videos'),
-                      } as const,
-                    ]
-                  : []),
                 {
                   type: 'divider',
                 },
                 {
-                  key: 'lang-en-us',
-                  label: LANGUAGE_LABELS['en-US'],
-                  onClick: () => setLocale('en-US', true),
+                  key: 'language',
+                  icon: <GlobalOutlined />,
+                  label: intl.formatMessage({ id: 'nav.language' }),
+                  children: ['en-US', 'zh-CN', 'th-TH', 'my-MM'].map(
+                    (localeKey) => ({
+                      key: `lang-${localeKey.toLowerCase()}`,
+                      label: (
+                        <span className="user-menu-language-item">
+                          {LANGUAGE_LABELS[localeKey]}
+                          {activeLocale === localeKey ? (
+                            <CheckOutlined className="user-menu-language-check" />
+                          ) : null}
+                        </span>
+                      ),
+                      className:
+                        activeLocale === localeKey
+                          ? 'user-menu-language-active'
+                          : undefined,
+                      onClick: () => setLocale(localeKey, true),
+                    }),
+                  ),
                 },
                 {
-                  key: 'lang-zh-cn',
-                  label: LANGUAGE_LABELS['zh-CN'],
-                  onClick: () => setLocale('zh-CN', true),
+                  key: 'settings',
+                  icon: <SettingOutlined />,
+                  label: intl.formatMessage({ id: 'nav.settings' }),
                 },
                 {
-                  key: 'lang-th-th',
-                  label: LANGUAGE_LABELS['th-TH'],
-                  onClick: () => setLocale('th-TH', true),
-                },
-                {
-                  key: 'lang-my-mm',
-                  label: LANGUAGE_LABELS['my-MM'],
-                  onClick: () => setLocale('my-MM', true),
+                  key: 'help',
+                  icon: <HelpCircleOutlined />,
+                  label: intl.formatMessage({ id: 'nav.help' }),
                 },
                 {
                   type: 'divider',
@@ -466,10 +463,14 @@ export const layout: RunTimeLayoutConfig = ({
                   borderRadius: 999,
                   paddingInline: 10,
                   maxWidth: 180,
+                  background: isDark
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(184, 135, 46, 0.12)',
                 }}
               >
                 <Text style={{ fontWeight: 600, maxWidth: 150 }} ellipsis>
-                  {currentUser?.email}
+                  {currentUser?.email ||
+                    intl.formatMessage({ id: 'app.user.defaultName' })}
                 </Text>
               </Tag>
             </Space>
