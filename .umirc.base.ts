@@ -6,7 +6,7 @@ export default defineConfig({
   locale: {
     default: 'en-US',
     antd: true,
-    baseNavigator: true,
+    baseNavigator: false,
   },
   antd: {
     // 注入品牌色和全局圆角优化
