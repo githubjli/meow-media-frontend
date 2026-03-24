@@ -9,7 +9,6 @@ import {
   CloudUploadOutlined,
   CompassOutlined,
   FireOutlined,
-  GlobalOutlined,
   LogoutOutlined,
   MoonOutlined,
   NotificationOutlined,
@@ -24,7 +23,7 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { SelectLang, history } from '@umijs/max';
+import { history, setLocale, useIntl } from '@umijs/max';
 import {
   Avatar,
   Button,
@@ -39,6 +38,23 @@ import {
 import { useEffect } from 'react';
 
 const { Text } = Typography;
+const LANGUAGE_LABELS: Record<string, string> = {
+  'en-US': 'English',
+  'zh-CN': '中文',
+  'th-TH': 'ไทย',
+  'my-MM': 'မြန်မာ',
+};
+const SUPPORTED_LOCALES = new Set(Object.keys(LANGUAGE_LABELS));
+
+const resolveSupportedLocale = (value?: string | null) => {
+  const normalized = String(value || '').toLowerCase();
+
+  if (normalized.startsWith('zh')) return 'zh-CN';
+  if (normalized.startsWith('th')) return 'th-TH';
+  if (normalized.startsWith('my')) return 'my-MM';
+  if (normalized.startsWith('en')) return 'en-US';
+  return 'en-US';
+};
 
 const getCategoryIcon = (slug?: string) => {
   const value = String(slug || '').toLowerCase();
@@ -51,12 +67,12 @@ const getCategoryIcon = (slug?: string) => {
 };
 
 const SIDEBAR_CATEGORY_FALLBACKS = [
-  { name: 'Technology', slug: 'technology' },
-  { name: 'Education', slug: 'education' },
-  { name: 'Gaming', slug: 'gaming' },
-  { name: 'News', slug: 'news' },
-  { name: 'Entertainment', slug: 'entertainment' },
-  { name: 'Other', slug: 'other' },
+  { key: 'nav.category.technology', slug: 'technology' },
+  { key: 'nav.category.education', slug: 'education' },
+  { key: 'nav.category.gaming', slug: 'gaming' },
+  { key: 'nav.category.news', slug: 'news' },
+  { key: 'nav.category.entertainment', slug: 'entertainment' },
+  { key: 'nav.category.other', slug: 'other' },
 ];
 
 const normalizeCategoryKey = (value?: string) => {
@@ -96,7 +112,7 @@ export async function getInitialState(): Promise<InitialState> {
   ]);
 
   return {
-    name: 'Media Stream User',
+    name: 'Meow Media Stream User',
     darkTheme: false,
     currentUser,
     authLoading: false,
@@ -109,6 +125,7 @@ export const layout: RunTimeLayoutConfig = ({
   initialState,
   setInitialState,
 }) => {
+  const intl = useIntl();
   const isDark = initialState?.darkTheme;
   const currentUser = initialState?.currentUser;
   const isLoggedIn = Boolean(currentUser?.email);
@@ -120,8 +137,22 @@ export const layout: RunTimeLayoutConfig = ({
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: isDark ? '#d7e0ea' : '#4b5563',
+    color: isDark ? '#E4D5C5' : '#4b5563',
   } as const;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const storedLocale = localStorage.getItem('umi_locale');
+    if (storedLocale && SUPPORTED_LOCALES.has(storedLocale)) {
+      return;
+    }
+
+    const browserLocale =
+      (navigator.languages && navigator.languages[0]) || navigator.language;
+    const nextLocale = resolveSupportedLocale(browserLocale);
+    setLocale(nextLocale, true);
+  }, []);
 
   const handleUploadClick = () => {
     history.push(isLoggedIn ? '/videos/upload' : '/login');
@@ -145,12 +176,12 @@ export const layout: RunTimeLayoutConfig = ({
   };
 
   return {
-    title: 'Media Stream',
+    title: 'Meow Media Stream',
     layout: 'mix',
     splitMenus: false,
     defaultCollapsed: true,
     navTheme: isDark ? 'realDark' : 'light',
-    colorPrimary: '#35b8be',
+    colorPrimary: '#B8872E',
     siderWidth: 224,
     collapsedWidth: 76,
     menuHeaderRender: false,
@@ -172,7 +203,11 @@ export const layout: RunTimeLayoutConfig = ({
         ...(stableItemByPath.get(path) || {}),
         path,
         name:
-          path === '/home' ? 'Home' : path === '/browse' ? 'Browse' : undefined,
+          path === '/home'
+            ? intl.formatMessage({ id: 'nav.home' })
+            : path === '/browse'
+            ? intl.formatMessage({ id: 'nav.browse' })
+            : undefined,
         icon: stableItemMap.get(path),
         className: 'sidebar-menu-item sidebar-menu-item-primary',
       }));
@@ -182,7 +217,7 @@ export const layout: RunTimeLayoutConfig = ({
             {
               ...(stableItemByPath.get('/admin/videos') || {}),
               path: '/admin/videos',
-              name: 'All Videos',
+              name: intl.formatMessage({ id: 'nav.allVideos' }),
               icon: stableItemMap.get('/admin/videos'),
               className: 'sidebar-menu-item sidebar-menu-item-admin',
             },
@@ -202,7 +237,9 @@ export const layout: RunTimeLayoutConfig = ({
             normalizeCategoryKey(fallbackCategory.slug),
           );
           const slug = matchedCategory?.slug || fallbackCategory.slug;
-          const name = matchedCategory?.name || fallbackCategory.name;
+          const name =
+            matchedCategory?.name ||
+            intl.formatMessage({ id: fallbackCategory.key });
 
           return {
             name,
@@ -216,18 +253,18 @@ export const layout: RunTimeLayoutConfig = ({
       const liveItem = {
         ...(stableItemByPath.get('/live') || {}),
         path: '/live',
-        name: 'Live',
+        name: intl.formatMessage({ id: 'nav.live' }),
         icon: stableItemMap.get('/live'),
         className: 'sidebar-menu-item sidebar-menu-item-live',
         children: [
           {
-            name: 'Explore Live',
+            name: intl.formatMessage({ id: 'nav.exploreLive' }),
             path: '/live',
             icon: <VideoCameraOutlined />,
             className: 'sidebar-menu-item sidebar-menu-item-live-child',
           },
           {
-            name: 'Go Live',
+            name: intl.formatMessage({ id: 'nav.goLive' }),
             path: '/live/create',
             icon: <UploadOutlined />,
             className: 'sidebar-menu-item sidebar-menu-item-live-child',
@@ -255,19 +292,19 @@ export const layout: RunTimeLayoutConfig = ({
         onClick={() => history.push('/')}
       >
         <img
-          src={isDark ? '/logo_white.svg' : '/logo_black.svg'}
+          src="/assets/meow-main-logo.svg"
           alt="logo"
-          style={{ height: 28 }}
+          style={{ height: 28, width: 'auto', objectFit: 'contain' }}
         />
         <span
           style={{
             fontSize: 17,
             fontWeight: 700,
-            color: isDark ? '#fff' : '#111827',
+            color: isDark ? '#f5e8cf' : '#2C2C2C',
             letterSpacing: '-0.01em',
           }}
         >
-          Media Stream
+          {intl.formatMessage({ id: 'app.brand.name' })}
         </span>
       </div>
     ),
@@ -281,9 +318,13 @@ export const layout: RunTimeLayoutConfig = ({
         }}
       >
         <Input.Search
-          placeholder="Search videos, channels, and people"
+          placeholder={intl.formatMessage({ id: 'search.global.placeholder' })}
           allowClear
-          style={{ maxWidth: 560, width: '100%' }}
+          style={{
+            maxWidth: 560,
+            width: '100%',
+            borderRadius: 12,
+          }}
           size="middle"
           onSearch={(value) => console.log('Searching for:', value)}
         />
@@ -300,16 +341,16 @@ export const layout: RunTimeLayoutConfig = ({
           style={{
             borderRadius: 10,
             fontWeight: 700,
-            color: '#07272a',
-            backgroundColor: '#5bd1d7',
+            color: '#2C2C2C',
+            backgroundColor: '#EFBC5C',
             border: 'none',
             boxShadow: isDark
-              ? '0 8px 18px rgba(91, 209, 215, 0.16)'
-              : '0 8px 18px rgba(91, 209, 215, 0.18)',
+              ? '0 8px 18px rgba(239, 188, 92, 0.2)'
+              : '0 8px 18px rgba(184, 135, 46, 0.2)',
           }}
           onClick={handleGoLiveClick}
         >
-          Go Live
+          {intl.formatMessage({ id: 'nav.goLive' })}
         </Button>
         <Button
           type="text"
@@ -327,15 +368,6 @@ export const layout: RunTimeLayoutConfig = ({
           icon={<QuestionCircleOutlined style={{ fontSize: 18 }} />}
           style={utilityButtonStyle}
         />
-        <SelectLang
-          icon={
-            <Button
-              type="text"
-              icon={<GlobalOutlined style={{ fontSize: 18 }} />}
-              style={{ ...utilityButtonStyle, padding: 0 }}
-            />
-          }
-        />
         <Button
           type="text"
           icon={
@@ -348,7 +380,7 @@ export const layout: RunTimeLayoutConfig = ({
           style={{
             ...utilityButtonStyle,
             fontSize: 18,
-            color: isDark ? '#f6c453' : '#4b5563',
+            color: isDark ? '#EFBC5C' : '#4b5563',
           }}
           onClick={() => {
             setInitialState((pre) => ({
@@ -365,19 +397,19 @@ export const layout: RunTimeLayoutConfig = ({
                 {
                   key: 'my-videos',
                   icon: <PlaySquareOutlined />,
-                  label: 'My Videos',
+                  label: intl.formatMessage({ id: 'nav.myVideos' }),
                   onClick: () => history.push('/videos/mine'),
                 },
                 {
                   key: 'upload-video',
                   icon: <UploadOutlined />,
-                  label: 'Upload Video',
+                  label: intl.formatMessage({ id: 'nav.uploadVideo' }),
                   onClick: () => history.push('/videos/upload'),
                 },
                 {
                   key: 'go-live',
                   icon: <VideoCameraOutlined />,
-                  label: 'Go Live',
+                  label: intl.formatMessage({ id: 'nav.goLive' }),
                   onClick: handleGoLiveClick,
                 },
                 ...(isAdmin
@@ -385,7 +417,7 @@ export const layout: RunTimeLayoutConfig = ({
                       {
                         key: 'all-videos',
                         icon: <SettingOutlined />,
-                        label: 'All Videos',
+                        label: intl.formatMessage({ id: 'nav.allVideos' }),
                         onClick: () => history.push('/admin/videos'),
                       } as const,
                     ]
@@ -394,9 +426,32 @@ export const layout: RunTimeLayoutConfig = ({
                   type: 'divider',
                 },
                 {
+                  key: 'lang-en-us',
+                  label: LANGUAGE_LABELS['en-US'],
+                  onClick: () => setLocale('en-US', true),
+                },
+                {
+                  key: 'lang-zh-cn',
+                  label: LANGUAGE_LABELS['zh-CN'],
+                  onClick: () => setLocale('zh-CN', true),
+                },
+                {
+                  key: 'lang-th-th',
+                  label: LANGUAGE_LABELS['th-TH'],
+                  onClick: () => setLocale('th-TH', true),
+                },
+                {
+                  key: 'lang-my-mm',
+                  label: LANGUAGE_LABELS['my-MM'],
+                  onClick: () => setLocale('my-MM', true),
+                },
+                {
+                  type: 'divider',
+                },
+                {
                   key: 'logout',
                   icon: <LogoutOutlined />,
-                  label: 'Log out',
+                  label: intl.formatMessage({ id: 'nav.logOut' }),
                   onClick: handleLogout,
                 },
               ],
@@ -423,26 +478,26 @@ export const layout: RunTimeLayoutConfig = ({
           <Space size={8} style={{ marginLeft: 8 }}>
             <Button
               type="text"
-              style={{ color: '#0f766e', fontWeight: 600 }}
+              style={{ color: '#745F40', fontWeight: 600 }}
               onClick={() => history.push('/login')}
             >
-              Log In
+              {intl.formatMessage({ id: 'nav.logIn' })}
             </Button>
             <Button
               type="primary"
               style={{
                 borderRadius: 9,
                 fontWeight: 700,
-                color: '#07272a',
-                backgroundColor: '#35b8be',
+                color: '#2C2C2C',
+                backgroundColor: '#EFBC5C',
                 border: 'none',
                 boxShadow: isDark
-                  ? '0 8px 18px rgba(53, 184, 190, 0.18)'
-                  : '0 8px 18px rgba(53, 184, 190, 0.2)',
+                  ? '0 8px 18px rgba(239, 188, 92, 0.2)'
+                  : '0 8px 18px rgba(184, 135, 46, 0.2)',
               }}
               onClick={() => history.push('/register')}
             >
-              Sign Up
+              {intl.formatMessage({ id: 'nav.signUp' })}
             </Button>
           </Space>
         )}
@@ -455,8 +510,8 @@ export const layout: RunTimeLayoutConfig = ({
       },
       header: {
         colorBgHeader: isDark
-          ? 'rgba(11, 17, 24, 0.92)'
-          : 'rgba(255, 255, 255, 0.92)',
+          ? 'rgba(37, 31, 26, 0.94)'
+          : 'rgba(255, 252, 243, 0.94)',
       },
     },
     childrenRender: (children) => {
@@ -464,10 +519,11 @@ export const layout: RunTimeLayoutConfig = ({
         const favicon = document.querySelector(
           "link[rel*='icon']",
         ) as HTMLLinkElement;
-        const iconPath = isDark ? '/favicon_white.svg' : '/favicon_black.svg';
+        const iconPath = '/favicon.ico';
         if (favicon) {
           favicon.href = iconPath;
         }
+        document.body.dataset.theme = isDark ? 'dark' : 'light';
       }, [isDark]);
 
       return (
@@ -475,12 +531,26 @@ export const layout: RunTimeLayoutConfig = ({
           theme={{
             algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
             token: {
-              colorPrimary: '#35b8be',
+              colorPrimary: '#B8872E',
               borderRadius: 12,
+              ...(isDark
+                ? {
+                    colorBgBase: '#1F1A16',
+                    colorBgContainer: '#2A241F',
+                    colorText: '#F5F1EA',
+                    colorTextSecondary: '#CBBBAA',
+                    colorBorder: 'rgba(255,255,255,0.08)',
+                    colorFillSecondary: 'rgba(255,255,255,0.08)',
+                    colorFillTertiary: 'rgba(255,255,255,0.06)',
+                  }
+                : {}),
             },
             components: {
               Input: {
                 borderRadiusLG: 12,
+                colorBgContainer: isDark ? 'rgba(255,255,255,0.04)' : undefined,
+                colorText: isDark ? '#F5F1EA' : undefined,
+                colorBorder: isDark ? 'rgba(255,255,255,0.12)' : undefined,
               },
               Button: {
                 borderRadius: 9,
