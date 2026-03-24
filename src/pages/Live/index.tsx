@@ -11,7 +11,6 @@ import {
   Row,
   Skeleton,
   Space,
-  Tag,
   Typography,
 } from 'antd';
 import { useEffect, useState } from 'react';
@@ -26,7 +25,6 @@ const getStatusPresentation = (status?: string) => {
   if (['live', 'started', 'broadcasting', 'publishing'].includes(value)) {
     return {
       label: 'LIVE',
-      color: 'error' as const,
       heroBackground: 'linear-gradient(135deg, #230507, #63171d 55%, #2d0b0f)',
       accent: '#ff6b72',
       description: 'On air now',
@@ -37,9 +35,8 @@ const getStatusPresentation = (status?: string) => {
   if (['ready', 'created', 'prepared'].includes(value)) {
     return {
       label: 'ready',
-      color: 'processing' as const,
-      heroBackground: 'linear-gradient(135deg, #071a28, #15415e 55%, #0b2334)',
-      accent: '#62c7ff',
+      heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f 55%, #201b17)',
+      accent: '#efbc5c',
       description: 'Ready to go live',
       pulse: false,
     };
@@ -48,7 +45,6 @@ const getStatusPresentation = (status?: string) => {
   if (['waiting', 'pending', 'starting'].includes(value)) {
     return {
       label: 'waiting',
-      color: 'warning' as const,
       heroBackground: 'linear-gradient(135deg, #1f1405, #5f4011 55%, #281a07)',
       accent: '#ffcf70',
       description: 'Stream warming up',
@@ -59,9 +55,8 @@ const getStatusPresentation = (status?: string) => {
   if (['ended', 'finished', 'completed', 'stopped'].includes(value)) {
     return {
       label: 'ended',
-      color: 'default' as const,
-      heroBackground: 'linear-gradient(135deg, #0f1720, #2f3d4d 55%, #161d26)',
-      accent: '#d3d9e2',
+      heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f 55%, #171310)',
+      accent: '#cbbbaa',
       description: 'Broadcast ended',
       pulse: false,
     };
@@ -69,9 +64,8 @@ const getStatusPresentation = (status?: string) => {
 
   return {
     label: 'waiting',
-    color: 'processing' as const,
-    heroBackground: 'linear-gradient(135deg, #09121a, #143240)',
-    accent: '#7ed7dd',
+    heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f)',
+    accent: '#b8872e',
     description: 'Checking stream status',
     pulse: false,
   };
@@ -134,9 +128,6 @@ export default function ExploreLivePage() {
             wrap
           >
             <div>
-              <Tag color="error" style={{ marginBottom: 12 }}>
-                LIVE CONTROL ROOM
-              </Tag>
               <Title level={2} style={{ margin: 0 }}>
                 Explore Live Streams
               </Title>
@@ -177,7 +168,7 @@ export default function ExploreLivePage() {
             </Empty>
           </Card>
         ) : (
-          <Row gutter={[20, 20]}>
+          <Row gutter={[14, 18]}>
             {streams.map((item) => {
               const creatorName =
                 item.creator?.name ||
@@ -189,111 +180,103 @@ export default function ExploreLivePage() {
               const posterUrl = getPosterUrl(item);
 
               return (
-                <Col xs={24} sm={12} xl={8} key={String(item.id)}>
+                <Col xs={24} sm={12} md={8} lg={6} xl={6} key={String(item.id)}>
                   <Card
                     hoverable
                     bordered={false}
-                    style={{ borderRadius: 18, overflow: 'hidden' }}
+                    style={{
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                      padding: 8,
+                      boxShadow: 'none',
+                      border: '1px solid rgba(184, 135, 46, 0.18)',
+                      background: '#fffdf8',
+                    }}
+                    bodyStyle={{ padding: 0 }}
                     cover={
                       <div
                         style={{
-                          aspectRatio: '16 / 9',
+                          aspectRatio: '16 / 8',
                           background: posterUrl
-                            ? `linear-gradient(180deg, rgba(3, 7, 18, 0.04), rgba(3, 7, 18, 0.66)), url(${posterUrl}) center / cover no-repeat`
+                            ? `linear-gradient(180deg, rgba(31, 26, 22, 0.08), rgba(31, 26, 22, 0.5)), url(${posterUrl}) center / cover no-repeat`
                             : status.heroBackground,
                           display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
                           color: '#fff',
-                          padding: 18,
+                          borderRadius: 12,
+                          marginBottom: 8,
+                          padding: '8px 10px',
                           position: 'relative',
                         }}
                       >
-                        <Space
+                        <div
                           style={{
-                            justifyContent: 'space-between',
-                            width: '100%',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '2px 7px',
+                            borderRadius: 999,
+                            background: 'rgba(31, 26, 22, 0.56)',
                           }}
                         >
-                          <div
+                          <span
                             style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              padding: '6px 12px',
-                              borderRadius: 999,
-                              background:
-                                status.label === 'LIVE'
-                                  ? 'rgba(127, 29, 29, 0.92)'
-                                  : 'rgba(15, 23, 42, 0.68)',
-                              boxShadow:
-                                status.label === 'LIVE'
-                                  ? '0 10px 24px rgba(127, 29, 29, 0.35)'
-                                  : '0 10px 24px rgba(15, 23, 42, 0.16)',
+                              width: 7,
+                              height: 7,
+                              borderRadius: '50%',
+                              background: status.accent,
+                              boxShadow: status.pulse
+                                ? `0 0 0 3px ${status.accent}33`
+                                : 'none',
                             }}
-                          >
-                            <span
-                              style={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: '50%',
-                                background: status.accent,
-                                boxShadow: status.pulse
-                                  ? `0 0 0 6px ${status.accent}33`
-                                  : 'none',
-                              }}
-                            />
-                            <Text
-                              style={{
-                                color: '#fff',
-                                fontWeight: 700,
-                                letterSpacing: '0.04em',
-                                textTransform:
-                                  status.label === 'LIVE'
-                                    ? 'uppercase'
-                                    : 'none',
-                              }}
-                            >
-                              {status.label}
-                            </Text>
-                          </div>
-                          <Tag
-                            color={status.color}
-                            style={{ marginInlineEnd: 0, borderRadius: 999 }}
-                          >
-                            {status.description}
-                          </Tag>
-                        </Space>
-
-                        <div>
+                          />
                           <Text
                             style={{
-                              color: 'rgba(255,255,255,0.82)',
-                              display: 'block',
-                              marginBottom: 8,
-                            }}
-                          >
-                            {item.category || 'Live broadcast'}
-                          </Text>
-                          <Title
-                            level={4}
-                            style={{
-                              margin: 0,
                               color: '#fff',
-                              textAlign: 'left',
-                              textShadow: '0 4px 22px rgba(0,0,0,0.35)',
+                              fontWeight: 600,
+                              fontSize: 10.5,
+                              lineHeight: 1,
+                              letterSpacing: '0.02em',
+                              textTransform:
+                                status.label === 'LIVE' ? 'uppercase' : 'none',
                             }}
                           >
-                            {item.title || item.name || `Stream ${item.id}`}
-                          </Title>
+                            {status.label}
+                          </Text>
                         </div>
                       </div>
                     }
                     onClick={() => history.push(`/live/${item.id}`)}
                   >
+                    <div style={{ marginBottom: 8 }}>
+                      <Text
+                        style={{
+                          display: 'block',
+                          marginBottom: 4,
+                          fontSize: 10.5,
+                          letterSpacing: '0.02em',
+                          textTransform: 'uppercase',
+                          color: '#948261',
+                        }}
+                      >
+                        {item.category || 'Live broadcast'}
+                      </Text>
+                      <Title
+                        level={5}
+                        style={{
+                          margin: 0,
+                          fontSize: 14,
+                          lineHeight: 1.38,
+                          color: '#2C2C2C',
+                        }}
+                        ellipsis={{ rows: 2 }}
+                      >
+                        {item.title || item.name || `Stream ${item.id}`}
+                      </Title>
+                    </div>
+
                     <Space
                       direction="vertical"
-                      size={10}
+                      size={7}
                       style={{ width: '100%' }}
                     >
                       <Space
@@ -307,20 +290,35 @@ export default function ExploreLivePage() {
                           <Avatar size="small" src={item.creator?.avatar_url}>
                             {creatorName.charAt(0).toUpperCase()}
                           </Avatar>
-                          <Text type="secondary">{creatorName}</Text>
+                          <Text type="secondary" style={{ fontSize: 11 }}>
+                            {creatorName}
+                          </Text>
                         </Space>
-                        <Tag
-                          icon={<EyeOutlined />}
-                          style={{ borderRadius: 999 }}
+                        <Text
+                          type="secondary"
+                          style={{
+                            fontSize: 11,
+                            display: 'inline-flex',
+                            gap: 4,
+                          }}
                         >
+                          <EyeOutlined />
                           {viewerCount.toLocaleString()} viewers
-                        </Tag>
+                        </Text>
                       </Space>
-                      <Space wrap>
-                        <Tag color={status.color} style={{ borderRadius: 999 }}>
-                          {status.label}
-                        </Tag>
-                        <Text type="secondary">{status.description}</Text>
+                      <Space align="center" size={6}>
+                        <span
+                          style={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: '50%',
+                            background: status.accent,
+                            display: 'inline-block',
+                          }}
+                        />
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          {status.description}
+                        </Text>
                       </Space>
                     </Space>
                   </Card>

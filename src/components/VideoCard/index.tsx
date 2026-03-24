@@ -1,12 +1,12 @@
 import { CheckCircleFilled } from '@ant-design/icons';
-import { history } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import { Avatar, Tag, Typography } from 'antd';
 
 const { Text, Title, Paragraph } = Typography;
 
-const formatRelativeTime = (value: any) => {
+const formatRelativeTime = (value: any, intl: any) => {
   if (!value) {
-    return 'Recently added';
+    return intl.formatMessage({ id: 'videoCard.recentlyAdded' });
   }
 
   const parsed = new Date(value);
@@ -15,28 +15,41 @@ const formatRelativeTime = (value: any) => {
   }
 
   const diffMs = Date.now() - parsed.getTime();
+  if (diffMs < 60000) {
+    return intl.formatMessage({ id: 'videoCard.justNow' });
+  }
   const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
   if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+    return intl.formatMessage({
+      id: diffMinutes === 1 ? 'videoCard.time.minute' : 'videoCard.time.minutes',
+    }, { count: diffMinutes });
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
-    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    return intl.formatMessage({
+      id: diffHours === 1 ? 'videoCard.time.hour' : 'videoCard.time.hours',
+    }, { count: diffHours });
   }
 
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays < 30) {
-    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    return intl.formatMessage({
+      id: diffDays === 1 ? 'videoCard.time.day' : 'videoCard.time.days',
+    }, { count: diffDays });
   }
 
   const diffMonths = Math.floor(diffDays / 30);
   if (diffMonths < 12) {
-    return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
+    return intl.formatMessage({
+      id: diffMonths === 1 ? 'videoCard.time.month' : 'videoCard.time.months',
+    }, { count: diffMonths });
   }
 
   const diffYears = Math.floor(diffMonths / 12);
-  return `${diffYears} year${diffYears === 1 ? '' : 's'} ago`;
+  return intl.formatMessage({
+    id: diffYears === 1 ? 'videoCard.time.year' : 'videoCard.time.years',
+  }, { count: diffYears });
 };
 
 const formatDuration = (value: any) => {
@@ -67,10 +80,21 @@ const formatDuration = (value: any) => {
 };
 
 export default ({ data }: { data: any }) => {
+  const intl = useIntl();
+  const { initialState } = useModel('@@initialState');
+  const isDark = Boolean(initialState?.darkTheme);
   const title = data.title || data.name;
   const description = data.description_preview || data.description;
-  const uploaderLabel = data.author || data.owner_name || 'Media Stream';
-  const publishedLabel = formatRelativeTime(data.created_at || data.date);
+  const normalizedTitle = String(title || '').trim().toLowerCase();
+  const normalizedDescription = String(description || '').trim().toLowerCase();
+  const shouldShowDescription = Boolean(
+    normalizedDescription && normalizedDescription !== normalizedTitle,
+  );
+  const uploaderLabel =
+    data.author ||
+    data.owner_name ||
+    intl.formatMessage({ id: 'app.user.uploaderFallback' });
+  const publishedLabel = formatRelativeTime(data.created_at || data.date, intl);
   const viewsLabel = data.views || data.view_count;
   const categoryLabel = data.category_name || data.category_display;
   const durationLabel = formatDuration(
@@ -79,23 +103,35 @@ export default ({ data }: { data: any }) => {
   const metaLine = [uploaderLabel, publishedLabel, viewsLabel]
     .filter(Boolean)
     .join(' • ');
+  const cardBackground = isDark ? '#2F2923' : '#fffdf8';
+  const cardBorder = isDark
+    ? '1px solid rgba(255,255,255,0.08)'
+    : '1px solid rgba(184, 135, 46, 0.18)';
+  const titleColor = isDark ? '#F5F1EA' : '#2c2c2c';
+  const descriptionColor = isDark ? '#CBBBAA' : '#745f40';
+  const metaColor = isDark ? '#CBBBAA' : '#948261';
+  const thumbBackground = isDark ? '#211c18' : '#2c2c2c';
 
   return (
     <div
       onClick={() => history.push(data.routePath || `/room/${data.streamId}`)}
       style={{
         cursor: 'pointer',
-        borderRadius: 12,
-        padding: 6,
+        borderRadius: 14,
+        padding: 8,
+        border: cardBorder,
+        background: cardBackground,
         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
       }}
       onMouseEnter={(event) => {
-        event.currentTarget.style.transform = 'translateY(-4px)';
+        event.currentTarget.style.transform = 'translateY(-2px)';
         event.currentTarget.style.boxShadow =
-          '0 18px 30px rgba(15, 23, 42, 0.10)';
+          isDark
+            ? '0 10px 24px rgba(0, 0, 0, 0.34)'
+            : '0 10px 22px rgba(116, 95, 64, 0.12)';
         const image = event.currentTarget.querySelector('img');
         if (image) {
-          (image as HTMLImageElement).style.transform = 'scale(1.03)';
+          (image as HTMLImageElement).style.transform = 'scale(1.02)';
         }
       }}
       onMouseLeave={(event) => {
@@ -113,8 +149,8 @@ export default ({ data }: { data: any }) => {
           borderRadius: 12,
           overflow: 'hidden',
           aspectRatio: '16/9',
-          marginBottom: 6,
-          background: '#0f172a',
+          marginBottom: 8,
+          background: thumbBackground,
         }}
       >
         <img
@@ -144,7 +180,7 @@ export default ({ data }: { data: any }) => {
               paddingInline: 8,
             }}
           >
-            LIVE
+            {intl.formatMessage({ id: 'videoCard.live' })}
           </Tag>
         )}
         <div
@@ -154,8 +190,10 @@ export default ({ data }: { data: any }) => {
             bottom: 8,
             borderRadius: 8,
             padding: '2px 6px',
-            background: 'rgba(15, 23, 42, 0.78)',
-            color: '#f8fafc',
+            background: isDark
+              ? 'rgba(0, 0, 0, 0.5)'
+              : 'rgba(15, 23, 42, 0.78)',
+            color: '#fffaf0',
             fontSize: 11,
             fontWeight: 600,
             letterSpacing: '0.01em',
@@ -175,6 +213,7 @@ export default ({ data }: { data: any }) => {
               lineHeight: 1.3,
               letterSpacing: '0.02em',
               textTransform: 'uppercase',
+              color: metaColor,
             }}
             ellipsis
           >
@@ -186,18 +225,24 @@ export default ({ data }: { data: any }) => {
           style={{
             margin: '0 0 1px',
             fontSize: 14,
-            lineHeight: 1.4,
+            lineHeight: 1.38,
             fontWeight: 700,
+            color: titleColor,
           }}
           ellipsis={{ rows: 2 }}
         >
           {title}
         </Title>
-        {description ? (
+        {shouldShowDescription ? (
           <Paragraph
             type="secondary"
             ellipsis={{ rows: 2 }}
-            style={{ margin: '0 0 3px', fontSize: 11.5, lineHeight: 1.48 }}
+            style={{
+              margin: '0 0 6px',
+              fontSize: 11,
+              lineHeight: 1.5,
+              color: descriptionColor,
+            }}
           >
             {description}
           </Paragraph>
@@ -218,18 +263,23 @@ export default ({ data }: { data: any }) => {
           <Text
             type="secondary"
             style={{
-              fontSize: 11.5,
+              fontSize: 11,
               lineHeight: 1.45,
               flex: 1,
               minWidth: 0,
               display: 'block',
+              color: metaColor,
             }}
             ellipsis
           >
             {metaLine}
           </Text>
           <CheckCircleFilled
-            style={{ color: '#35b8be', fontSize: 10, flexShrink: 0 }}
+            style={{
+              color: isDark ? '#EFBC5C' : '#b8872e',
+              fontSize: 10,
+              flexShrink: 0,
+            }}
           />
         </div>
       </div>
