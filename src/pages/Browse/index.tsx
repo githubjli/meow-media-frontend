@@ -1,7 +1,7 @@
 import VideoCard from '@/components/VideoCard';
 import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
 import { PageContainer } from '@ant-design/pro-components';
-import { useModel, useSearchParams } from '@umijs/max';
+import { useIntl, useModel, useSearchParams } from '@umijs/max';
 import {
   Alert,
   Card,
@@ -20,20 +20,13 @@ import { useEffect, useMemo, useState } from 'react';
 const { Title, Text } = Typography;
 const PAGE_SIZE = 12;
 
-const ORDER_OPTIONS = [
-  { label: 'Latest first', value: '-created_at' },
-  { label: 'Oldest first', value: 'created_at' },
-  { label: 'Title A-Z', value: 'title' },
-  { label: 'Title Z-A', value: '-title' },
-];
-
 const toCardData = (video: PublicVideo) => ({
   ...video,
   routePath: `/browse/${video.id}`,
   name: video.title,
-  author: video.owner_name || video.author || 'Media Stream',
-  date: video.created_at || 'Recently added',
-  views: video.views || video.view_count || 'Public',
+  author: video.owner_name || video.author,
+  date: video.created_at,
+  views: video.views || video.view_count,
   thumbnail: video.thumbnail,
   thumbnail_url: video.thumbnail_url,
   description: video.description,
@@ -43,7 +36,9 @@ const toCardData = (video: PublicVideo) => ({
 });
 
 export default function BrowsePage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
+  const isDark = Boolean(initialState?.darkTheme);
   const categories = initialState?.publicCategories || [];
   const [searchParams, setSearchParams] = useSearchParams();
   const [videos, setVideos] = useState<PublicVideo[]>([]);
@@ -58,6 +53,12 @@ export default function BrowsePage() {
   const search = searchParams.get('search') || '';
   const category = searchParams.get('category') || '';
   const ordering = searchParams.get('ordering') || '-created_at';
+  const orderOptions = [
+    { label: intl.formatMessage({ id: 'browse.order.latest' }), value: '-created_at' },
+    { label: intl.formatMessage({ id: 'browse.order.oldest' }), value: 'created_at' },
+    { label: intl.formatMessage({ id: 'browse.order.az' }), value: 'title' },
+    { label: intl.formatMessage({ id: 'browse.order.za' }), value: '-title' },
+  ];
 
   useEffect(() => {
     setSearchDraft(search);
@@ -80,13 +81,13 @@ export default function BrowsePage() {
       })
       .catch((error: any) => {
         setErrorMessage(
-          error?.message || 'Unable to load public videos right now.',
+          error?.message || intl.formatMessage({ id: 'browse.error' }),
         );
         setVideos([]);
         setCount(0);
       })
       .finally(() => setLoading(false));
-  }, [search, category, ordering, page]);
+  }, [search, category, ordering, page, intl]);
 
   const updateQuery = (next: Record<string, string | number | undefined>) => {
     const merged = new URLSearchParams(searchParams);
@@ -120,17 +121,19 @@ export default function BrowsePage() {
           style={{
             borderRadius: 16,
             marginBottom: 20,
-            border: '1px solid rgba(15, 23, 42, 0.06)',
+            border: isDark
+              ? '1px solid rgba(255,255,255,0.08)'
+              : '1px solid rgba(15, 23, 42, 0.06)',
+            background: isDark ? '#2A241F' : undefined,
           }}
         >
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <div>
               <Title level={2} style={{ margin: 0, fontSize: 28 }}>
-                Browse videos
+                {intl.formatMessage({ id: 'browse.title' })}
               </Title>
               <Text type="secondary">
-                Search the public catalog, filter by category, and sort by what
-                matters most.
+                {intl.formatMessage({ id: 'browse.subtitle' })}
               </Text>
             </div>
 
@@ -141,22 +144,30 @@ export default function BrowsePage() {
                 width: '100%',
                 padding: 10,
                 borderRadius: 14,
-                background: 'rgba(15, 23, 42, 0.03)',
-                border: '1px solid rgba(15, 23, 42, 0.05)',
+                background: isDark
+                  ? 'rgba(255,255,255,0.04)'
+                  : 'rgba(15, 23, 42, 0.03)',
+                border: isDark
+                  ? '1px solid rgba(255,255,255,0.08)'
+                  : '1px solid rgba(15, 23, 42, 0.05)',
               }}
             >
               <Input.Search
                 value={searchDraft}
                 onChange={(event) => setSearchDraft(event.target.value)}
                 onSearch={(value) => updateQuery({ search: value, page: 1 })}
-                placeholder="Search videos"
+                placeholder={intl.formatMessage({
+                  id: 'browse.search.placeholder',
+                })}
                 allowClear
                 size="large"
                 style={{ minWidth: 240, flex: 1 }}
               />
               <Select
                 allowClear
-                placeholder="Category"
+                placeholder={intl.formatMessage({
+                  id: 'browse.category.placeholder',
+                })}
                 value={category || undefined}
                 size="large"
                 style={{ minWidth: 170 }}
@@ -167,7 +178,7 @@ export default function BrowsePage() {
                 value={ordering}
                 size="large"
                 style={{ minWidth: 170 }}
-                options={ORDER_OPTIONS}
+                options={orderOptions}
                 onChange={(value) => updateQuery({ ordering: value, page: 1 })}
               />
             </Space>
@@ -188,7 +199,7 @@ export default function BrowsePage() {
             <Spin />
           </div>
         ) : videos.length === 0 ? (
-          <Empty description="No public videos matched your filters." />
+          <Empty description={intl.formatMessage({ id: 'browse.empty' })} />
         ) : (
           <>
             <Row gutter={[14, 18]}>
@@ -214,7 +225,10 @@ export default function BrowsePage() {
               />
             </div>
             <Text type="secondary" style={{ display: 'block', marginTop: 6 }}>
-              Page {page} of {totalPages}
+              {intl.formatMessage(
+                { id: 'common.pageOf' },
+                { page, total: totalPages },
+              )}
             </Text>
           </>
         )}
