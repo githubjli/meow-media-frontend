@@ -54,8 +54,14 @@ export default function BrowsePage() {
   const category = searchParams.get('category') || '';
   const ordering = searchParams.get('ordering') || '-created_at';
   const orderOptions = [
-    { label: intl.formatMessage({ id: 'browse.order.latest' }), value: '-created_at' },
-    { label: intl.formatMessage({ id: 'browse.order.oldest' }), value: 'created_at' },
+    {
+      label: intl.formatMessage({ id: 'browse.order.latest' }),
+      value: '-created_at',
+    },
+    {
+      label: intl.formatMessage({ id: 'browse.order.oldest' }),
+      value: 'created_at',
+    },
     { label: intl.formatMessage({ id: 'browse.order.az' }), value: 'title' },
     { label: intl.formatMessage({ id: 'browse.order.za' }), value: '-title' },
   ];
@@ -161,6 +167,7 @@ export default function BrowsePage() {
                 })}
                 allowClear
                 size="large"
+                className="browse-search-input"
                 style={{ minWidth: 240, flex: 1 }}
               />
               <Select

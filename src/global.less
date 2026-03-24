@@ -157,7 +157,9 @@
 .ant-pro-sider-collapsed .ant-menu-item .ant-pro-base-menu-item-icon,
 .ant-pro-sider-collapsed .ant-pro-menu-item .anticon,
 .ant-pro-sider-collapsed .ant-menu-item .anticon,
-.ant-pro-sider-collapsed .ant-pro-menu-item-selected .ant-pro-base-menu-item-icon,
+.ant-pro-sider-collapsed
+  .ant-pro-menu-item-selected
+  .ant-pro-base-menu-item-icon,
 .ant-pro-sider-collapsed .ant-menu-item-selected .ant-pro-base-menu-item-icon,
 .ant-pro-sider-collapsed .ant-pro-menu-item-selected .anticon,
 .ant-pro-sider-collapsed .ant-menu-item-selected .anticon {
@@ -240,7 +242,8 @@ body[data-theme='dark'] .ant-menu-dark .ant-menu-submenu-title:hover {
 }
 
 body[data-theme='dark'] .ant-menu-dark .ant-menu-item-selected,
-body[data-theme='dark'] .ant-menu-dark.ant-menu-root.ant-menu-inline
+body[data-theme='dark']
+  .ant-menu-dark.ant-menu-root.ant-menu-inline
   .ant-menu-item-selected {
   background: rgba(239, 188, 92, 0.18) !important;
   color: #f5f1ea !important;
@@ -249,4 +252,37 @@ body[data-theme='dark'] .ant-menu-dark.ant-menu-root.ant-menu-inline
 
 body[data-theme='dark'] .ant-pro-page-container-children-container {
   color: #f5f1ea;
+}
+
+.browse-search-input.ant-input-search .ant-input-affix-wrapper,
+.browse-search-input.ant-input-search
+  .ant-input-group-addon
+  .ant-input-search-button {
+  border-color: rgba(148, 130, 97, 0.34) !important;
+}
+
+.browse-search-input.ant-input-search .ant-input-affix-wrapper:hover,
+.browse-search-input.ant-input-search
+  .ant-input-group-addon
+  .ant-input-search-button:hover {
+  border-color: rgba(148, 130, 97, 0.58) !important;
+}
+
+.browse-search-input.ant-input-search .ant-input-affix-wrapper-focused,
+.browse-search-input.ant-input-search .ant-input-affix-wrapper:focus-within,
+.browse-search-input.ant-input-search
+  .ant-input-group-addon
+  .ant-input-search-button:focus,
+.browse-search-input.ant-input-search
+  .ant-input-group-addon
+  .ant-input-search-button:focus-visible {
+  border-color: #b8872e !important;
+  box-shadow: 0 0 0 2px rgba(239, 188, 92, 0.2) !important;
+  outline: none !important;
+}
+
+.browse-search-input.ant-input-search .ant-input,
+.browse-search-input.ant-input-search .ant-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }

@@ -9,7 +9,6 @@ import {
   CloudUploadOutlined,
   CompassOutlined,
   FireOutlined,
-  GlobalOutlined,
   LogoutOutlined,
   MoonOutlined,
   NotificationOutlined,
@@ -24,7 +23,7 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { SelectLang, history, setLocale, useIntl } from '@umijs/max';
+import { history, setLocale, useIntl } from '@umijs/max';
 import {
   Avatar,
   Button,
@@ -44,6 +43,17 @@ const LANGUAGE_LABELS: Record<string, string> = {
   'zh-CN': '中文',
   'th-TH': 'ไทย',
   'my-MM': 'မြန်မာ',
+};
+const SUPPORTED_LOCALES = new Set(Object.keys(LANGUAGE_LABELS));
+
+const resolveSupportedLocale = (value?: string | null) => {
+  const normalized = String(value || '').toLowerCase();
+
+  if (normalized.startsWith('zh')) return 'zh-CN';
+  if (normalized.startsWith('th')) return 'th-TH';
+  if (normalized.startsWith('my')) return 'my-MM';
+  if (normalized.startsWith('en')) return 'en-US';
+  return 'en-US';
 };
 
 const getCategoryIcon = (slug?: string) => {
@@ -129,6 +139,20 @@ export const layout: RunTimeLayoutConfig = ({
     justifyContent: 'center',
     color: isDark ? '#E4D5C5' : '#4b5563',
   } as const;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const storedLocale = localStorage.getItem('umi_locale');
+    if (storedLocale && SUPPORTED_LOCALES.has(storedLocale)) {
+      return;
+    }
+
+    const browserLocale =
+      (navigator.languages && navigator.languages[0]) || navigator.language;
+    const nextLocale = resolveSupportedLocale(browserLocale);
+    setLocale(nextLocale, true);
+  }, []);
 
   const handleUploadClick = () => {
     history.push(isLoggedIn ? '/videos/upload' : '/login');
@@ -344,25 +368,6 @@ export const layout: RunTimeLayoutConfig = ({
           icon={<QuestionCircleOutlined style={{ fontSize: 18 }} />}
           style={utilityButtonStyle}
         />
-        <SelectLang
-          postLocalesData={(data) =>
-            data
-              .filter((item) => LANGUAGE_LABELS[item.value])
-              .map((item) => ({
-                ...item,
-                name: LANGUAGE_LABELS[item.value],
-                label: LANGUAGE_LABELS[item.value],
-              }))
-          }
-          onItemClick={(key) => setLocale(key, true)}
-          icon={
-            <Button
-              type="text"
-              icon={<GlobalOutlined style={{ fontSize: 18 }} />}
-              style={{ ...utilityButtonStyle, padding: 0 }}
-            />
-          }
-        />
         <Button
           type="text"
           icon={
@@ -417,6 +422,29 @@ export const layout: RunTimeLayoutConfig = ({
                       } as const,
                     ]
                   : []),
+                {
+                  type: 'divider',
+                },
+                {
+                  key: 'lang-en-us',
+                  label: LANGUAGE_LABELS['en-US'],
+                  onClick: () => setLocale('en-US', true),
+                },
+                {
+                  key: 'lang-zh-cn',
+                  label: LANGUAGE_LABELS['zh-CN'],
+                  onClick: () => setLocale('zh-CN', true),
+                },
+                {
+                  key: 'lang-th-th',
+                  label: LANGUAGE_LABELS['th-TH'],
+                  onClick: () => setLocale('th-TH', true),
+                },
+                {
+                  key: 'lang-my-mm',
+                  label: LANGUAGE_LABELS['my-MM'],
+                  onClick: () => setLocale('my-MM', true),
+                },
                 {
                   type: 'divider',
                 },
@@ -520,9 +548,7 @@ export const layout: RunTimeLayoutConfig = ({
             components: {
               Input: {
                 borderRadiusLG: 12,
-                colorBgContainer: isDark
-                  ? 'rgba(255,255,255,0.04)'
-                  : undefined,
+                colorBgContainer: isDark ? 'rgba(255,255,255,0.04)' : undefined,
                 colorText: isDark ? '#F5F1EA' : undefined,
                 colorBorder: isDark ? 'rgba(255,255,255,0.12)' : undefined,
               },
