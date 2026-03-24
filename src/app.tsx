@@ -145,12 +145,12 @@ export const layout: RunTimeLayoutConfig = ({
   };
 
   return {
-    title: 'Media Stream',
+    title: 'Meow Media Stream',
     layout: 'mix',
     splitMenus: false,
     defaultCollapsed: true,
     navTheme: isDark ? 'realDark' : 'light',
-    colorPrimary: '#35b8be',
+    colorPrimary: '#B8872E',
     siderWidth: 224,
     collapsedWidth: 76,
     menuHeaderRender: false,
@@ -255,19 +255,19 @@ export const layout: RunTimeLayoutConfig = ({
         onClick={() => history.push('/')}
       >
         <img
-          src={isDark ? '/logo_white.svg' : '/logo_black.svg'}
+          src="/assets/meow-main-logo.svg"
           alt="logo"
-          style={{ height: 28 }}
+          style={{ height: 28, width: 'auto', objectFit: 'contain' }}
         />
         <span
           style={{
             fontSize: 17,
             fontWeight: 700,
-            color: isDark ? '#fff' : '#111827',
+            color: isDark ? '#f5e8cf' : '#2C2C2C',
             letterSpacing: '-0.01em',
           }}
         >
-          Media Stream
+          Meow Media Stream
         </span>
       </div>
     ),
@@ -300,12 +300,12 @@ export const layout: RunTimeLayoutConfig = ({
           style={{
             borderRadius: 10,
             fontWeight: 700,
-            color: '#07272a',
-            backgroundColor: '#5bd1d7',
+            color: '#2C2C2C',
+            backgroundColor: '#EFBC5C',
             border: 'none',
             boxShadow: isDark
-              ? '0 8px 18px rgba(91, 209, 215, 0.16)'
-              : '0 8px 18px rgba(91, 209, 215, 0.18)',
+              ? '0 8px 18px rgba(239, 188, 92, 0.2)'
+              : '0 8px 18px rgba(184, 135, 46, 0.2)',
           }}
           onClick={handleGoLiveClick}
         >
@@ -423,7 +423,7 @@ export const layout: RunTimeLayoutConfig = ({
           <Space size={8} style={{ marginLeft: 8 }}>
             <Button
               type="text"
-              style={{ color: '#0f766e', fontWeight: 600 }}
+              style={{ color: '#745F40', fontWeight: 600 }}
               onClick={() => history.push('/login')}
             >
               Log In
@@ -433,12 +433,12 @@ export const layout: RunTimeLayoutConfig = ({
               style={{
                 borderRadius: 9,
                 fontWeight: 700,
-                color: '#07272a',
-                backgroundColor: '#35b8be',
+                color: '#2C2C2C',
+                backgroundColor: '#EFBC5C',
                 border: 'none',
                 boxShadow: isDark
-                  ? '0 8px 18px rgba(53, 184, 190, 0.18)'
-                  : '0 8px 18px rgba(53, 184, 190, 0.2)',
+                  ? '0 8px 18px rgba(239, 188, 92, 0.2)'
+                  : '0 8px 18px rgba(184, 135, 46, 0.2)',
               }}
               onClick={() => history.push('/register')}
             >
@@ -455,8 +455,8 @@ export const layout: RunTimeLayoutConfig = ({
       },
       header: {
         colorBgHeader: isDark
-          ? 'rgba(11, 17, 24, 0.92)'
-          : 'rgba(255, 255, 255, 0.92)',
+          ? 'rgba(44, 44, 44, 0.92)'
+          : 'rgba(255, 252, 243, 0.94)',
       },
     },
     childrenRender: (children) => {
@@ -475,7 +475,7 @@ export const layout: RunTimeLayoutConfig = ({
           theme={{
             algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
             token: {
-              colorPrimary: '#35b8be',
+              colorPrimary: '#B8872E',
               borderRadius: 12,
             },
             components: {

@@ -208,11 +208,11 @@ export default function HomePage() {
             <div>
               <Text className={styles.heroEyebrow}>Public library</Text>
               <Title level={2} className={styles.heroTitle}>
-                Browse the latest public videos by topic.
+                Discover stories, live moments, and fresh releases.
               </Title>
               <Text className={styles.heroDescription}>
-                Explore fresh uploads, jump into category pages, or open the
-                full browse experience for search, sorting, and filters.
+                Explore the latest uploads across the platform, follow topics
+                you care about, and jump into live streaming in one place.
               </Text>
             </div>
           </div>

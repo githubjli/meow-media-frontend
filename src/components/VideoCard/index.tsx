@@ -85,17 +85,19 @@ export default ({ data }: { data: any }) => {
       onClick={() => history.push(data.routePath || `/room/${data.streamId}`)}
       style={{
         cursor: 'pointer',
-        borderRadius: 12,
-        padding: 6,
+        borderRadius: 14,
+        padding: 8,
+        border: '1px solid rgba(184, 135, 46, 0.18)',
+        background: '#fffdf8',
         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
       }}
       onMouseEnter={(event) => {
-        event.currentTarget.style.transform = 'translateY(-4px)';
+        event.currentTarget.style.transform = 'translateY(-2px)';
         event.currentTarget.style.boxShadow =
-          '0 18px 30px rgba(15, 23, 42, 0.10)';
+          '0 10px 22px rgba(116, 95, 64, 0.12)';
         const image = event.currentTarget.querySelector('img');
         if (image) {
-          (image as HTMLImageElement).style.transform = 'scale(1.03)';
+          (image as HTMLImageElement).style.transform = 'scale(1.02)';
         }
       }}
       onMouseLeave={(event) => {
@@ -113,8 +115,8 @@ export default ({ data }: { data: any }) => {
           borderRadius: 12,
           overflow: 'hidden',
           aspectRatio: '16/9',
-          marginBottom: 6,
-          background: '#0f172a',
+          marginBottom: 8,
+          background: '#2c2c2c',
         }}
       >
         <img
@@ -155,7 +157,7 @@ export default ({ data }: { data: any }) => {
             borderRadius: 8,
             padding: '2px 6px',
             background: 'rgba(15, 23, 42, 0.78)',
-            color: '#f8fafc',
+            color: '#fffaf0',
             fontSize: 11,
             fontWeight: 600,
             letterSpacing: '0.01em',
@@ -175,6 +177,7 @@ export default ({ data }: { data: any }) => {
               lineHeight: 1.3,
               letterSpacing: '0.02em',
               textTransform: 'uppercase',
+              color: '#948261',
             }}
             ellipsis
           >
@@ -186,8 +189,9 @@ export default ({ data }: { data: any }) => {
           style={{
             margin: '0 0 1px',
             fontSize: 14,
-            lineHeight: 1.4,
+            lineHeight: 1.38,
             fontWeight: 700,
+            color: '#2c2c2c',
           }}
           ellipsis={{ rows: 2 }}
         >
@@ -197,7 +201,12 @@ export default ({ data }: { data: any }) => {
           <Paragraph
             type="secondary"
             ellipsis={{ rows: 2 }}
-            style={{ margin: '0 0 3px', fontSize: 11.5, lineHeight: 1.48 }}
+            style={{
+              margin: '0 0 6px',
+              fontSize: 11.5,
+              lineHeight: 1.5,
+              color: '#745f40',
+            }}
           >
             {description}
           </Paragraph>
@@ -218,18 +227,19 @@ export default ({ data }: { data: any }) => {
           <Text
             type="secondary"
             style={{
-              fontSize: 11.5,
+              fontSize: 11,
               lineHeight: 1.45,
               flex: 1,
               minWidth: 0,
               display: 'block',
+              color: '#948261',
             }}
             ellipsis
           >
             {metaLine}
           </Text>
           <CheckCircleFilled
-            style={{ color: '#35b8be', fontSize: 10, flexShrink: 0 }}
+            style={{ color: '#b8872e', fontSize: 10, flexShrink: 0 }}
           />
         </div>
       </div>
