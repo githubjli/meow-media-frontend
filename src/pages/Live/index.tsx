@@ -31,17 +31,19 @@ const getStatusPresentation = (status?: string) => {
       accent: '#ff6b72',
       description: 'On air now',
       pulse: true,
+      badgeBackground: 'rgba(127, 29, 29, 0.92)',
     };
   }
 
   if (['ready', 'created', 'prepared'].includes(value)) {
     return {
       label: 'ready',
-      color: 'processing' as const,
-      heroBackground: 'linear-gradient(135deg, #071a28, #15415e 55%, #0b2334)',
-      accent: '#62c7ff',
+      color: 'warning' as const,
+      heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f 55%, #201b17)',
+      accent: '#efbc5c',
       description: 'Ready to go live',
       pulse: false,
+      badgeBackground: 'rgba(116, 95, 64, 0.9)',
     };
   }
 
@@ -53,6 +55,7 @@ const getStatusPresentation = (status?: string) => {
       accent: '#ffcf70',
       description: 'Stream warming up',
       pulse: false,
+      badgeBackground: 'rgba(116, 95, 64, 0.9)',
     };
   }
 
@@ -60,20 +63,22 @@ const getStatusPresentation = (status?: string) => {
     return {
       label: 'ended',
       color: 'default' as const,
-      heroBackground: 'linear-gradient(135deg, #0f1720, #2f3d4d 55%, #161d26)',
-      accent: '#d3d9e2',
+      heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f 55%, #171310)',
+      accent: '#cbbbaa',
       description: 'Broadcast ended',
       pulse: false,
+      badgeBackground: 'rgba(88, 75, 63, 0.9)',
     };
   }
 
   return {
     label: 'waiting',
-    color: 'processing' as const,
-    heroBackground: 'linear-gradient(135deg, #09121a, #143240)',
-    accent: '#7ed7dd',
+    color: 'warning' as const,
+    heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f)',
+    accent: '#b8872e',
     description: 'Checking stream status',
     pulse: false,
+    badgeBackground: 'rgba(116, 95, 64, 0.9)',
   };
 };
 
@@ -177,7 +182,7 @@ export default function ExploreLivePage() {
             </Empty>
           </Card>
         ) : (
-          <Row gutter={[20, 20]}>
+          <Row gutter={[14, 18]}>
             {streams.map((item) => {
               const creatorName =
                 item.creator?.name ||
@@ -193,108 +198,91 @@ export default function ExploreLivePage() {
                   <Card
                     hoverable
                     bordered={false}
-                    style={{ borderRadius: 18, overflow: 'hidden' }}
+                    style={{
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                      border: '1px solid rgba(184, 135, 46, 0.16)',
+                      background: '#fffdf8',
+                    }}
                     cover={
                       <div
                         style={{
                           aspectRatio: '16 / 9',
                           background: posterUrl
-                            ? `linear-gradient(180deg, rgba(3, 7, 18, 0.04), rgba(3, 7, 18, 0.66)), url(${posterUrl}) center / cover no-repeat`
+                            ? `linear-gradient(180deg, rgba(31, 26, 22, 0.08), rgba(31, 26, 22, 0.55)), url(${posterUrl}) center / cover no-repeat`
                             : status.heroBackground,
                           display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
                           color: '#fff',
-                          padding: 18,
+                          padding: 12,
                           position: 'relative',
                         }}
                       >
-                        <Space
+                        <div
                           style={{
-                            justifyContent: 'space-between',
-                            width: '100%',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 7,
+                            padding: '5px 10px',
+                            borderRadius: 999,
+                            background: status.badgeBackground,
+                            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
                           }}
                         >
-                          <div
+                          <span
                             style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              padding: '6px 12px',
-                              borderRadius: 999,
-                              background:
-                                status.label === 'LIVE'
-                                  ? 'rgba(127, 29, 29, 0.92)'
-                                  : 'rgba(15, 23, 42, 0.68)',
-                              boxShadow:
-                                status.label === 'LIVE'
-                                  ? '0 10px 24px rgba(127, 29, 29, 0.35)'
-                                  : '0 10px 24px rgba(15, 23, 42, 0.16)',
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              background: status.accent,
+                              boxShadow: status.pulse
+                                ? `0 0 0 4px ${status.accent}33`
+                                : 'none',
                             }}
-                          >
-                            <span
-                              style={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: '50%',
-                                background: status.accent,
-                                boxShadow: status.pulse
-                                  ? `0 0 0 6px ${status.accent}33`
-                                  : 'none',
-                              }}
-                            />
-                            <Text
-                              style={{
-                                color: '#fff',
-                                fontWeight: 700,
-                                letterSpacing: '0.04em',
-                                textTransform:
-                                  status.label === 'LIVE'
-                                    ? 'uppercase'
-                                    : 'none',
-                              }}
-                            >
-                              {status.label}
-                            </Text>
-                          </div>
-                          <Tag
-                            color={status.color}
-                            style={{ marginInlineEnd: 0, borderRadius: 999 }}
-                          >
-                            {status.description}
-                          </Tag>
-                        </Space>
-
-                        <div>
+                          />
                           <Text
                             style={{
-                              color: 'rgba(255,255,255,0.82)',
-                              display: 'block',
-                              marginBottom: 8,
-                            }}
-                          >
-                            {item.category || 'Live broadcast'}
-                          </Text>
-                          <Title
-                            level={4}
-                            style={{
-                              margin: 0,
                               color: '#fff',
-                              textAlign: 'left',
-                              textShadow: '0 4px 22px rgba(0,0,0,0.35)',
+                              fontWeight: 700,
+                              fontSize: 11,
+                              letterSpacing: '0.04em',
+                              textTransform: status.label === 'LIVE' ? 'uppercase' : 'none',
                             }}
                           >
-                            {item.title || item.name || `Stream ${item.id}`}
-                          </Title>
+                            {status.label}
+                          </Text>
                         </div>
                       </div>
                     }
                     onClick={() => history.push(`/live/${item.id}`)}
                   >
-                    <Space
-                      direction="vertical"
-                      size={10}
-                      style={{ width: '100%' }}
+                    <div style={{ marginBottom: 6 }}>
+                      <Text
+                        style={{
+                          display: 'block',
+                          marginBottom: 4,
+                          fontSize: 10.5,
+                          letterSpacing: '0.02em',
+                          textTransform: 'uppercase',
+                          color: '#948261',
+                        }}
+                      >
+                        {item.category || 'Live broadcast'}
+                      </Text>
+                      <Title
+                        level={5}
+                        style={{
+                          margin: 0,
+                          fontSize: 15,
+                          lineHeight: 1.38,
+                          color: '#2C2C2C',
+                        }}
+                        ellipsis={{ rows: 2 }}
+                      >
+                        {item.title || item.name || `Stream ${item.id}`}
+                      </Title>
+                    </div>
+
+                    <Space direction="vertical" size={8} style={{ width: '100%' }}
                     >
                       <Space
                         align="center"
@@ -311,16 +299,24 @@ export default function ExploreLivePage() {
                         </Space>
                         <Tag
                           icon={<EyeOutlined />}
-                          style={{ borderRadius: 999 }}
+                          style={{ borderRadius: 999, marginInlineEnd: 0 }}
                         >
                           {viewerCount.toLocaleString()} viewers
                         </Tag>
                       </Space>
-                      <Space wrap>
-                        <Tag color={status.color} style={{ borderRadius: 999 }}>
-                          {status.label}
+                      <Space align="center" wrap>
+                        <Tag
+                          style={{
+                            borderRadius: 999,
+                            marginInlineEnd: 0,
+                            borderColor: 'rgba(184, 135, 46, 0.32)',
+                            color: '#745F40',
+                            background: 'rgba(239, 188, 92, 0.16)',
+                          }}
+                        >
+                          {status.description}
                         </Tag>
-                        <Text type="secondary">{status.description}</Text>
+                        <Text type="secondary">{status.label}</Text>
                       </Space>
                     </Space>
                   </Card>
