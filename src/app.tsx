@@ -5,17 +5,22 @@ import {
 } from '@/services/publicCategories';
 import { clearStoredTokens } from '@/utils/auth';
 import {
-  BookOutlined,
-  CloudUploadOutlined,
+  AlertOutlined,
+  BgColorsOutlined,
+  CarOutlined,
+  CoffeeOutlined,
   CompassOutlined,
-  FireOutlined,
+  GlobalOutlined,
+  HomeOutlined,
   LogoutOutlined,
   MoonOutlined,
   NotificationOutlined,
+  PlayCircleOutlined,
   PlaySquareOutlined,
   QuestionCircleOutlined,
   ReadOutlined,
   SettingOutlined,
+  ShopOutlined,
   SunOutlined,
   ThunderboltOutlined,
   UploadOutlined,
@@ -56,23 +61,66 @@ const resolveSupportedLocale = (value?: string | null) => {
   return 'en-US';
 };
 
-const getCategoryIcon = (slug?: string) => {
-  const value = String(slug || '').toLowerCase();
-  if (value.includes('tech')) return <CompassOutlined />;
-  if (value.includes('news')) return <NotificationOutlined />;
-  if (value.includes('game')) return <FireOutlined />;
-  if (value.includes('edu') || value.includes('learn')) return <ReadOutlined />;
-  if (value.includes('live')) return <ThunderboltOutlined />;
-  return <BookOutlined />;
+const resolveSystemDarkTheme = () => {
+  if (typeof window === 'undefined' || !window.matchMedia) {
+    return false;
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
 };
 
-const SIDEBAR_CATEGORY_FALLBACKS = [
+const getCategoryIcon = (slug?: string) => {
+  return <ReadOutlined />;
+};
+
+const getCommerceIcon = (slug?: string) => {
+  const value = String(slug || '').toLowerCase();
+  if (value === 'food') return <CoffeeOutlined />;
+  if (value === 'shops') return <ShopOutlined />;
+  if (value === 'real-estate') return <HomeOutlined />;
+  if (value === 'vehicles') return <CarOutlined />;
+  if (value === 'creators') return <UserOutlined />;
+  return <ShopOutlined />;
+};
+
+const getLiveChildIcon = (path: string, slug?: string) => {
+  if (path === '/live') return <PlayCircleOutlined />;
+  if (path === '/live/create') return <VideoCameraOutlined />;
+
+  const value = String(slug || '').toLowerCase();
+  if (value === 'selling') return <ShopOutlined />;
+  if (value === 'news') return <NotificationOutlined />;
+  if (value === 'reporting') return <AlertOutlined />;
+  if (value === 'food') return <CoffeeOutlined />;
+  return <ThunderboltOutlined />;
+};
+
+const CONTENT_CATEGORY_FALLBACKS = [
   { key: 'nav.category.technology', slug: 'technology' },
   { key: 'nav.category.education', slug: 'education' },
   { key: 'nav.category.gaming', slug: 'gaming' },
-  { key: 'nav.category.news', slug: 'news' },
   { key: 'nav.category.entertainment', slug: 'entertainment' },
-  { key: 'nav.category.other', slug: 'other' },
+  { label: 'Travel', slug: 'travel' },
+  { label: 'Finance', slug: 'finance' },
+  { label: 'Movies', slug: 'movies' },
+  { label: 'Beauty', slug: 'beauty' },
+];
+
+const COMMERCE_CATEGORY_ITEMS = [
+  { label: 'Food', slug: 'food' },
+  { label: 'Shops', slug: 'shops' },
+  { label: 'Real Estate', slug: 'real-estate' },
+  { label: 'Vehicles', slug: 'vehicles' },
+  { label: 'Creators', slug: 'creators' },
+];
+
+const LIVE_SECTION_ITEMS = [
+  { key: 'nav.exploreLive', path: '/live', slug: 'live' },
+  { key: 'nav.goLive', path: '/live/create', slug: 'live-create' },
+  { label: 'Selling', path: '/categories/live-selling', slug: 'selling' },
+  { label: 'News', path: '/categories/live-news', slug: 'news' },
+  { label: 'Reporting', path: '/categories/live-reporting', slug: 'reporting' },
+  { label: 'Food', path: '/categories/live-food', slug: 'food' },
 ];
 
 const normalizeCategoryKey = (value?: string) => {
@@ -105,11 +153,21 @@ type InitialState = {
   publicCategories: PublicCategory[];
 };
 
+let cachedCategories: PublicCategory[] | null = null;
+
 export async function getInitialState(): Promise<InitialState> {
-  const [currentUser, publicCategories] = await Promise.all([
-    resolveCurrentUser(),
-    listPublicCategories().catch(() => []),
-  ]);
+  let publicCategories: PublicCategory[] = [];
+
+  if (typeof window !== 'undefined') {
+    if (cachedCategories) {
+      publicCategories = cachedCategories;
+    } else {
+      publicCategories = await listPublicCategories().catch(() => []);
+      cachedCategories = publicCategories;
+    }
+  }
+
+  const currentUser = await resolveCurrentUser();
 
   return {
     name: 'Meow Media Stream User',
@@ -154,9 +212,6 @@ export const layout: RunTimeLayoutConfig = ({
     setLocale(nextLocale, true);
   }, []);
 
-  const handleUploadClick = () => {
-    history.push(isLoggedIn ? '/videos/upload' : '/login');
-  };
   const handleGoLiveClick = () => {
     history.push(
       isLoggedIn
@@ -173,6 +228,16 @@ export const layout: RunTimeLayoutConfig = ({
       authLoading: false,
     }));
     history.push('/home');
+  };
+
+  const applyThemeMode = async (mode: 'light' | 'dark' | 'system') => {
+    const nextDarkTheme =
+      mode === 'system' ? resolveSystemDarkTheme() : mode === 'dark';
+
+    await setInitialState((prev) => ({
+      ...prev,
+      darkTheme: nextDarkTheme,
+    }));
   };
 
   return {
@@ -231,7 +296,7 @@ export const layout: RunTimeLayoutConfig = ({
         ]),
       );
 
-      const categoryItems = SIDEBAR_CATEGORY_FALLBACKS.map(
+      const categoryItems = CONTENT_CATEGORY_FALLBACKS.map(
         (fallbackCategory) => {
           const matchedCategory = apiCategories.get(
             normalizeCategoryKey(fallbackCategory.slug),
@@ -239,7 +304,9 @@ export const layout: RunTimeLayoutConfig = ({
           const slug = matchedCategory?.slug || fallbackCategory.slug;
           const name =
             matchedCategory?.name ||
-            intl.formatMessage({ id: fallbackCategory.key });
+            (fallbackCategory.key
+              ? intl.formatMessage({ id: fallbackCategory.key })
+              : fallbackCategory.label);
 
           return {
             name,
@@ -250,26 +317,31 @@ export const layout: RunTimeLayoutConfig = ({
         },
       );
 
+      const commerceItem = {
+        name: 'Commerce',
+        path: '/categories/food',
+        icon: <ShopOutlined />,
+        className: 'sidebar-menu-item sidebar-menu-item-category',
+        children: COMMERCE_CATEGORY_ITEMS.map((item) => ({
+          name: item.label,
+          path: `/categories/${item.slug}`,
+          icon: getCommerceIcon(item.slug),
+          className: 'sidebar-menu-item sidebar-menu-item-category',
+        })),
+      };
+
       const liveItem = {
         ...(stableItemByPath.get('/live') || {}),
         path: '/live',
         name: intl.formatMessage({ id: 'nav.live' }),
         icon: stableItemMap.get('/live'),
         className: 'sidebar-menu-item sidebar-menu-item-live',
-        children: [
-          {
-            name: intl.formatMessage({ id: 'nav.exploreLive' }),
-            path: '/live',
-            icon: <VideoCameraOutlined />,
-            className: 'sidebar-menu-item sidebar-menu-item-live-child',
-          },
-          {
-            name: intl.formatMessage({ id: 'nav.goLive' }),
-            path: '/live/create',
-            icon: <UploadOutlined />,
-            className: 'sidebar-menu-item sidebar-menu-item-live-child',
-          },
-        ],
+        children: LIVE_SECTION_ITEMS.map((item) => ({
+          name: item.key ? intl.formatMessage({ id: item.key }) : item.label,
+          path: item.path,
+          icon: getLiveChildIcon(item.path, item.slug),
+          className: 'sidebar-menu-item sidebar-menu-item-live-child',
+        })),
       };
 
       return [
@@ -277,6 +349,8 @@ export const layout: RunTimeLayoutConfig = ({
         ...adminItems,
         { type: 'divider', key: 'sidebar-divider-primary' } as any,
         ...categoryItems,
+        { type: 'divider', key: 'sidebar-divider-commerce' } as any,
+        commerceItem,
         { type: 'divider', key: 'sidebar-divider-live' } as any,
         liveItem,
       ];
@@ -354,22 +428,6 @@ export const layout: RunTimeLayoutConfig = ({
         </Button>
         <Button
           type="text"
-          icon={<CloudUploadOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-          onClick={handleUploadClick}
-        />
-        <Button
-          type="text"
-          icon={<SettingOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-        />
-        <Button
-          type="text"
-          icon={<QuestionCircleOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-        />
-        <Button
-          type="text"
           icon={
             isDark ? (
               <SunOutlined style={{ color: '#faad14' }} />
@@ -382,18 +440,30 @@ export const layout: RunTimeLayoutConfig = ({
             fontSize: 18,
             color: isDark ? '#EFBC5C' : '#4b5563',
           }}
-          onClick={() => {
-            setInitialState((pre) => ({
-              ...pre!,
-              darkTheme: !pre?.darkTheme,
-            }));
-          }}
+          onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
         />
         {isLoggedIn ? (
           <Dropdown
             trigger={['click']}
             menu={{
               items: [
+                {
+                  key: 'profile-header',
+                  disabled: true,
+                  label: (
+                    <Space size={10} style={{ width: '100%' }}>
+                      <Avatar size={30} icon={<UserOutlined />} />
+                      <Text style={{ fontWeight: 600, maxWidth: 180 }} ellipsis>
+                        {currentUser?.name ||
+                          currentUser?.username ||
+                          currentUser?.email}
+                      </Text>
+                    </Space>
+                  ),
+                },
+                {
+                  type: 'divider',
+                },
                 {
                   key: 'my-videos',
                   icon: <PlaySquareOutlined />,
@@ -426,24 +496,66 @@ export const layout: RunTimeLayoutConfig = ({
                   type: 'divider',
                 },
                 {
-                  key: 'lang-en-us',
-                  label: LANGUAGE_LABELS['en-US'],
-                  onClick: () => setLocale('en-US', true),
+                  key: 'language-menu',
+                  icon: <GlobalOutlined />,
+                  label: intl.formatMessage({ id: 'nav.language' }),
+                  children: [
+                    {
+                      key: 'lang-en-us',
+                      label: LANGUAGE_LABELS['en-US'],
+                      onClick: () => setLocale('en-US', true),
+                    },
+                    {
+                      key: 'lang-zh-cn',
+                      label: LANGUAGE_LABELS['zh-CN'],
+                      onClick: () => setLocale('zh-CN', true),
+                    },
+                    {
+                      key: 'lang-th-th',
+                      label: LANGUAGE_LABELS['th-TH'],
+                      onClick: () => setLocale('th-TH', true),
+                    },
+                    {
+                      key: 'lang-my-mm',
+                      label: LANGUAGE_LABELS['my-MM'],
+                      onClick: () => setLocale('my-MM', true),
+                    },
+                  ],
                 },
                 {
-                  key: 'lang-zh-cn',
-                  label: LANGUAGE_LABELS['zh-CN'],
-                  onClick: () => setLocale('zh-CN', true),
+                  key: 'theme-menu',
+                  icon: <BgColorsOutlined />,
+                  label: intl.formatMessage({ id: 'nav.theme' }),
+                  children: [
+                    {
+                      key: 'theme-light',
+                      icon: <SunOutlined />,
+                      label: intl.formatMessage({ id: 'nav.theme.light' }),
+                      onClick: () => applyThemeMode('light'),
+                    },
+                    {
+                      key: 'theme-dark',
+                      icon: <MoonOutlined />,
+                      label: intl.formatMessage({ id: 'nav.theme.dark' }),
+                      onClick: () => applyThemeMode('dark'),
+                    },
+                    {
+                      key: 'theme-system',
+                      icon: <CompassOutlined />,
+                      label: intl.formatMessage({ id: 'nav.theme.system' }),
+                      onClick: () => applyThemeMode('system'),
+                    },
+                  ],
                 },
                 {
-                  key: 'lang-th-th',
-                  label: LANGUAGE_LABELS['th-TH'],
-                  onClick: () => setLocale('th-TH', true),
+                  key: 'settings',
+                  icon: <SettingOutlined />,
+                  label: intl.formatMessage({ id: 'nav.settings' }),
                 },
                 {
-                  key: 'lang-my-mm',
-                  label: LANGUAGE_LABELS['my-MM'],
-                  onClick: () => setLocale('my-MM', true),
+                  key: 'help',
+                  icon: <QuestionCircleOutlined />,
+                  label: intl.formatMessage({ id: 'nav.help' }),
                 },
                 {
                   type: 'divider',
