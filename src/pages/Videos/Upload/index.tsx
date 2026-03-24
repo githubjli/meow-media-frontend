@@ -125,9 +125,14 @@ export default function UploadVideoPage() {
                 onChange={({ fileList: nextFileList }) =>
                   setFileList(nextFileList.slice(-1))
                 }
+                style={{
+                  borderColor: '#B8872E',
+                  background: '#FFFDF8',
+                  borderRadius: 14,
+                }}
               >
                 <p className="ant-upload-drag-icon">
-                  <UploadOutlined style={{ color: '#5bd1d7' }} />
+                  <UploadOutlined style={{ color: '#EFBC5C' }} />
                 </p>
                 <p className="ant-upload-text">
                   Click or drag a video file to this area
