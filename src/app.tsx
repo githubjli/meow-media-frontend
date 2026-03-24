@@ -159,11 +159,21 @@ type InitialState = {
   publicCategories: PublicCategory[];
 };
 
+let cachedCategories: PublicCategory[] | null = null;
+
 export async function getInitialState(): Promise<InitialState> {
-  const [currentUser, publicCategories] = await Promise.all([
-    resolveCurrentUser(),
-    listPublicCategories().catch(() => []),
-  ]);
+  let publicCategories: PublicCategory[] = [];
+
+  if (typeof window !== 'undefined') {
+    if (cachedCategories) {
+      publicCategories = cachedCategories;
+    } else {
+      publicCategories = await listPublicCategories().catch(() => []);
+      cachedCategories = publicCategories;
+    }
+  }
+
+  const currentUser = await resolveCurrentUser();
 
   return {
     name: 'Meow Media Stream User',
