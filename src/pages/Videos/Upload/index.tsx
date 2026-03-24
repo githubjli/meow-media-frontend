@@ -21,6 +21,7 @@ const { Title, Text } = Typography;
 export default function UploadVideoPage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
+  const isDark = Boolean(initialState?.darkTheme);
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -75,7 +76,14 @@ export default function UploadVideoPage() {
   return (
     <PageContainer title={false}>
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '8px 0 24px' }}>
-        <Card bordered={false} style={{ borderRadius: 20 }}>
+        <Card
+          bordered={false}
+          style={{
+            borderRadius: 20,
+            background: isDark ? '#2A241F' : undefined,
+            border: isDark ? '1px solid rgba(255,255,255,0.08)' : undefined,
+          }}
+        >
           <Title level={2} style={{ marginTop: 0 }}>
             {intl.formatMessage({ id: 'upload.title' })}
           </Title>
@@ -150,8 +158,8 @@ export default function UploadVideoPage() {
                   setFileList(nextFileList.slice(-1))
                 }
                 style={{
-                  borderColor: '#B8872E',
-                  background: '#FFFDF8',
+                  borderColor: isDark ? '#EFBC5C' : '#B8872E',
+                  background: isDark ? '#2F2923' : '#FFFDF8',
                   borderRadius: 14,
                 }}
               >

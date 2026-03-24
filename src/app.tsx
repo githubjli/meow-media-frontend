@@ -121,7 +121,7 @@ export const layout: RunTimeLayoutConfig = ({
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: isDark ? '#d7e0ea' : '#4b5563',
+    color: isDark ? '#E4D5C5' : '#4b5563',
   } as const;
 
   const handleUploadClick = () => {
@@ -290,7 +290,11 @@ export const layout: RunTimeLayoutConfig = ({
         <Input.Search
           placeholder={intl.formatMessage({ id: 'search.global.placeholder' })}
           allowClear
-          style={{ maxWidth: 560, width: '100%' }}
+          style={{
+            maxWidth: 560,
+            width: '100%',
+            borderRadius: 12,
+          }}
           size="middle"
           onSearch={(value) => console.log('Searching for:', value)}
         />
@@ -361,7 +365,7 @@ export const layout: RunTimeLayoutConfig = ({
           style={{
             ...utilityButtonStyle,
             fontSize: 18,
-            color: isDark ? '#f6c453' : '#4b5563',
+            color: isDark ? '#EFBC5C' : '#4b5563',
           }}
           onClick={() => {
             setInitialState((pre) => ({
@@ -468,7 +472,7 @@ export const layout: RunTimeLayoutConfig = ({
       },
       header: {
         colorBgHeader: isDark
-          ? 'rgba(44, 44, 44, 0.92)'
+          ? 'rgba(37, 31, 26, 0.94)'
           : 'rgba(255, 252, 243, 0.94)',
       },
     },
@@ -481,6 +485,7 @@ export const layout: RunTimeLayoutConfig = ({
         if (favicon) {
           favicon.href = iconPath;
         }
+        document.body.dataset.theme = isDark ? 'dark' : 'light';
       }, [isDark]);
 
       return (
@@ -490,10 +495,26 @@ export const layout: RunTimeLayoutConfig = ({
             token: {
               colorPrimary: '#B8872E',
               borderRadius: 12,
+              ...(isDark
+                ? {
+                    colorBgBase: '#1F1A16',
+                    colorBgContainer: '#2A241F',
+                    colorText: '#F5F1EA',
+                    colorTextSecondary: '#CBBBAA',
+                    colorBorder: 'rgba(255,255,255,0.08)',
+                    colorFillSecondary: 'rgba(255,255,255,0.08)',
+                    colorFillTertiary: 'rgba(255,255,255,0.06)',
+                  }
+                : {}),
             },
             components: {
               Input: {
                 borderRadiusLG: 12,
+                colorBgContainer: isDark
+                  ? 'rgba(255,255,255,0.04)'
+                  : undefined,
+                colorText: isDark ? '#F5F1EA' : undefined,
+                colorBorder: isDark ? 'rgba(255,255,255,0.12)' : undefined,
               },
               Button: {
                 borderRadius: 9,

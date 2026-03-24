@@ -38,6 +38,7 @@ const toCardData = (video: PublicVideo) => ({
 export default function BrowsePage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
+  const isDark = Boolean(initialState?.darkTheme);
   const categories = initialState?.publicCategories || [];
   const [searchParams, setSearchParams] = useSearchParams();
   const [videos, setVideos] = useState<PublicVideo[]>([]);
@@ -120,7 +121,10 @@ export default function BrowsePage() {
           style={{
             borderRadius: 16,
             marginBottom: 20,
-            border: '1px solid rgba(15, 23, 42, 0.06)',
+            border: isDark
+              ? '1px solid rgba(255,255,255,0.08)'
+              : '1px solid rgba(15, 23, 42, 0.06)',
+            background: isDark ? '#2A241F' : undefined,
           }}
         >
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
@@ -140,8 +144,12 @@ export default function BrowsePage() {
                 width: '100%',
                 padding: 10,
                 borderRadius: 14,
-                background: 'rgba(15, 23, 42, 0.03)',
-                border: '1px solid rgba(15, 23, 42, 0.05)',
+                background: isDark
+                  ? 'rgba(255,255,255,0.04)'
+                  : 'rgba(15, 23, 42, 0.03)',
+                border: isDark
+                  ? '1px solid rgba(255,255,255,0.08)'
+                  : '1px solid rgba(15, 23, 42, 0.05)',
               }}
             >
               <Input.Search

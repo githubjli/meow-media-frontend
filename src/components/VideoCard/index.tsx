@@ -1,5 +1,5 @@
 import { CheckCircleFilled } from '@ant-design/icons';
-import { history, useIntl } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import { Avatar, Tag, Typography } from 'antd';
 
 const { Text, Title, Paragraph } = Typography;
@@ -81,6 +81,8 @@ const formatDuration = (value: any) => {
 
 export default ({ data }: { data: any }) => {
   const intl = useIntl();
+  const { initialState } = useModel('@@initialState');
+  const isDark = Boolean(initialState?.darkTheme);
   const title = data.title || data.name;
   const description = data.description_preview || data.description;
   const normalizedTitle = String(title || '').trim().toLowerCase();
@@ -101,6 +103,14 @@ export default ({ data }: { data: any }) => {
   const metaLine = [uploaderLabel, publishedLabel, viewsLabel]
     .filter(Boolean)
     .join(' • ');
+  const cardBackground = isDark ? '#2F2923' : '#fffdf8';
+  const cardBorder = isDark
+    ? '1px solid rgba(255,255,255,0.08)'
+    : '1px solid rgba(184, 135, 46, 0.18)';
+  const titleColor = isDark ? '#F5F1EA' : '#2c2c2c';
+  const descriptionColor = isDark ? '#CBBBAA' : '#745f40';
+  const metaColor = isDark ? '#CBBBAA' : '#948261';
+  const thumbBackground = isDark ? '#211c18' : '#2c2c2c';
 
   return (
     <div
@@ -109,14 +119,16 @@ export default ({ data }: { data: any }) => {
         cursor: 'pointer',
         borderRadius: 14,
         padding: 8,
-        border: '1px solid rgba(184, 135, 46, 0.18)',
-        background: '#fffdf8',
+        border: cardBorder,
+        background: cardBackground,
         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
       }}
       onMouseEnter={(event) => {
         event.currentTarget.style.transform = 'translateY(-2px)';
         event.currentTarget.style.boxShadow =
-          '0 10px 22px rgba(116, 95, 64, 0.12)';
+          isDark
+            ? '0 10px 24px rgba(0, 0, 0, 0.34)'
+            : '0 10px 22px rgba(116, 95, 64, 0.12)';
         const image = event.currentTarget.querySelector('img');
         if (image) {
           (image as HTMLImageElement).style.transform = 'scale(1.02)';
@@ -138,7 +150,7 @@ export default ({ data }: { data: any }) => {
           overflow: 'hidden',
           aspectRatio: '16/9',
           marginBottom: 8,
-          background: '#2c2c2c',
+          background: thumbBackground,
         }}
       >
         <img
@@ -178,7 +190,9 @@ export default ({ data }: { data: any }) => {
             bottom: 8,
             borderRadius: 8,
             padding: '2px 6px',
-            background: 'rgba(15, 23, 42, 0.78)',
+            background: isDark
+              ? 'rgba(0, 0, 0, 0.5)'
+              : 'rgba(15, 23, 42, 0.78)',
             color: '#fffaf0',
             fontSize: 11,
             fontWeight: 600,
@@ -199,7 +213,7 @@ export default ({ data }: { data: any }) => {
               lineHeight: 1.3,
               letterSpacing: '0.02em',
               textTransform: 'uppercase',
-              color: '#948261',
+              color: metaColor,
             }}
             ellipsis
           >
@@ -213,7 +227,7 @@ export default ({ data }: { data: any }) => {
             fontSize: 14,
             lineHeight: 1.38,
             fontWeight: 700,
-            color: '#2c2c2c',
+            color: titleColor,
           }}
           ellipsis={{ rows: 2 }}
         >
@@ -227,7 +241,7 @@ export default ({ data }: { data: any }) => {
               margin: '0 0 6px',
               fontSize: 11,
               lineHeight: 1.5,
-              color: '#745f40',
+              color: descriptionColor,
             }}
           >
             {description}
@@ -254,14 +268,18 @@ export default ({ data }: { data: any }) => {
               flex: 1,
               minWidth: 0,
               display: 'block',
-              color: '#948261',
+              color: metaColor,
             }}
             ellipsis
           >
             {metaLine}
           </Text>
           <CheckCircleFilled
-            style={{ color: '#b8872e', fontSize: 10, flexShrink: 0 }}
+            style={{
+              color: isDark ? '#EFBC5C' : '#b8872e',
+              fontSize: 10,
+              flexShrink: 0,
+            }}
           />
         </div>
       </div>
