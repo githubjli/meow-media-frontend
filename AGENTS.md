@@ -42,3 +42,51 @@ Video endpoints:
 - App should run locally after changes
 - Do not break existing routes
 - Summarize changed files and test steps
+
+## UI Consistency Rules (CRITICAL)
+
+- LiveCard MUST reuse VideoCard layout and spacing
+- DO NOT introduce new card designs
+- Header structure is fixed (see PROJECT_CONTEXT.md)
+- Any removal of header actions is forbidden
+
+---
+
+## Icon Safety Rule
+
+- Every icon used in JSX MUST be imported from '@ant-design/icons'
+- NEVER use icons that are not imported
+- ALWAYS verify before commit
+
+---
+
+## i18n Rules
+
+- No hardcoded UI text
+- Always use intl.formatMessage
+- Brand name MUST NOT be translated
+
+---
+
+## Change Strategy
+
+Before coding:
+
+1. Explain what will change
+2. Show affected files
+3. Keep patch minimal
+4. Do NOT refactor unrelated code
+
+---
+
+## Validation Checklist
+
+Before commit:
+
+- UI layout unchanged unless intended
+- Header still has:
+  - Go Live
+  - Theme toggle
+  - User avatar
+- Live and Video grid are consistent
+- No console errors
