@@ -3,7 +3,7 @@ import { type PublicCategory } from '@/services/publicCategories';
 import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
 import { AppstoreOutlined, RightOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import { Alert, Button, Card, Col, Empty, Row, Spin, Typography } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import styles from './index.less';
@@ -49,9 +49,9 @@ const toCardData = (video: PublicVideo) => ({
   ...video,
   routePath: `/browse/${video.id}`,
   name: video.title,
-  author: video.owner_name || video.author || 'Media Stream',
-  date: video.created_at || 'Recently added',
-  views: video.views || video.view_count || 'Public',
+  author: video.owner_name || video.author,
+  date: video.created_at,
+  views: video.views || video.view_count,
   thumbnail: video.thumbnail,
   thumbnail_url: video.thumbnail_url,
   description: video.description,
@@ -60,7 +60,13 @@ const toCardData = (video: PublicVideo) => ({
   category_name: video.category_name || video.category_display,
 });
 
-const TagsBar = ({ tags }: { tags: PublicCategory[] }) => (
+const TagsBar = ({
+  tags,
+  intl,
+}: {
+  tags: PublicCategory[];
+  intl: any;
+}) => (
   <div className={styles.tagsWrap}>
     <div className={styles.tagsBar}>
       <button
@@ -68,7 +74,7 @@ const TagsBar = ({ tags }: { tags: PublicCategory[] }) => (
         onClick={() => history.push('/browse')}
         className={styles.tagChip}
       >
-        All Videos
+        {intl.formatMessage({ id: 'common.allVideos' })}
       </button>
       {tags.map((tag) => (
         <button
@@ -84,7 +90,7 @@ const TagsBar = ({ tags }: { tags: PublicCategory[] }) => (
   </div>
 );
 
-const ChannelRow = ({ title, path, items, description }: any) => (
+const ChannelRow = ({ title, path, items, description, intl }: any) => (
   <section className={styles.sectionBlock}>
     <div className={styles.sectionHeader}>
       <div className={styles.sectionTitleWrap}>
@@ -103,12 +109,18 @@ const ChannelRow = ({ title, path, items, description }: any) => (
         onClick={() => history.push(path)}
         className={styles.sectionAction}
       >
-        Show more <RightOutlined style={{ fontSize: 10 }} />
+        {intl.formatMessage({ id: 'common.showMore' })}{' '}
+        <RightOutlined style={{ fontSize: 10 }} />
       </Button>
     </div>
 
     {items.length === 0 ? (
-      <Empty description={`No videos available in ${title} yet.`} />
+      <Empty
+        description={intl.formatMessage(
+          { id: 'common.noVideosInSection' },
+          { section: title },
+        )}
+      />
     ) : (
       <Row gutter={[14, 18]}>
         {items.map((item: PublicVideo) => (
@@ -122,6 +134,7 @@ const ChannelRow = ({ title, path, items, description }: any) => (
 );
 
 export default function HomePage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const rawCategories = initialState?.publicCategories || [];
   const categories = useMemo(
@@ -183,7 +196,7 @@ export default function HomePage() {
       } catch (error: any) {
         if (active) {
           setErrorMessage(
-            error?.message || 'Unable to load public videos right now.',
+            error?.message || intl.formatMessage({ id: 'home.error' }),
           );
         }
       } finally {
@@ -198,7 +211,7 @@ export default function HomePage() {
     return () => {
       active = false;
     };
-  }, [homepageCategories]);
+  }, [homepageCategories, intl]);
 
   return (
     <PageContainer title={false} ghost contentWidth="Fluid">
@@ -206,17 +219,18 @@ export default function HomePage() {
         <Card bordered={false} className={styles.heroCard}>
           <div className={styles.heroHeader}>
             <div>
-              <Text className={styles.heroEyebrow}>Public library</Text>
+              <Text className={styles.heroEyebrow}>
+                {intl.formatMessage({ id: 'home.hero.eyebrow' })}
+              </Text>
               <Title level={2} className={styles.heroTitle}>
-                Discover stories, live moments, and fresh releases.
+                {intl.formatMessage({ id: 'home.hero.title' })}
               </Title>
               <Text className={styles.heroDescription}>
-                Explore the latest uploads across the platform, follow topics
-                you care about, and jump into live streaming in one place.
+                {intl.formatMessage({ id: 'home.hero.description' })}
               </Text>
             </div>
           </div>
-          <TagsBar tags={homepageCategories} />
+          <TagsBar tags={homepageCategories} intl={intl} />
         </Card>
 
         {errorMessage ? (
@@ -235,18 +249,23 @@ export default function HomePage() {
         ) : (
           <>
             <ChannelRow
-              title="Latest"
+              title={intl.formatMessage({ id: 'common.latest' })}
               path="/browse"
-              description="Recently published public videos across the platform."
+              description={intl.formatMessage({ id: 'home.latest.description' })}
               items={latestVideos}
+              intl={intl}
             />
             {homepageCategories.map((section) => (
               <ChannelRow
                 key={section.slug}
                 title={section.name}
                 path={`/categories/${section.slug}`}
-                description={`Browse the latest videos in ${section.name}.`}
+                description={intl.formatMessage(
+                  { id: 'home.category.description' },
+                  { category: section.name },
+                )}
                 items={sectionVideos[section.slug] || []}
+                intl={intl}
               />
             ))}
           </>

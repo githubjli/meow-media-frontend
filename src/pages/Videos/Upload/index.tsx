@@ -1,7 +1,7 @@
 import { uploadVideo } from '@/services/videos';
 import { UploadOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 const { Title, Text } = Typography;
 
 export default function UploadVideoPage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
@@ -46,7 +47,7 @@ export default function UploadVideoPage() {
     category?: string;
   }) => {
     if (!fileList[0]?.originFileObj) {
-      setErrorMessage('Please select a video file to upload.');
+      setErrorMessage(intl.formatMessage({ id: 'upload.validation.file' }));
       return;
     }
 
@@ -60,11 +61,11 @@ export default function UploadVideoPage() {
         category: values.category,
         file: fileList[0].originFileObj as File,
       });
-      message.success('Video uploaded successfully.');
+      message.success(intl.formatMessage({ id: 'upload.success' }));
       history.push(`/videos/${video.id}`);
     } catch (error: any) {
       setErrorMessage(
-        error?.message || 'Unable to upload your video right now.',
+        error?.message || intl.formatMessage({ id: 'upload.error' }),
       );
     } finally {
       setSubmitting(false);
@@ -76,11 +77,10 @@ export default function UploadVideoPage() {
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '8px 0 24px' }}>
         <Card bordered={false} style={{ borderRadius: 20 }}>
           <Title level={2} style={{ marginTop: 0 }}>
-            Upload a video
+            {intl.formatMessage({ id: 'upload.title' })}
           </Title>
           <Text type="secondary">
-            Add a title, optional description, and a video file to publish to
-            your library.
+            {intl.formatMessage({ id: 'upload.subtitle' })}
           </Text>
 
           <Form
@@ -99,23 +99,47 @@ export default function UploadVideoPage() {
               />
             ) : null}
             <Form.Item
-              label="Title"
+              label={intl.formatMessage({ id: 'upload.label.title' })}
               name="title"
-              rules={[{ required: true, message: 'Please enter a title.' }]}
+              rules={[
+                {
+                  required: true,
+                  message: intl.formatMessage({ id: 'upload.validation.title' }),
+                },
+              ]}
             >
-              <Input size="large" placeholder="Enter video title" />
+              <Input
+                size="large"
+                placeholder={intl.formatMessage({ id: 'upload.placeholder.title' })}
+              />
             </Form.Item>
-            <Form.Item label="Description" name="description">
-              <Input.TextArea rows={4} placeholder="Optional description" />
+            <Form.Item
+              label={intl.formatMessage({ id: 'upload.label.description' })}
+              name="description"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={intl.formatMessage({
+                  id: 'upload.placeholder.description',
+                })}
+              />
             </Form.Item>
-            <Form.Item label="Category" name="category">
+            <Form.Item
+              label={intl.formatMessage({ id: 'upload.label.category' })}
+              name="category"
+            >
               <Select
                 allowClear
-                placeholder="Select a category"
+                placeholder={intl.formatMessage({
+                  id: 'upload.placeholder.category',
+                })}
                 options={categoryOptions}
               />
             </Form.Item>
-            <Form.Item label="Video file" required>
+            <Form.Item
+              label={intl.formatMessage({ id: 'upload.label.file' })}
+              required
+            >
               <Upload.Dragger
                 accept="video/*"
                 multiple={false}
@@ -135,10 +159,10 @@ export default function UploadVideoPage() {
                   <UploadOutlined style={{ color: '#EFBC5C' }} />
                 </p>
                 <p className="ant-upload-text">
-                  Click or drag a video file to this area
+                  {intl.formatMessage({ id: 'upload.dropzone.text' })}
                 </p>
                 <p className="ant-upload-hint">
-                  The file will be uploaded to your account after submission.
+                  {intl.formatMessage({ id: 'upload.dropzone.hint' })}
                 </p>
               </Upload.Dragger>
             </Form.Item>
@@ -146,10 +170,10 @@ export default function UploadVideoPage() {
               style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}
             >
               <Button onClick={() => history.push('/videos/mine')}>
-                Cancel
+                {intl.formatMessage({ id: 'common.cancel' })}
               </Button>
               <Button type="primary" htmlType="submit" loading={submitting}>
-                Upload Video
+                {intl.formatMessage({ id: 'common.uploadVideo' })}
               </Button>
             </div>
           </Form>

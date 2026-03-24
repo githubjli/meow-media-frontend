@@ -1,12 +1,12 @@
 import { CheckCircleFilled } from '@ant-design/icons';
-import { history } from '@umijs/max';
+import { history, useIntl } from '@umijs/max';
 import { Avatar, Tag, Typography } from 'antd';
 
 const { Text, Title, Paragraph } = Typography;
 
-const formatRelativeTime = (value: any) => {
+const formatRelativeTime = (value: any, intl: any) => {
   if (!value) {
-    return 'Recently added';
+    return intl.formatMessage({ id: 'videoCard.recentlyAdded' });
   }
 
   const parsed = new Date(value);
@@ -15,28 +15,41 @@ const formatRelativeTime = (value: any) => {
   }
 
   const diffMs = Date.now() - parsed.getTime();
+  if (diffMs < 60000) {
+    return intl.formatMessage({ id: 'videoCard.justNow' });
+  }
   const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
   if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+    return intl.formatMessage({
+      id: diffMinutes === 1 ? 'videoCard.time.minute' : 'videoCard.time.minutes',
+    }, { count: diffMinutes });
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
-    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    return intl.formatMessage({
+      id: diffHours === 1 ? 'videoCard.time.hour' : 'videoCard.time.hours',
+    }, { count: diffHours });
   }
 
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays < 30) {
-    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    return intl.formatMessage({
+      id: diffDays === 1 ? 'videoCard.time.day' : 'videoCard.time.days',
+    }, { count: diffDays });
   }
 
   const diffMonths = Math.floor(diffDays / 30);
   if (diffMonths < 12) {
-    return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
+    return intl.formatMessage({
+      id: diffMonths === 1 ? 'videoCard.time.month' : 'videoCard.time.months',
+    }, { count: diffMonths });
   }
 
   const diffYears = Math.floor(diffMonths / 12);
-  return `${diffYears} year${diffYears === 1 ? '' : 's'} ago`;
+  return intl.formatMessage({
+    id: diffYears === 1 ? 'videoCard.time.year' : 'videoCard.time.years',
+  }, { count: diffYears });
 };
 
 const formatDuration = (value: any) => {
@@ -67,6 +80,7 @@ const formatDuration = (value: any) => {
 };
 
 export default ({ data }: { data: any }) => {
+  const intl = useIntl();
   const title = data.title || data.name;
   const description = data.description_preview || data.description;
   const normalizedTitle = String(title || '').trim().toLowerCase();
@@ -74,8 +88,11 @@ export default ({ data }: { data: any }) => {
   const shouldShowDescription = Boolean(
     normalizedDescription && normalizedDescription !== normalizedTitle,
   );
-  const uploaderLabel = data.author || data.owner_name || 'Media Stream';
-  const publishedLabel = formatRelativeTime(data.created_at || data.date);
+  const uploaderLabel =
+    data.author ||
+    data.owner_name ||
+    intl.formatMessage({ id: 'app.user.uploaderFallback' });
+  const publishedLabel = formatRelativeTime(data.created_at || data.date, intl);
   const viewsLabel = data.views || data.view_count;
   const categoryLabel = data.category_name || data.category_display;
   const durationLabel = formatDuration(
@@ -151,7 +168,7 @@ export default ({ data }: { data: any }) => {
               paddingInline: 8,
             }}
           >
-            LIVE
+            {intl.formatMessage({ id: 'videoCard.live' })}
           </Tag>
         )}
         <div

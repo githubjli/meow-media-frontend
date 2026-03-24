@@ -24,7 +24,7 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { SelectLang, history } from '@umijs/max';
+import { SelectLang, history, useIntl } from '@umijs/max';
 import {
   Avatar,
   Button,
@@ -51,12 +51,12 @@ const getCategoryIcon = (slug?: string) => {
 };
 
 const SIDEBAR_CATEGORY_FALLBACKS = [
-  { name: 'Technology', slug: 'technology' },
-  { name: 'Education', slug: 'education' },
-  { name: 'Gaming', slug: 'gaming' },
-  { name: 'News', slug: 'news' },
-  { name: 'Entertainment', slug: 'entertainment' },
-  { name: 'Other', slug: 'other' },
+  { key: 'nav.category.technology', slug: 'technology' },
+  { key: 'nav.category.education', slug: 'education' },
+  { key: 'nav.category.gaming', slug: 'gaming' },
+  { key: 'nav.category.news', slug: 'news' },
+  { key: 'nav.category.entertainment', slug: 'entertainment' },
+  { key: 'nav.category.other', slug: 'other' },
 ];
 
 const normalizeCategoryKey = (value?: string) => {
@@ -96,7 +96,7 @@ export async function getInitialState(): Promise<InitialState> {
   ]);
 
   return {
-    name: 'Media Stream User',
+    name: 'Meow Media Stream User',
     darkTheme: false,
     currentUser,
     authLoading: false,
@@ -109,6 +109,7 @@ export const layout: RunTimeLayoutConfig = ({
   initialState,
   setInitialState,
 }) => {
+  const intl = useIntl();
   const isDark = initialState?.darkTheme;
   const currentUser = initialState?.currentUser;
   const isLoggedIn = Boolean(currentUser?.email);
@@ -172,7 +173,11 @@ export const layout: RunTimeLayoutConfig = ({
         ...(stableItemByPath.get(path) || {}),
         path,
         name:
-          path === '/home' ? 'Home' : path === '/browse' ? 'Browse' : undefined,
+          path === '/home'
+            ? intl.formatMessage({ id: 'nav.home' })
+            : path === '/browse'
+            ? intl.formatMessage({ id: 'nav.browse' })
+            : undefined,
         icon: stableItemMap.get(path),
         className: 'sidebar-menu-item sidebar-menu-item-primary',
       }));
@@ -182,7 +187,7 @@ export const layout: RunTimeLayoutConfig = ({
             {
               ...(stableItemByPath.get('/admin/videos') || {}),
               path: '/admin/videos',
-              name: 'All Videos',
+              name: intl.formatMessage({ id: 'nav.allVideos' }),
               icon: stableItemMap.get('/admin/videos'),
               className: 'sidebar-menu-item sidebar-menu-item-admin',
             },
@@ -202,7 +207,9 @@ export const layout: RunTimeLayoutConfig = ({
             normalizeCategoryKey(fallbackCategory.slug),
           );
           const slug = matchedCategory?.slug || fallbackCategory.slug;
-          const name = matchedCategory?.name || fallbackCategory.name;
+          const name =
+            matchedCategory?.name ||
+            intl.formatMessage({ id: fallbackCategory.key });
 
           return {
             name,
@@ -216,18 +223,18 @@ export const layout: RunTimeLayoutConfig = ({
       const liveItem = {
         ...(stableItemByPath.get('/live') || {}),
         path: '/live',
-        name: 'Live',
+        name: intl.formatMessage({ id: 'nav.live' }),
         icon: stableItemMap.get('/live'),
         className: 'sidebar-menu-item sidebar-menu-item-live',
         children: [
           {
-            name: 'Explore Live',
+            name: intl.formatMessage({ id: 'nav.exploreLive' }),
             path: '/live',
             icon: <VideoCameraOutlined />,
             className: 'sidebar-menu-item sidebar-menu-item-live-child',
           },
           {
-            name: 'Go Live',
+            name: intl.formatMessage({ id: 'nav.goLive' }),
             path: '/live/create',
             icon: <UploadOutlined />,
             className: 'sidebar-menu-item sidebar-menu-item-live-child',
@@ -267,7 +274,7 @@ export const layout: RunTimeLayoutConfig = ({
             letterSpacing: '-0.01em',
           }}
         >
-          Meow Media Stream
+          {intl.formatMessage({ id: 'app.brand.name' })}
         </span>
       </div>
     ),
@@ -281,7 +288,7 @@ export const layout: RunTimeLayoutConfig = ({
         }}
       >
         <Input.Search
-          placeholder="Search videos, channels, and people"
+          placeholder={intl.formatMessage({ id: 'search.global.placeholder' })}
           allowClear
           style={{ maxWidth: 560, width: '100%' }}
           size="middle"
@@ -309,7 +316,7 @@ export const layout: RunTimeLayoutConfig = ({
           }}
           onClick={handleGoLiveClick}
         >
-          Go Live
+          {intl.formatMessage({ id: 'nav.goLive' })}
         </Button>
         <Button
           type="text"
@@ -328,6 +335,12 @@ export const layout: RunTimeLayoutConfig = ({
           style={utilityButtonStyle}
         />
         <SelectLang
+          postLocalesData={() => [
+            { name: 'English', value: 'en-US' },
+            { name: '中文', value: 'zh-CN' },
+            { name: 'ไทย', value: 'th-TH' },
+            { name: 'မြန်မာ', value: 'my-MM' },
+          ]}
           icon={
             <Button
               type="text"
@@ -365,19 +378,19 @@ export const layout: RunTimeLayoutConfig = ({
                 {
                   key: 'my-videos',
                   icon: <PlaySquareOutlined />,
-                  label: 'My Videos',
+                  label: intl.formatMessage({ id: 'nav.myVideos' }),
                   onClick: () => history.push('/videos/mine'),
                 },
                 {
                   key: 'upload-video',
                   icon: <UploadOutlined />,
-                  label: 'Upload Video',
+                  label: intl.formatMessage({ id: 'nav.uploadVideo' }),
                   onClick: () => history.push('/videos/upload'),
                 },
                 {
                   key: 'go-live',
                   icon: <VideoCameraOutlined />,
-                  label: 'Go Live',
+                  label: intl.formatMessage({ id: 'nav.goLive' }),
                   onClick: handleGoLiveClick,
                 },
                 ...(isAdmin
@@ -385,7 +398,7 @@ export const layout: RunTimeLayoutConfig = ({
                       {
                         key: 'all-videos',
                         icon: <SettingOutlined />,
-                        label: 'All Videos',
+                        label: intl.formatMessage({ id: 'nav.allVideos' }),
                         onClick: () => history.push('/admin/videos'),
                       } as const,
                     ]
@@ -396,7 +409,7 @@ export const layout: RunTimeLayoutConfig = ({
                 {
                   key: 'logout',
                   icon: <LogoutOutlined />,
-                  label: 'Log out',
+                  label: intl.formatMessage({ id: 'nav.logOut' }),
                   onClick: handleLogout,
                 },
               ],
@@ -426,7 +439,7 @@ export const layout: RunTimeLayoutConfig = ({
               style={{ color: '#745F40', fontWeight: 600 }}
               onClick={() => history.push('/login')}
             >
-              Log In
+              {intl.formatMessage({ id: 'nav.logIn' })}
             </Button>
             <Button
               type="primary"
@@ -442,7 +455,7 @@ export const layout: RunTimeLayoutConfig = ({
               }}
               onClick={() => history.push('/register')}
             >
-              Sign Up
+              {intl.formatMessage({ id: 'nav.signUp' })}
             </Button>
           </Space>
         )}
