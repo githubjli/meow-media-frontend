@@ -88,7 +88,7 @@
   color: #2c2c2c !important;
   font-weight: 600;
   box-shadow: none !important;
-  border-left: 3px solid #efbc5c;
+  border: 1px solid rgba(184, 135, 46, 0.22) !important;
 }
 
 .ant-menu-light .ant-menu-item:hover,
@@ -108,7 +108,7 @@
   background: rgba(239, 188, 92, 0.12) !important;
   color: #fff5df !important;
   box-shadow: none !important;
-  border-left: 3px solid #efbc5c;
+  border: 1px solid rgba(239, 188, 92, 0.26) !important;
 }
 
 .ant-menu-dark .ant-menu-item:hover,
@@ -121,11 +121,30 @@
 .ant-menu-item-selected {
   background: rgba(239, 188, 92, 0.12) !important;
   box-shadow: none !important;
+  border-left: none !important;
 }
 
 .ant-pro-sider-collapsed .ant-pro-menu-item-selected,
 .ant-pro-sider-collapsed .ant-menu-item-selected {
-  border-left: none !important;
+  border: none !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+  margin: 6px auto !important;
+  padding-inline: 0 !important;
+  border-radius: 12px !important;
+  background: rgba(239, 188, 92, 0.16) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ant-pro-sider-collapsed .ant-pro-menu-item-selected .ant-pro-base-menu-item-icon,
+.ant-pro-sider-collapsed .ant-menu-item-selected .ant-pro-base-menu-item-icon,
+.ant-pro-sider-collapsed .ant-pro-menu-item-selected .anticon,
+.ant-pro-sider-collapsed .ant-menu-item-selected .anticon {
+  margin-inline-end: 0 !important;
 }
 
 .ant-menu-inline .ant-menu-item,

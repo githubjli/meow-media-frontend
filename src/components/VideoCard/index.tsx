@@ -69,6 +69,11 @@ const formatDuration = (value: any) => {
 export default ({ data }: { data: any }) => {
   const title = data.title || data.name;
   const description = data.description_preview || data.description;
+  const normalizedTitle = String(title || '').trim().toLowerCase();
+  const normalizedDescription = String(description || '').trim().toLowerCase();
+  const shouldShowDescription = Boolean(
+    normalizedDescription && normalizedDescription !== normalizedTitle,
+  );
   const uploaderLabel = data.author || data.owner_name || 'Media Stream';
   const publishedLabel = formatRelativeTime(data.created_at || data.date);
   const viewsLabel = data.views || data.view_count;
@@ -197,13 +202,13 @@ export default ({ data }: { data: any }) => {
         >
           {title}
         </Title>
-        {description ? (
+        {shouldShowDescription ? (
           <Paragraph
             type="secondary"
             ellipsis={{ rows: 2 }}
             style={{
               margin: '0 0 6px',
-              fontSize: 11.5,
+              fontSize: 11,
               lineHeight: 1.5,
               color: '#745f40',
             }}
