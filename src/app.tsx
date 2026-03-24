@@ -6,11 +6,11 @@ import {
 import { clearStoredTokens } from '@/utils/auth';
 import {
   AlertOutlined,
-  BookOutlined,
+  BgColorsOutlined,
   CarOutlined,
   CoffeeOutlined,
   CompassOutlined,
-  FireOutlined,
+  GlobalOutlined,
   HomeOutlined,
   LogoutOutlined,
   MoonOutlined,
@@ -70,13 +70,7 @@ const resolveSystemDarkTheme = () => {
 };
 
 const getCategoryIcon = (slug?: string) => {
-  const value = String(slug || '').toLowerCase();
-  if (value.includes('tech')) return <CompassOutlined />;
-  if (value.includes('news')) return <NotificationOutlined />;
-  if (value.includes('game')) return <FireOutlined />;
-  if (value.includes('edu') || value.includes('learn')) return <ReadOutlined />;
-  if (value.includes('live')) return <ThunderboltOutlined />;
-  return <BookOutlined />;
+  return <ReadOutlined />;
 };
 
 const getCommerceIcon = (slug?: string) => {
@@ -503,6 +497,7 @@ export const layout: RunTimeLayoutConfig = ({
                 },
                 {
                   key: 'language-menu',
+                  icon: <GlobalOutlined />,
                   label: intl.formatMessage({ id: 'nav.language' }),
                   children: [
                     {
@@ -529,6 +524,7 @@ export const layout: RunTimeLayoutConfig = ({
                 },
                 {
                   key: 'theme-menu',
+                  icon: <BgColorsOutlined />,
                   label: intl.formatMessage({ id: 'nav.theme' }),
                   children: [
                     {
