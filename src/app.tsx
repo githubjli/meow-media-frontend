@@ -9,7 +9,6 @@ import {
   BookOutlined,
   CarOutlined,
   CoffeeOutlined,
-  CloudUploadOutlined,
   CompassOutlined,
   FireOutlined,
   HomeOutlined,
@@ -60,6 +59,14 @@ const resolveSupportedLocale = (value?: string | null) => {
   if (normalized.startsWith('my')) return 'my-MM';
   if (normalized.startsWith('en')) return 'en-US';
   return 'en-US';
+};
+
+const resolveSystemDarkTheme = () => {
+  if (typeof window === 'undefined' || !window.matchMedia) {
+    return false;
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
 };
 
 const getCategoryIcon = (slug?: string) => {
@@ -201,9 +208,6 @@ export const layout: RunTimeLayoutConfig = ({
     setLocale(nextLocale, true);
   }, []);
 
-  const handleUploadClick = () => {
-    history.push(isLoggedIn ? '/videos/upload' : '/login');
-  };
   const handleGoLiveClick = () => {
     history.push(
       isLoggedIn
@@ -220,6 +224,16 @@ export const layout: RunTimeLayoutConfig = ({
       authLoading: false,
     }));
     history.push('/home');
+  };
+
+  const applyThemeMode = async (mode: 'light' | 'dark' | 'system') => {
+    const nextDarkTheme =
+      mode === 'system' ? resolveSystemDarkTheme() : mode === 'dark';
+
+    await setInitialState((prev) => ({
+      ...prev,
+      darkTheme: nextDarkTheme,
+    }));
   };
 
   return {
@@ -410,22 +424,6 @@ export const layout: RunTimeLayoutConfig = ({
         </Button>
         <Button
           type="text"
-          icon={<CloudUploadOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-          onClick={handleUploadClick}
-        />
-        <Button
-          type="text"
-          icon={<SettingOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-        />
-        <Button
-          type="text"
-          icon={<QuestionCircleOutlined style={{ fontSize: 18 }} />}
-          style={utilityButtonStyle}
-        />
-        <Button
-          type="text"
           icon={
             isDark ? (
               <SunOutlined style={{ color: '#faad14' }} />
@@ -438,18 +436,30 @@ export const layout: RunTimeLayoutConfig = ({
             fontSize: 18,
             color: isDark ? '#EFBC5C' : '#4b5563',
           }}
-          onClick={() => {
-            setInitialState((pre) => ({
-              ...pre!,
-              darkTheme: !pre?.darkTheme,
-            }));
-          }}
+          onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
         />
         {isLoggedIn ? (
           <Dropdown
             trigger={['click']}
             menu={{
               items: [
+                {
+                  key: 'profile-header',
+                  disabled: true,
+                  label: (
+                    <Space size={10} style={{ width: '100%' }}>
+                      <Avatar size={30} icon={<UserOutlined />} />
+                      <Text style={{ fontWeight: 600, maxWidth: 180 }} ellipsis>
+                        {currentUser?.name ||
+                          currentUser?.username ||
+                          currentUser?.email}
+                      </Text>
+                    </Space>
+                  ),
+                },
+                {
+                  type: 'divider',
+                },
                 {
                   key: 'my-videos',
                   icon: <PlaySquareOutlined />,
@@ -482,24 +492,64 @@ export const layout: RunTimeLayoutConfig = ({
                   type: 'divider',
                 },
                 {
-                  key: 'lang-en-us',
-                  label: LANGUAGE_LABELS['en-US'],
-                  onClick: () => setLocale('en-US', true),
+                  key: 'language-menu',
+                  label: intl.formatMessage({ id: 'nav.language' }),
+                  children: [
+                    {
+                      key: 'lang-en-us',
+                      label: LANGUAGE_LABELS['en-US'],
+                      onClick: () => setLocale('en-US', true),
+                    },
+                    {
+                      key: 'lang-zh-cn',
+                      label: LANGUAGE_LABELS['zh-CN'],
+                      onClick: () => setLocale('zh-CN', true),
+                    },
+                    {
+                      key: 'lang-th-th',
+                      label: LANGUAGE_LABELS['th-TH'],
+                      onClick: () => setLocale('th-TH', true),
+                    },
+                    {
+                      key: 'lang-my-mm',
+                      label: LANGUAGE_LABELS['my-MM'],
+                      onClick: () => setLocale('my-MM', true),
+                    },
+                  ],
                 },
                 {
-                  key: 'lang-zh-cn',
-                  label: LANGUAGE_LABELS['zh-CN'],
-                  onClick: () => setLocale('zh-CN', true),
+                  key: 'theme-menu',
+                  label: intl.formatMessage({ id: 'nav.theme' }),
+                  children: [
+                    {
+                      key: 'theme-light',
+                      icon: <SunOutlined />,
+                      label: intl.formatMessage({ id: 'nav.theme.light' }),
+                      onClick: () => applyThemeMode('light'),
+                    },
+                    {
+                      key: 'theme-dark',
+                      icon: <MoonOutlined />,
+                      label: intl.formatMessage({ id: 'nav.theme.dark' }),
+                      onClick: () => applyThemeMode('dark'),
+                    },
+                    {
+                      key: 'theme-system',
+                      icon: <CompassOutlined />,
+                      label: intl.formatMessage({ id: 'nav.theme.system' }),
+                      onClick: () => applyThemeMode('system'),
+                    },
+                  ],
                 },
                 {
-                  key: 'lang-th-th',
-                  label: LANGUAGE_LABELS['th-TH'],
-                  onClick: () => setLocale('th-TH', true),
+                  key: 'settings',
+                  icon: <SettingOutlined />,
+                  label: intl.formatMessage({ id: 'nav.settings' }),
                 },
                 {
-                  key: 'lang-my-mm',
-                  label: LANGUAGE_LABELS['my-MM'],
-                  onClick: () => setLocale('my-MM', true),
+                  key: 'help',
+                  icon: <QuestionCircleOutlined />,
+                  label: intl.formatMessage({ id: 'nav.help' }),
                 },
                 {
                   type: 'divider',
