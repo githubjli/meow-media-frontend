@@ -24,7 +24,7 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { SelectLang, history, useIntl } from '@umijs/max';
+import { SelectLang, history, setLocale, useIntl } from '@umijs/max';
 import {
   Avatar,
   Button,
@@ -354,6 +354,7 @@ export const layout: RunTimeLayoutConfig = ({
                 label: LANGUAGE_LABELS[item.value],
               }))
           }
+          onItemClick={(key) => setLocale(key, true)}
           icon={
             <Button
               type="text"

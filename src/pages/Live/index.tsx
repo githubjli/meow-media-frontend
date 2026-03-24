@@ -37,9 +37,9 @@ const getStatusPresentation = (status?: string) => {
   if (['ready', 'created', 'prepared'].includes(value)) {
     return {
       label: 'ready',
-      color: 'processing' as const,
-      heroBackground: 'linear-gradient(135deg, #071a28, #15415e 55%, #0b2334)',
-      accent: '#62c7ff',
+      color: 'warning' as const,
+      heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f 55%, #201b17)',
+      accent: '#efbc5c',
       description: 'Ready to go live',
       pulse: false,
     };
@@ -60,8 +60,8 @@ const getStatusPresentation = (status?: string) => {
     return {
       label: 'ended',
       color: 'default' as const,
-      heroBackground: 'linear-gradient(135deg, #0f1720, #2f3d4d 55%, #161d26)',
-      accent: '#d3d9e2',
+      heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f 55%, #171310)',
+      accent: '#cbbbaa',
       description: 'Broadcast ended',
       pulse: false,
     };
@@ -69,9 +69,9 @@ const getStatusPresentation = (status?: string) => {
 
   return {
     label: 'waiting',
-    color: 'processing' as const,
-    heroBackground: 'linear-gradient(135deg, #09121a, #143240)',
-    accent: '#7ed7dd',
+    color: 'warning' as const,
+    heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f)',
+    accent: '#b8872e',
     description: 'Checking stream status',
     pulse: false,
   };
@@ -222,14 +222,14 @@ export default function ExploreLivePage() {
                               gap: 8,
                               padding: '6px 12px',
                               borderRadius: 999,
-                              background:
+                          background:
                                 status.label === 'LIVE'
                                   ? 'rgba(127, 29, 29, 0.92)'
-                                  : 'rgba(15, 23, 42, 0.68)',
+                                  : 'rgba(44, 35, 28, 0.76)',
                               boxShadow:
                                 status.label === 'LIVE'
                                   ? '0 10px 24px rgba(127, 29, 29, 0.35)'
-                                  : '0 10px 24px rgba(15, 23, 42, 0.16)',
+                                  : '0 10px 24px rgba(0, 0, 0, 0.22)',
                             }}
                           >
                             <span
@@ -268,7 +268,7 @@ export default function ExploreLivePage() {
                         <div>
                           <Text
                             style={{
-                              color: 'rgba(255,255,255,0.82)',
+                              color: '#f5f1ea',
                               display: 'block',
                               marginBottom: 8,
                             }}
@@ -279,7 +279,7 @@ export default function ExploreLivePage() {
                             level={4}
                             style={{
                               margin: 0,
-                              color: '#fff',
+                              color: '#F5F1EA',
                               textAlign: 'left',
                               textShadow: '0 4px 22px rgba(0,0,0,0.35)',
                             }}
