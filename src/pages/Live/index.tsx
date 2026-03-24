@@ -29,6 +29,7 @@ const getStatusPresentation = (status?: string) => {
       accent: '#ff6b72',
       description: 'On air now',
       pulse: true,
+      badgeBackground: 'rgba(127, 29, 29, 0.92)',
     };
   }
 
@@ -39,6 +40,7 @@ const getStatusPresentation = (status?: string) => {
       accent: '#efbc5c',
       description: 'Ready to go live',
       pulse: false,
+      badgeBackground: 'rgba(116, 95, 64, 0.9)',
     };
   }
 
@@ -49,6 +51,7 @@ const getStatusPresentation = (status?: string) => {
       accent: '#ffcf70',
       description: 'Stream warming up',
       pulse: false,
+      badgeBackground: 'rgba(116, 95, 64, 0.9)',
     };
   }
 
@@ -59,6 +62,7 @@ const getStatusPresentation = (status?: string) => {
       accent: '#cbbbaa',
       description: 'Broadcast ended',
       pulse: false,
+      badgeBackground: 'rgba(88, 75, 63, 0.9)',
     };
   }
 
@@ -68,6 +72,7 @@ const getStatusPresentation = (status?: string) => {
     accent: '#b8872e',
     description: 'Checking stream status',
     pulse: false,
+    badgeBackground: 'rgba(116, 95, 64, 0.9)',
   };
 };
 
