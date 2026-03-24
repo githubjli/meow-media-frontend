@@ -9,7 +9,6 @@ import {
   CloudUploadOutlined,
   CompassOutlined,
   FireOutlined,
-  GlobalOutlined,
   LogoutOutlined,
   MoonOutlined,
   NotificationOutlined,
@@ -147,6 +146,20 @@ export const layout: RunTimeLayoutConfig = ({
       onClick: () => setLocale(locale, true),
     }),
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const storedLocale = localStorage.getItem('umi_locale');
+    if (storedLocale && SUPPORTED_LOCALES.has(storedLocale)) {
+      return;
+    }
+
+    const browserLocale =
+      (navigator.languages && navigator.languages[0]) || navigator.language;
+    const nextLocale = resolveSupportedLocale(browserLocale);
+    setLocale(nextLocale, true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
