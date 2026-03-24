@@ -5,17 +5,23 @@ import {
 } from '@/services/publicCategories';
 import { clearStoredTokens } from '@/utils/auth';
 import {
+  AlertOutlined,
   BookOutlined,
+  CarOutlined,
+  CoffeeOutlined,
   CloudUploadOutlined,
   CompassOutlined,
   FireOutlined,
+  HomeOutlined,
   LogoutOutlined,
   MoonOutlined,
   NotificationOutlined,
+  PlayCircleOutlined,
   PlaySquareOutlined,
   QuestionCircleOutlined,
   ReadOutlined,
   SettingOutlined,
+  ShopOutlined,
   SunOutlined,
   ThunderboltOutlined,
   UploadOutlined,
@@ -64,6 +70,28 @@ const getCategoryIcon = (slug?: string) => {
   if (value.includes('edu') || value.includes('learn')) return <ReadOutlined />;
   if (value.includes('live')) return <ThunderboltOutlined />;
   return <BookOutlined />;
+};
+
+const getCommerceIcon = (slug?: string) => {
+  const value = String(slug || '').toLowerCase();
+  if (value === 'food') return <CoffeeOutlined />;
+  if (value === 'shops') return <ShopOutlined />;
+  if (value === 'real-estate') return <HomeOutlined />;
+  if (value === 'vehicles') return <CarOutlined />;
+  if (value === 'creators') return <UserOutlined />;
+  return <ShopOutlined />;
+};
+
+const getLiveChildIcon = (path: string, slug?: string) => {
+  if (path === '/live') return <PlayCircleOutlined />;
+  if (path === '/live/create') return <VideoCameraOutlined />;
+
+  const value = String(slug || '').toLowerCase();
+  if (value === 'selling') return <ShopOutlined />;
+  if (value === 'news') return <NotificationOutlined />;
+  if (value === 'reporting') return <AlertOutlined />;
+  if (value === 'food') return <CoffeeOutlined />;
+  return <ThunderboltOutlined />;
 };
 
 const CONTENT_CATEGORY_FALLBACKS = [
@@ -274,12 +302,12 @@ export const layout: RunTimeLayoutConfig = ({
       const commerceItem = {
         name: 'Commerce',
         path: '/categories/food',
-        icon: getCategoryIcon('commerce'),
+        icon: <ShopOutlined />,
         className: 'sidebar-menu-item sidebar-menu-item-category',
         children: COMMERCE_CATEGORY_ITEMS.map((item) => ({
           name: item.label,
           path: `/categories/${item.slug}`,
-          icon: getCategoryIcon(item.slug),
+          icon: getCommerceIcon(item.slug),
           className: 'sidebar-menu-item sidebar-menu-item-category',
         })),
       };
@@ -293,12 +321,7 @@ export const layout: RunTimeLayoutConfig = ({
         children: LIVE_SECTION_ITEMS.map((item) => ({
           name: item.key ? intl.formatMessage({ id: item.key }) : item.label,
           path: item.path,
-          icon:
-            item.path === '/live'
-              ? <VideoCameraOutlined />
-              : item.path === '/live/create'
-              ? <UploadOutlined />
-              : getCategoryIcon(item.slug),
+          icon: getLiveChildIcon(item.path, item.slug),
           className: 'sidebar-menu-item sidebar-menu-item-live-child',
         })),
       };
