@@ -7,6 +7,7 @@ import { clearStoredTokens } from '@/utils/auth';
 import {
   BookOutlined,
   CheckOutlined,
+  CloudUploadOutlined,
   CompassOutlined,
   FireOutlined,
   GlobalOutlined,
@@ -127,6 +128,15 @@ export const layout: RunTimeLayoutConfig = ({
   const isLoggedIn = Boolean(currentUser?.email);
   const isAdmin = isAdminUser(currentUser);
   const activeLocale = resolveSupportedLocale(intl.locale);
+  const utilityButtonStyle = {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: isDark ? '#E4D5C5' : '#4b5563',
+  } as const;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -340,6 +350,33 @@ export const layout: RunTimeLayoutConfig = ({
         >
           {intl.formatMessage({ id: 'nav.goLive' })}
         </Button>
+        <Button
+          type="text"
+          icon={<CloudUploadOutlined style={{ fontSize: 18 }} />}
+          style={utilityButtonStyle}
+          onClick={handleUploadClick}
+        />
+        <Button
+          type="text"
+          icon={
+            isDark ? (
+              <SunOutlined style={{ color: '#faad14' }} />
+            ) : (
+              <MoonOutlined />
+            )
+          }
+          style={{
+            ...utilityButtonStyle,
+            fontSize: 18,
+            color: isDark ? '#EFBC5C' : '#4b5563',
+          }}
+          onClick={() => {
+            setInitialState((pre) => ({
+              ...pre!,
+              darkTheme: !pre?.darkTheme,
+            }));
+          }}
+        />
         {isLoggedIn ? (
           <Dropdown
             trigger={['click']}
@@ -414,6 +451,23 @@ export const layout: RunTimeLayoutConfig = ({
           >
             <Space size={8} style={{ marginLeft: 6, cursor: 'pointer' }}>
               <Avatar size={32} icon={<UserOutlined />} />
+              <Tag
+                bordered={false}
+                style={{
+                  marginInlineEnd: 0,
+                  borderRadius: 999,
+                  paddingInline: 10,
+                  maxWidth: 180,
+                  background: isDark
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(184, 135, 46, 0.12)',
+                }}
+              >
+                <Text style={{ fontWeight: 600, maxWidth: 150 }} ellipsis>
+                  {currentUser?.email ||
+                    intl.formatMessage({ id: 'app.user.defaultName' })}
+                </Text>
+              </Tag>
             </Space>
           </Dropdown>
         ) : (
