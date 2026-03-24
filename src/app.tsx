@@ -13,12 +13,10 @@ import {
   GlobalOutlined,
   HelpCircleOutlined,
   LogoutOutlined,
-  MoonOutlined,
   NotificationOutlined,
   PlaySquareOutlined,
   ReadOutlined,
   SettingOutlined,
-  SunOutlined,
   ThunderboltOutlined,
   UploadOutlined,
   UserOutlined,
@@ -33,13 +31,10 @@ import {
   Dropdown,
   Input,
   Space,
-  Tag,
-  Typography,
   theme,
 } from 'antd';
 import { useEffect } from 'react';
 
-const { Text } = Typography;
 const LANGUAGE_LABELS: Record<string, string> = {
   'en-US': 'English',
   'zh-CN': '中文',
