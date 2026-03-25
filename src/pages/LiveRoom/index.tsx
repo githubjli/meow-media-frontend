@@ -506,9 +506,7 @@ export default function LiveRoomPage() {
                     title={
                       <Space size={8}>
                         <QrcodeOutlined />
-                        <span>
-                          {qrPayload ? 'Pay QR' : 'Pay QR unavailable'}
-                        </span>
+                        <span>Pay QR</span>
                       </Space>
                     }
                   >
