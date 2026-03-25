@@ -1,9 +1,10 @@
-import { EyeOutlined, VideoCameraOutlined } from '@ant-design/icons';
+import VideoCard from '@/components/VideoCard';
+import { getLiveList, type LiveBroadcast } from '@/services/live';
+import { VideoCameraOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import {
   Alert,
-  Avatar,
   Button,
   Card,
   Col,
@@ -15,8 +16,6 @@ import {
 } from 'antd';
 import { useEffect, useState } from 'react';
 
-import { getLiveList, type LiveBroadcast } from '@/services/live';
-
 const { Title, Text } = Typography;
 
 const getStatusPresentation = (status?: string) => {
@@ -25,63 +24,75 @@ const getStatusPresentation = (status?: string) => {
   if (['live', 'started', 'broadcasting', 'publishing'].includes(value)) {
     return {
       label: 'LIVE',
-      heroBackground: 'linear-gradient(135deg, #230507, #63171d 55%, #2d0b0f)',
-      accent: '#ff6b72',
       description: 'On air now',
-      pulse: true,
-      badgeBackground: 'rgba(127, 29, 29, 0.92)',
+      isLive: true,
     };
   }
 
   if (['ready', 'created', 'prepared'].includes(value)) {
     return {
       label: 'ready',
-      heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f 55%, #201b17)',
-      accent: '#efbc5c',
       description: 'Ready to go live',
-      pulse: false,
-      badgeBackground: 'rgba(116, 95, 64, 0.9)',
+      isLive: false,
     };
   }
 
   if (['waiting', 'pending', 'starting'].includes(value)) {
     return {
       label: 'waiting',
-      heroBackground: 'linear-gradient(135deg, #1f1405, #5f4011 55%, #281a07)',
-      accent: '#ffcf70',
       description: 'Stream warming up',
-      pulse: false,
-      badgeBackground: 'rgba(116, 95, 64, 0.9)',
+      isLive: false,
     };
   }
 
   if (['ended', 'finished', 'completed', 'stopped'].includes(value)) {
     return {
       label: 'ended',
-      heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f 55%, #171310)',
-      accent: '#cbbbaa',
       description: 'Broadcast ended',
-      pulse: false,
-      badgeBackground: 'rgba(88, 75, 63, 0.9)',
+      isLive: false,
     };
   }
 
   return {
     label: 'waiting',
-    heroBackground: 'linear-gradient(135deg, #1f1a16, #2a241f)',
-    accent: '#b8872e',
     description: 'Checking stream status',
-    pulse: false,
-    badgeBackground: 'rgba(116, 95, 64, 0.9)',
+    isLive: false,
   };
 };
 
 const getPosterUrl = (item: LiveBroadcast) =>
   item.thumbnail_url || item.preview_image_url || item.snapshot_url || '';
 
+const toLiveVideoCardData = (item: LiveBroadcast) => {
+  const status = getStatusPresentation(item.status);
+  const creatorName =
+    item.creator?.name || item.creator?.username || item.creator?.email || 'Creator';
+  const viewerCount = item.viewer_count ?? item.viewerCount ?? 0;
+
+  return {
+    id: item.id,
+    routePath: `/live/${item.id}`,
+    title: item.title || item.name || `Stream ${item.id}`,
+    name: item.title || item.name || `Stream ${item.id}`,
+    author: creatorName,
+    owner_name: creatorName,
+    created_at: item.started_at || item.created_at,
+    date: item.started_at || item.created_at,
+    thumbnail_url: getPosterUrl(item),
+    thumbnail: getPosterUrl(item),
+    category_name: item.category || 'Live broadcast',
+    category_display: item.category || 'Live broadcast',
+    views: `${viewerCount.toLocaleString()} viewers`,
+    description: `${status.description} · ${status.label.toUpperCase()}`,
+    description_preview: `${status.description} · ${status.label.toUpperCase()}`,
+    status: status.isLive ? 'broadcasting' : String(item.status || '').toLowerCase(),
+    duration_display: 'LIVE',
+  };
+};
+
 export default function ExploreLivePage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
-  const isDark = Boolean(initialState?.darkTheme);
   const [streams, setStreams] = useState<LiveBroadcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -135,11 +146,11 @@ export default function ExploreLivePage() {
           >
             <div>
               <Title level={2} style={{ margin: 0 }}>
-                Explore Live Streams
+                {intl.formatMessage({ id: 'nav.exploreLive' })}
               </Title>
               <Text type="secondary">
-                Browse live events created through Django, then open each room
-                to manage stream state and Ant Media playback.
+                Browse live events and open a room to watch stream playback and
+                status.
               </Text>
             </div>
             <Button
@@ -147,7 +158,7 @@ export default function ExploreLivePage() {
               icon={<VideoCameraOutlined />}
               onClick={handleGoLiveClick}
             >
-              Go Live
+              {intl.formatMessage({ id: 'nav.goLive' })}
             </Button>
           </Space>
         </Card>
@@ -175,185 +186,11 @@ export default function ExploreLivePage() {
           </Card>
         ) : (
           <Row gutter={[14, 18]}>
-            {streams.map((item) => {
-              const creatorName =
-                item.creator?.name ||
-                item.creator?.username ||
-                item.creator?.email ||
-                'Creator';
-              const viewerCount = item.viewer_count ?? item.viewerCount ?? 0;
-              const status = getStatusPresentation(item.status);
-              const posterUrl = getPosterUrl(item);
-              const cardBackground = isDark ? '#2F2923' : '#fffdf8';
-              const cardBorder = isDark
-                ? '1px solid rgba(255,255,255,0.08)'
-                : '1px solid rgba(184, 135, 46, 0.18)';
-              const titleColor = isDark ? '#F5F1EA' : '#2c2c2c';
-              const metaColor = isDark ? '#CBBBAA' : '#948261';
-              const thumbBackground = isDark ? '#211c18' : '#2c2c2c';
-
-              return (
-                <Col xs={24} sm={12} md={8} lg={6} xl={6} key={String(item.id)}>
-                  <Card
-                    bordered={false}
-                    style={{
-                      borderRadius: 14,
-                      overflow: 'hidden',
-                      padding: 8,
-                      boxShadow: 'none',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                      border: cardBorder,
-                      background: cardBackground,
-                    }}
-                    bodyStyle={{ padding: 0 }}
-                    cover={
-                      <div
-                        style={{
-                          aspectRatio: '16 / 9',
-                          backgroundColor: thumbBackground,
-                          background: posterUrl
-                            ? `linear-gradient(180deg, rgba(31, 26, 22, 0.08), rgba(31, 26, 22, 0.5)), url(${posterUrl}) center / cover no-repeat`
-                            : status.heroBackground,
-                          display: 'flex',
-                          color: '#fff',
-                          borderRadius: 12,
-                          marginBottom: 8,
-                          padding: '8px 10px',
-                          position: 'relative',
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            padding: '2px 7px',
-                            borderRadius: 999,
-                            background: 'rgba(31, 26, 22, 0.56)',
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: 7,
-                              height: 7,
-                              borderRadius: '50%',
-                              background: status.accent,
-                              boxShadow: status.pulse
-                                ? `0 0 0 3px ${status.accent}33`
-                                : 'none',
-                            }}
-                          />
-                          <Text
-                            style={{
-                              color: '#fff',
-                              fontWeight: 600,
-                              fontSize: 10.5,
-                              lineHeight: 1,
-                              letterSpacing: '0.02em',
-                              textTransform:
-                                status.label === 'LIVE' ? 'uppercase' : 'none',
-                            }}
-                          >
-                            {status.label}
-                          </Text>
-                        </div>
-                      </div>
-                    }
-                    onClick={() => history.push(`/live/${item.id}`)}
-                    onMouseEnter={(event) => {
-                      event.currentTarget.style.transform = 'translateY(-2px)';
-                      event.currentTarget.style.boxShadow = isDark
-                        ? '0 10px 24px rgba(0, 0, 0, 0.34)'
-                        : '0 10px 22px rgba(116, 95, 64, 0.12)';
-                    }}
-                    onMouseLeave={(event) => {
-                      event.currentTarget.style.transform = 'translateY(0)';
-                      event.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
-                    <div style={{ marginBottom: 8 }}>
-                      <Text
-                        style={{
-                          display: 'block',
-                          marginBottom: 4,
-                          fontSize: 10.5,
-                          letterSpacing: '0.02em',
-                          textTransform: 'uppercase',
-                          color: metaColor,
-                        }}
-                      >
-                        {item.category || 'Live broadcast'}
-                      </Text>
-                      <Title
-                        level={5}
-                        style={{
-                          margin: 0,
-                          fontSize: 14,
-                          lineHeight: 1.38,
-                          color: titleColor,
-                        }}
-                        ellipsis={{ rows: 2 }}
-                      >
-                        {item.title || item.name || `Stream ${item.id}`}
-                      </Title>
-                    </div>
-
-                    <Space
-                      direction="vertical"
-                      size={7}
-                      style={{ width: '100%' }}
-                    >
-                      <Space
-                        align="center"
-                        style={{
-                          justifyContent: 'space-between',
-                          width: '100%',
-                        }}
-                      >
-                        <Space align="center">
-                          <Avatar size="small" src={item.creator?.avatar_url}>
-                            {creatorName.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <Text type="secondary" style={{ fontSize: 11 }}>
-                            {creatorName}
-                          </Text>
-                        </Space>
-                        <Text
-                          type="secondary"
-                          style={{
-                            fontSize: 11,
-                            display: 'inline-flex',
-                            gap: 4,
-                            color: metaColor,
-                          }}
-                        >
-                          <EyeOutlined />
-                          {viewerCount.toLocaleString()} viewers
-                        </Text>
-                      </Space>
-                      <Space align="center" size={6}>
-                        <span
-                          style={{
-                            width: 7,
-                            height: 7,
-                            borderRadius: '50%',
-                            background: status.accent,
-                            display: 'inline-block',
-                          }}
-                        />
-                        <Text
-                          type="secondary"
-                          style={{ fontSize: 11, color: metaColor }}
-                        >
-                          {status.description}
-                        </Text>
-                      </Space>
-                    </Space>
-                  </Card>
-                </Col>
-              );
-            })}
+            {streams.map((item) => (
+              <Col xs={24} sm={12} md={8} lg={6} xl={6} key={String(item.id)}>
+                <VideoCard data={toLiveVideoCardData(item)} />
+              </Col>
+            ))}
           </Row>
         )}
       </div>
