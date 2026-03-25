@@ -184,7 +184,12 @@ export default function LiveRoomPage() {
       const data = await getLiveBroadcast(id);
       setBroadcast(data);
       const savedQrConfig = getLiveQrConfig(data?.id);
-      setQrPayload(savedQrConfig?.payload || watchUrl || '');
+      setQrPayload(
+        savedQrConfig?.payload ||
+          data?.payment_address ||
+          data?.wallet_address ||
+          '',
+      );
       setUploadedQrImageDataUrl(savedQrConfig?.uploadedImageDataUrl || '');
       setErrorMessage('');
       setPlayerPhase(data?.playback_url ? 'loading' : 'waiting');
@@ -493,10 +498,11 @@ export default function LiveRoomPage() {
                     }
                   >
                     <QrCodePanel
-                      payload={qrPayload}
+                      payload={watchUrl || qrPayload}
                       uploadedImageDataUrl={uploadedQrImageDataUrl}
-                      emptyText="QR will appear after a payload or uploaded image is available."
+                      emptyText="Watch QR will appear once a watch link is available."
                     />
+                    <Text type="secondary">Scan to open this live stream.</Text>
                   </Card>
                 </Space>
               </Col>
@@ -509,16 +515,16 @@ export default function LiveRoomPage() {
                     title={
                       <Space size={8}>
                         <QrcodeOutlined />
-                        <span>Watch QR</span>
+                        <span>Pay QR</span>
                       </Space>
                     }
                   >
                     <QrCodePanel
-                      payload={watchUrl || qrPayload}
+                      payload={qrPayload}
                       uploadedImageDataUrl={uploadedQrImageDataUrl}
-                      emptyText="Watch QR will appear once a watch link is available."
+                      emptyText="Payment address is not available yet."
                     />
-                    <Text type="secondary">Scan to open this live stream.</Text>
+                    <Text type="secondary">Scan to support this stream.</Text>
                   </Card>
                   <Card
                     bordered={false}

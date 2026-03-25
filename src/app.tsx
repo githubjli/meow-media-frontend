@@ -127,8 +127,8 @@ const NEWS_SECTION_ITEMS = [
     target: '_blank',
   },
   {
-    label: 'News Category',
-    path: '/news/videos',
+    label: 'News Channel',
+    path: '/news/channel',
   },
 ];
 
@@ -351,7 +351,7 @@ export const layout: RunTimeLayoutConfig = ({
           target: item.target,
           className: 'sidebar-menu-item sidebar-menu-item-live-child',
           icon:
-            item.path === '/news/videos' ? (
+            item.path === '/news/channel' ? (
               <PlayCircleOutlined />
             ) : (
               <GlobalOutlined />

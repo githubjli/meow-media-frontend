@@ -147,13 +147,6 @@ export default function LiveCreatePage() {
   const [qrMode, setQrMode] = useState<'upload' | 'generate'>('generate');
   const [qrPayload, setQrPayload] = useState('');
   const [uploadedQrImageDataUrl, setUploadedQrImageDataUrl] = useState('');
-  const watchUrl = useMemo(() => {
-    if (!createdLive?.id || typeof window === 'undefined') {
-      return '';
-    }
-
-    return `${window.location.origin}/live/${createdLive.id}`;
-  }, [createdLive?.id]);
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -211,9 +204,7 @@ export default function LiveCreatePage() {
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
       const existingQr = getLiveQrConfig(nextLive.id);
-      setQrPayload(
-        existingQr?.payload || `${window.location.origin}/live/${nextLive.id}`,
-      );
+      setQrPayload(existingQr?.payload || '');
       setUploadedQrImageDataUrl(existingQr?.uploadedImageDataUrl || '');
     } catch (error: any) {
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
@@ -576,7 +567,7 @@ export default function LiveCreatePage() {
                           setQrMode(value as 'upload' | 'generate')
                         }
                         items={[
-                          { key: 'generate', label: 'Generate QR' },
+                          { key: 'generate', label: 'Generate Pay QR' },
                           { key: 'upload', label: 'Upload QR' },
                         ]}
                       />
@@ -587,12 +578,16 @@ export default function LiveCreatePage() {
                           style={{ width: '100%' }}
                         >
                           <Text type="secondary">
-                            QR for viewers to scan and open the live stream.
+                            Enter a wallet/payment address to generate the Pay
+                            QR. This QR is used for payment/support, not for
+                            watching the stream.
                           </Text>
                           <Input
-                            readOnly
-                            placeholder="Watch QR will be generated after session creation"
-                            value={watchUrl || ''}
+                            placeholder="Payment Address"
+                            value={qrPayload}
+                            onChange={(event) =>
+                              setQrPayload(event.target.value.trim())
+                            }
                           />
                         </Space>
                       ) : (
@@ -616,14 +611,12 @@ export default function LiveCreatePage() {
                         </Upload>
                       )}
                       <QrCodePanel
-                        payload={
-                          qrMode === 'generate' ? watchUrl || qrPayload : ''
-                        }
+                        payload={qrMode === 'generate' ? qrPayload : ''}
                         uploadedImageDataUrl={
                           qrMode === 'upload' ? uploadedQrImageDataUrl : ''
                         }
                         size={160}
-                        emptyText="Watch QR will be generated from the live watch link after session creation."
+                        emptyText="Enter a payment address to generate the Pay QR."
                       />
                     </Space>
                   </Form.Item>
