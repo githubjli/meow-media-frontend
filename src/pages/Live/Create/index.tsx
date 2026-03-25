@@ -28,6 +28,7 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import QrCodePanel from '@/components/QrCodePanel';
 import { createLiveBroadcast, type LiveBroadcast } from '@/services/live';
 
 const { Title, Text, Paragraph } = Typography;
@@ -140,6 +141,7 @@ export default function LiveCreatePage() {
   const [publishingMessage, setPublishingMessage] = useState(
     'Browser publishing is standing by.',
   );
+  const [qrPayload, setQrPayload] = useState('');
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -184,7 +186,10 @@ export default function LiveCreatePage() {
     setErrorMessage('');
 
     try {
-      const nextLive = await createLiveBroadcast(values);
+      const nextLive = await createLiveBroadcast({
+        ...values,
+        payment_address: qrPayload || undefined,
+      });
       setCreatedLive(nextLive);
       setBroadcastMode('camera');
       setDevicePermissionStatus('idle');
@@ -196,6 +201,7 @@ export default function LiveCreatePage() {
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
+      setQrPayload(nextLive.payment_address || qrPayload);
     } catch (error: any) {
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
     } finally {
@@ -530,11 +536,46 @@ export default function LiveCreatePage() {
                       ]}
                     />
                   </Form.Item>
+                  <Form.Item
+                    label="QR Code (Optional)"
+                    style={{ marginBottom: 16 }}
+                  >
+                    <Space
+                      direction="vertical"
+                      size={12}
+                      style={{ width: '100%' }}
+                    >
+                      <Space
+                        direction="vertical"
+                        size={8}
+                        style={{ width: '100%' }}
+                      >
+                        <Text type="secondary">
+                          Enter a wallet/payment address to generate the Pay QR.
+                          This QR is used for payment/support, not for watching
+                          the stream.
+                        </Text>
+                        <Input
+                          placeholder="Payment Address"
+                          value={qrPayload}
+                          onChange={(event) =>
+                            setQrPayload(event.target.value.trim())
+                          }
+                        />
+                      </Space>
+                      <QrCodePanel
+                        payload={qrPayload}
+                        size={160}
+                        emptyText="Enter a payment address to generate the Pay QR."
+                      />
+                    </Space>
+                  </Form.Item>
                   <div
                     style={{
                       display: 'flex',
                       justifyContent: 'flex-end',
                       gap: 12,
+                      marginTop: 4,
                     }}
                   >
                     <Button onClick={() => history.push('/live')}>
