@@ -1,5 +1,6 @@
 export default {
   'app.brand.name': 'Meow Media Stream',
+  'app.name': 'Meow Stream',
   'app.user.defaultName': 'ผู้ใช้ Media Stream',
   'app.user.uploaderFallback': 'Meow Media',
 
@@ -27,6 +28,31 @@ export default {
   'nav.category.news': 'ข่าวสาร',
   'nav.category.entertainment': 'บันเทิง',
   'nav.category.other': 'อื่น ๆ',
+
+  'menu.home': 'Home',
+  'menu.browse': 'Browse',
+  'menu.news': 'News',
+  'menu.news.live': 'News Live',
+  'menu.news.channel': 'News Channel',
+  'menu.news.articles': 'News Articles',
+  'menu.live': 'Live',
+  'menu.live.explore': 'Explore Live',
+  'menu.live.create': 'Create Live',
+  'menu.live.sessions': 'My Sessions',
+  'menu.commerce': 'Commerce',
+  'menu.categories.technology': 'Technology',
+  'menu.categories.education': 'Education',
+  'menu.categories.gaming': 'Gaming',
+  'menu.categories.entertainment': 'Entertainment',
+  'menu.categories.travel': 'Travel',
+  'menu.categories.finance': 'Finance',
+  'menu.categories.movies': 'Movies',
+  'menu.categories.beauty': 'Beauty',
+  'menu.categories.food': 'Food',
+  'menu.categories.shops': 'Shops',
+  'menu.categories.realEstate': 'Real Estate',
+  'menu.categories.vehicles': 'Vehicles',
+  'menu.categories.creators': 'Creators',
 
   'search.global.placeholder': 'ค้นหาวิดีโอ ช่อง และผู้คน',
 
@@ -76,6 +102,70 @@ export default {
   'upload.success': 'อัปโหลดวิดีโอสำเร็จ',
   'upload.error': 'ไม่สามารถอัปโหลดวิดีโอได้ในขณะนี้',
 
+  'categories.fallbackTitle': 'Category',
+  'categories.subtitle': 'Browse the latest public videos in this category.',
+  'categories.backToAll': 'Back to all videos',
+  'categories.empty': 'No public videos found in {category}.',
+  'categories.error': 'Unable to load this category right now.',
+  'publicVideoDetail.creatorUnavailable': 'Creator unavailable',
+  'publicVideoDetail.error.loadVideo': 'Unable to load this video.',
+  'publicVideoDetail.error.recommendations':
+    'Unable to load recommendations right now.',
+  'publicVideoDetail.error.comments': 'Comments are unavailable right now.',
+  'publicVideoDetail.error.updateLike': 'Unable to update like status.',
+  'publicVideoDetail.error.updateSubscription':
+    'Unable to update subscription status.',
+  'publicVideoDetail.error.publishComment': 'Unable to publish your comment.',
+  'publicVideoDetail.viewsUnavailable': 'Views unavailable',
+  'publicVideoDetail.followersCount': '{count} followers',
+  'publicVideoDetail.followersUnavailable': 'Followers unavailable',
+  'publicVideoDetail.commentsCount': '{count} comments',
+  'publicVideoDetail.commentsUnavailable': 'Comments unavailable',
+  'publicVideoDetail.message.linkCopied':
+    'Video link copied to your clipboard.',
+  'publicVideoDetail.message.copyPageUrl':
+    'Copy the current page URL to share this video.',
+  'publicVideoDetail.creatorInfoUnavailable':
+    'Creator information is unavailable for this video.',
+  'publicVideoDetail.you': 'You',
+  'publicVideoDetail.action.like': 'Like',
+  'publicVideoDetail.action.liked': 'Liked',
+  'publicVideoDetail.action.share': 'Share',
+  'publicVideoDetail.action.subscribe': 'Subscribe',
+  'publicVideoDetail.action.subscribed': 'Subscribed',
+  'publicVideoDetail.action.comment': 'Comment',
+  'publicVideoDetail.meta.published': 'Published',
+  'publicVideoDetail.meta.category': 'Category',
+  'publicVideoDetail.meta.videoId': 'Video ID',
+  'publicVideoDetail.videoNotFound': 'Video not found.',
+  'publicVideoDetail.playbackUnavailable':
+    'This video is not available for playback yet.',
+  'publicVideoDetail.publicWatchPage': 'Public watch page',
+  'publicVideoDetail.backToBrowse': 'Back to browse',
+  'publicVideoDetail.contentSummary':
+    'Published content with creator context, engagement signals, and related videos nearby.',
+  'publicVideoDetail.loadingAudience': 'Loading audience details…',
+  'publicVideoDetail.creatorProfileFromRecord':
+    'Creator profile pulled from the published video record.',
+  'publicVideoDetail.creatorDetailsUnavailable':
+    'Creator details are not available for this video yet.',
+  'publicVideoDetail.noDescription':
+    'No description has been added for this video yet. Check the recommendation panel for more public content to explore.',
+  'publicVideoDetail.commentsTitle': 'Comments',
+  'publicVideoDetail.commentPlaceholder.auth': 'Add a public comment',
+  'publicVideoDetail.commentPlaceholder.guest':
+    'Log in to join the conversation.',
+  'publicVideoDetail.viewerInitial': 'V',
+  'publicVideoDetail.viewer': 'Viewer',
+  'publicVideoDetail.loadMore': 'Load more',
+  'publicVideoDetail.noComments': 'No comments yet.',
+  'publicVideoDetail.upNext': 'Up next',
+  'publicVideoDetail.upNextDescription':
+    'More public videos from the same category when available, with latest uploads as backup.',
+  'publicVideoDetail.noRecommendations': 'No recommendations available yet.',
+  'publicVideoDetail.authModal.title': 'Continue with your account',
+  'publicVideoDetail.authModal.description':
+    'Log in or create an account to like videos, subscribe to creators, and join the comments.',
   'videoCard.justNow': 'เมื่อสักครู่',
   'videoCard.recentlyAdded': 'เพิ่งเพิ่มล่าสุด',
   'videoCard.time.minute': '{count} นาทีที่แล้ว',
@@ -88,5 +178,13 @@ export default {
   'videoCard.time.months': '{count} เดือนที่แล้ว',
   'videoCard.time.year': '{count} ปีที่แล้ว',
   'videoCard.time.years': '{count} ปีที่แล้ว',
+  'live.status.live': 'LIVE',
+  'live.status.starting': 'STARTING',
+  'live.status.notStarted': 'NOT STARTED',
+  'live.status.ended': 'ENDED',
+  'live.status.onAir': 'กำลังถ่ายทอดสด',
+  'live.status.readyToGoLive': 'พร้อมเริ่มไลฟ์',
+  'live.status.broadcastEnded': 'ไลฟ์จบแล้ว',
+  'live.status.streamStarting': 'กำลังเริ่มไลฟ์',
   'videoCard.live': 'สด',
 };
