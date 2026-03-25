@@ -1,5 +1,9 @@
 import VideoCard from '@/components/VideoCard';
-import { getLiveList, type FrontendLiveStatus, type LiveBroadcast } from '@/services/live';
+import {
+  getLiveList,
+  type FrontendLiveStatus,
+  type LiveBroadcast,
+} from '@/services/live';
 import { VideoCameraOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useLocation, useModel } from '@umijs/max';
@@ -18,34 +22,34 @@ import { useEffect, useState } from 'react';
 
 const { Title, Text } = Typography;
 
-const getStatusPresentation = (status: FrontendLiveStatus) => {
+const getStatusPresentation = (status: FrontendLiveStatus, intl: any) => {
   if (status === 'live') {
     return {
-      label: 'LIVE',
-      description: 'On air now',
+      label: intl.formatMessage({ id: 'live.status.live' }),
+      description: intl.formatMessage({ id: 'live.status.onAir' }),
       isLive: true,
     };
   }
 
   if (status === 'ready') {
     return {
-      label: 'ready',
-      description: 'Ready to go live',
+      label: intl.formatMessage({ id: 'live.status.notStarted' }),
+      description: intl.formatMessage({ id: 'live.status.readyToGoLive' }),
       isLive: false,
     };
   }
 
   if (status === 'ended') {
     return {
-      label: 'ended',
-      description: 'Broadcast ended',
+      label: intl.formatMessage({ id: 'live.status.ended' }),
+      description: intl.formatMessage({ id: 'live.status.broadcastEnded' }),
       isLive: false,
     };
   }
 
   return {
-    label: 'waiting',
-    description: 'Stream warming up',
+    label: intl.formatMessage({ id: 'live.status.starting' }),
+    description: intl.formatMessage({ id: 'live.status.streamStarting' }),
     isLive: false,
   };
 };
@@ -56,18 +60,21 @@ const getPosterUrl = (item: LiveBroadcast) =>
   item.thumbnail_url || item.preview_image_url || item.snapshot_url || '';
 
 const isNotStartedStatus = (status: FrontendLiveStatus) =>
-  status === 'ready' || status === 'waiting';
+  status === 'ready' || status === 'waiting_for_signal';
 
 const isNewsLiveStream = (stream: LiveBroadcast) => {
   const categoryValue = String(stream.category || '').toLowerCase();
   return categoryValue.includes('news');
 };
 
-const toLiveVideoCardData = (item: LiveBroadcast) => {
-  const normalizedStatus = item.normalized_status || 'waiting';
-  const status = getStatusPresentation(normalizedStatus);
+const toLiveVideoCardData = (item: LiveBroadcast, intl: any) => {
+  const normalizedStatus = item.normalized_status || 'waiting_for_signal';
+  const status = getStatusPresentation(normalizedStatus, intl);
   const creatorName =
-    item.creator?.name || item.creator?.username || item.creator?.email || 'Creator';
+    item.creator?.name ||
+    item.creator?.username ||
+    item.creator?.email ||
+    'Creator';
   const viewerCount = item.viewer_count ?? item.viewerCount ?? 0;
   const posterUrl = getPosterUrl(item);
   const shouldUseFallbackCover =
@@ -88,9 +95,16 @@ const toLiveVideoCardData = (item: LiveBroadcast) => {
     category_display: item.category || 'Live broadcast',
     views: `${viewerCount.toLocaleString()} viewers`,
     description: `${status.description} · ${status.label.toUpperCase()}`,
-    description_preview: `${status.description} · ${status.label.toUpperCase()}`,
-    status: status.isLive ? 'broadcasting' : String(item.status || '').toLowerCase(),
-    duration_display: 'LIVE',
+    description_preview: `${
+      status.description
+    } · ${status.label.toUpperCase()}`,
+    status: status.isLive
+      ? 'broadcasting'
+      : String(item.status || '').toLowerCase(),
+    normalized_status: normalizedStatus,
+    duration_display: status.isLive
+      ? intl.formatMessage({ id: 'videoCard.live' })
+      : undefined,
   };
 };
 
@@ -197,7 +211,7 @@ export default function ExploreLivePage() {
           <Row gutter={[14, 18]}>
             {visibleStreams.map((item) => (
               <Col xs={24} sm={12} md={8} lg={6} xl={6} key={String(item.id)}>
-                <VideoCard data={toLiveVideoCardData(item)} />
+                <VideoCard data={toLiveVideoCardData(item, intl)} />
               </Col>
             ))}
           </Row>

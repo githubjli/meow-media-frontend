@@ -1,7 +1,7 @@
 import VideoCard from '@/components/VideoCard';
 import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel, useParams } from '@umijs/max';
+import { history, useIntl, useModel, useParams } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -21,9 +21,9 @@ const toCardData = (video: PublicVideo) => ({
   ...video,
   routePath: `/browse/${video.id}`,
   name: video.title,
-  author: video.owner_name || video.author || 'Media Stream',
-  date: video.created_at || 'Recently added',
-  views: video.views || video.view_count || 'Public',
+  author: video.owner_name || video.author,
+  date: video.created_at,
+  views: video.views || video.view_count,
   thumbnail: video.thumbnail,
   thumbnail_url: video.thumbnail_url,
   description: video.description,
@@ -34,6 +34,7 @@ const toCardData = (video: PublicVideo) => ({
 
 export default function CategoryBrowsePage() {
   const { category } = useParams<{ category: string }>();
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const categories = initialState?.publicCategories || [];
   const [videos, setVideos] = useState<PublicVideo[]>([]);
@@ -52,18 +53,21 @@ export default function CategoryBrowsePage() {
       .then((response) => setVideos(response.results))
       .catch((error: any) => {
         setErrorMessage(
-          error?.message || 'Unable to load this category right now.',
+          error?.message || intl.formatMessage({ id: 'categories.error' }),
         );
         setVideos([]);
       })
       .finally(() => setLoading(false));
-  }, [category]);
+  }, [category, intl]);
 
   const currentCategory = useMemo(
     () => categories.find((item) => item.slug === category),
     [categories, category],
   );
-  const pageTitle = currentCategory?.name || category || 'Category';
+  const pageTitle =
+    currentCategory?.name ||
+    category ||
+    intl.formatMessage({ id: 'categories.fallbackTitle' });
 
   return (
     <PageContainer title={false}>
@@ -74,14 +78,14 @@ export default function CategoryBrowsePage() {
               {pageTitle}
             </Title>
             <Text type="secondary">
-              Browse the latest public videos in this category.
+              {intl.formatMessage({ id: 'categories.subtitle' })}
             </Text>
             <Button
               type="link"
               style={{ paddingInline: 0 }}
               onClick={() => history.push('/browse')}
             >
-              Back to all videos
+              {intl.formatMessage({ id: 'categories.backToAll' })}
             </Button>
           </Space>
         </Card>
@@ -100,7 +104,12 @@ export default function CategoryBrowsePage() {
             <Spin />
           </div>
         ) : videos.length === 0 ? (
-          <Empty description={`No public videos found in ${pageTitle}.`} />
+          <Empty
+            description={intl.formatMessage(
+              { id: 'categories.empty' },
+              { category: pageTitle },
+            )}
+          />
         ) : (
           <Row gutter={[14, 18]}>
             {videos.map((video) => (

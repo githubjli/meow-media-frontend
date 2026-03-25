@@ -34,12 +34,18 @@ export type LiveBroadcast = {
   normalized_status?: FrontendLiveStatus;
 };
 
-export type FrontendLiveStatus = 'ready' | 'live' | 'ended' | 'waiting';
+export type FrontendLiveStatus =
+  | 'ready'
+  | 'waiting_for_signal'
+  | 'live'
+  | 'ended';
 
 export const normalizeLiveStatus = (
   value?: string | null,
 ): FrontendLiveStatus => {
-  const status = String(value || '').toLowerCase().trim();
+  const status = String(value || '')
+    .toLowerCase()
+    .trim();
 
   if (['live', 'started', 'broadcasting', 'publishing'].includes(status)) {
     return 'live';
@@ -53,11 +59,13 @@ export const normalizeLiveStatus = (
     return 'ended';
   }
 
-  if (['waiting', 'waiting_for_signal', 'pending', 'starting'].includes(status)) {
-    return 'waiting';
+  if (
+    ['waiting', 'waiting_for_signal', 'pending', 'starting'].includes(status)
+  ) {
+    return 'waiting_for_signal';
   }
 
-  return 'waiting';
+  return 'waiting_for_signal';
 };
 
 const withAuth = async (options: RequestInit = {}) => {
@@ -98,13 +106,20 @@ const normalizeBroadcast = (item: any): LiveBroadcast => {
     rtmp_url: item?.rtmp_url || item?.rtmpUrl || '',
     playback_url: item?.playback_url || item?.playbackUrl || '',
     payment_address: item?.payment_address || item?.wallet_address || '',
-    thumbnail_url:
-      (item?.thumbnail_url || item?.thumbnailUrl || '').toString().trim(),
-    preview_image_url:
-      (item?.preview_image_url || item?.previewImageUrl || item?.poster_url || '')
-        .toString()
-        .trim(),
-    snapshot_url: (item?.snapshot_url || item?.snapshotUrl || '').toString().trim(),
+    thumbnail_url: (item?.thumbnail_url || item?.thumbnailUrl || '')
+      .toString()
+      .trim(),
+    preview_image_url: (
+      item?.preview_image_url ||
+      item?.previewImageUrl ||
+      item?.poster_url ||
+      ''
+    )
+      .toString()
+      .trim(),
+    snapshot_url: (item?.snapshot_url || item?.snapshotUrl || '')
+      .toString()
+      .trim(),
     creator: item?.creator
       ? {
           ...item.creator,
