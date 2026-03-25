@@ -22,14 +22,17 @@ import {
   Row,
   Select,
   Space,
+  Tabs,
   Tag,
   Typography,
+  Upload,
   message,
 } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import QrCodePanel from '@/components/QrCodePanel';
 import { createLiveBroadcast, type LiveBroadcast } from '@/services/live';
+import { getLiveQrConfig, saveLiveQrConfig } from '@/utils/liveQr';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -431,6 +434,17 @@ export default function LiveCreatePage() {
       value: createdLive?.playback_url || '',
     },
   ];
+
+  useEffect(() => {
+    if (!createdLive?.id) {
+      return;
+    }
+
+    saveLiveQrConfig(createdLive.id, {
+      payload: qrPayload,
+      uploadedImageDataUrl: uploadedQrImageDataUrl,
+    });
+  }, [createdLive?.id, qrPayload, uploadedQrImageDataUrl]);
 
   const deviceChecklist = [
     {
