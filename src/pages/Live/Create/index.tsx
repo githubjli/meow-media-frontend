@@ -185,13 +185,14 @@ export default function LiveCreatePage() {
     visibility: string;
     description?: string;
   }) => {
+    const paymentAddress = qrPayload.trim();
     setSubmitting(true);
     setErrorMessage('');
 
     try {
       const nextLive = await createLiveBroadcast({
         ...values,
-        payment_address: qrPayload || undefined,
+        payment_address: paymentAddress || undefined,
       });
       setCreatedLive(nextLive);
       setBroadcastMode('camera');
@@ -204,7 +205,7 @@ export default function LiveCreatePage() {
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
-      setQrPayload(nextLive.payment_address || '');
+      setQrPayload(nextLive.payment_address || paymentAddress || '');
     } catch (error: any) {
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
     } finally {
@@ -572,9 +573,7 @@ export default function LiveCreatePage() {
                         <Input
                           placeholder="Payment Address"
                           value={qrPayload}
-                          onChange={(event) =>
-                            setQrPayload(event.target.value.trim())
-                          }
+                          onChange={(event) => setQrPayload(event.target.value)}
                         />
                       </Space>
                       <QrCodePanel
