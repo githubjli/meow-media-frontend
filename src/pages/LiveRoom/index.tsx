@@ -3,6 +3,7 @@ import {
   EyeOutlined,
   PlayCircleOutlined,
   PoweroffOutlined,
+  QrcodeOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
@@ -24,12 +25,14 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import QrCodePanel from '@/components/QrCodePanel';
 import {
   endLiveBroadcast,
   getLiveBroadcast,
   startLiveBroadcast,
   type LiveBroadcast,
 } from '@/services/live';
+import { getLiveQrConfig } from '@/utils/liveQr';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -139,6 +142,8 @@ export default function LiveRoomPage() {
     'Waiting for a playback URL from Django.',
   );
   const [playerPhase, setPlayerPhase] = useState<PlayerPhase>('idle');
+  const [qrPayload, setQrPayload] = useState('');
+  const [uploadedQrImageDataUrl, setUploadedQrImageDataUrl] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const playbackUrl = broadcast?.playback_url || '';
@@ -171,6 +176,9 @@ export default function LiveRoomPage() {
     try {
       const data = await getLiveBroadcast(id);
       setBroadcast(data);
+      const savedQrConfig = getLiveQrConfig(data?.id);
+      setQrPayload(savedQrConfig?.payload || data?.playback_url || '');
+      setUploadedQrImageDataUrl(savedQrConfig?.uploadedImageDataUrl || '');
       setErrorMessage('');
       setPlayerPhase(data?.playback_url ? 'loading' : 'waiting');
       setPlayerStatus(
@@ -473,44 +481,19 @@ export default function LiveRoomPage() {
                   <Card
                     bordered={false}
                     style={{ borderRadius: 20 }}
-                    title="Stream details"
+                    title={
+                      <Space size={8}>
+                        <QrcodeOutlined />
+                        <span>Watch QR</span>
+                      </Space>
+                    }
                   >
-                    <Space
-                      direction="vertical"
-                      size={16}
-                      style={{ width: '100%' }}
-                    >
-                      {detailItems.map((item) => (
-                        <div key={item.label}>
-                          <Text
-                            strong
-                            style={{ display: 'block', marginBottom: 6 }}
-                          >
-                            {item.label}
-                          </Text>
-                          <Space
-                            align="start"
-                            style={{
-                              width: '100%',
-                              justifyContent: 'space-between',
-                            }}
-                          >
-                            <Text code style={{ wordBreak: 'break-all' }}>
-                              {item.value || 'Not available'}
-                            </Text>
-                            <Button
-                              size="small"
-                              icon={<CopyOutlined />}
-                              onClick={() => copyValue(item.value, item.label)}
-                            >
-                              Copy
-                            </Button>
-                          </Space>
-                        </div>
-                      ))}
-                    </Space>
+                    <QrCodePanel
+                      payload={qrPayload}
+                      uploadedImageDataUrl={uploadedQrImageDataUrl}
+                      emptyText="QR will appear after a payload or uploaded image is available."
+                    />
                   </Card>
-
                   <Card
                     bordered={false}
                     style={{ borderRadius: 20 }}
@@ -536,6 +519,39 @@ export default function LiveRoomPage() {
                 </Space>
               </Col>
             </Row>
+            <Card
+              bordered={false}
+              style={{ borderRadius: 20 }}
+              title="Stream details"
+            >
+              <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                {detailItems.map((item) => (
+                  <div key={item.label}>
+                    <Text strong style={{ display: 'block', marginBottom: 6 }}>
+                      {item.label}
+                    </Text>
+                    <Space
+                      align="start"
+                      style={{
+                        width: '100%',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Text code style={{ wordBreak: 'break-all' }}>
+                        {item.value || 'Not available'}
+                      </Text>
+                      <Button
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => copyValue(item.value, item.label)}
+                      >
+                        Copy
+                      </Button>
+                    </Space>
+                  </div>
+                ))}
+              </Space>
+            </Card>
           </Space>
         ) : (
           <Empty description="Live room unavailable." />
