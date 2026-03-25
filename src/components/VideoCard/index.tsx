@@ -1,5 +1,7 @@
 import { CheckCircleFilled } from '@ant-design/icons';
 import { history, useIntl, useModel } from '@umijs/max';
+
+import { firstNonEmpty, safeImageUrl, safeOptionalText, safeText } from '@/utils/fallbacks';
 import { Avatar, Tag, Typography } from 'antd';
 
 const { Text, Title, Paragraph } = Typography;
@@ -83,20 +85,20 @@ export default ({ data }: { data: any }) => {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const isDark = Boolean(initialState?.darkTheme);
-  const title = data.title || data.name;
-  const description = data.description_preview || data.description;
+  const title = safeText(data.title || data.name, 'Untitled video');
+  const description = safeOptionalText(data.description_preview || data.description);
   const normalizedTitle = String(title || '').trim().toLowerCase();
   const normalizedDescription = String(description || '').trim().toLowerCase();
   const shouldShowDescription = Boolean(
     normalizedDescription && normalizedDescription !== normalizedTitle,
   );
-  const uploaderLabel =
-    data.author ||
-    data.owner_name ||
-    intl.formatMessage({ id: 'app.user.uploaderFallback' });
+  const uploaderLabel = safeText(
+    data.author || data.owner_name,
+    intl.formatMessage({ id: 'app.user.uploaderFallback' }),
+  );
   const publishedLabel = formatRelativeTime(data.created_at || data.date, intl);
   const viewsLabel = data.views || data.view_count;
-  const categoryLabel = data.category_name || data.category_display;
+  const categoryLabel = safeOptionalText(data.category_name || data.category_display);
   const durationLabel = formatDuration(
     data.duration_display || data.duration || data.length_seconds,
   );
@@ -155,8 +157,7 @@ export default ({ data }: { data: any }) => {
       >
         <img
           src={
-            data.thumbnail_url ||
-            data.thumbnail ||
+            safeImageUrl(firstNonEmpty(data.thumbnail_url, data.thumbnail)) ||
             `https://picsum.photos/seed/${data.id || data.streamId}/640/360`
           }
           style={{

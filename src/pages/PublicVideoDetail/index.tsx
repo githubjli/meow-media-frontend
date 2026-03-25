@@ -28,6 +28,8 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { firstNonEmpty, safeImageUrl, safeOptionalText, safeText } from '@/utils/fallbacks';
+
 import {
   createVideoComment,
   getVideoInteractionSummary,
@@ -70,14 +72,13 @@ const formatDate = (value?: string) => {
 };
 
 const getCreatorLabel = (video?: PublicVideo | null) =>
-  video?.owner_name ||
-  video?.channel_name ||
-  video?.author ||
-  'Creator unavailable';
+  safeText(
+    video?.owner_name || video?.channel_name || video?.author,
+    'Unknown creator',
+  );
 
 const getThumbnail = (video: PublicVideo) =>
-  video.thumbnail_url ||
-  video.thumbnail ||
+  safeImageUrl(firstNonEmpty(video.thumbnail_url, video.thumbnail)) ||
   `https://picsum.photos/seed/${video.id}/640/360`;
 
 const getRecommendationMeta = (video: PublicVideo) =>
@@ -86,7 +87,7 @@ const getRecommendationMeta = (video: PublicVideo) =>
     .join(' • ');
 
 const RecommendationItem = ({ video }: { video: PublicVideo }) => {
-  const title = video.title || `Video #${video.id}`;
+  const title = safeText(video.title, `Video #${video.id}`);
   const authorLabel = getCreatorLabel(video);
 
   return (
@@ -322,7 +323,7 @@ export default function PublicVideoDetailPage() {
       : 'Views unavailable';
   const videoId = String(video?.id || '');
   const channelId = video?.owner_id;
-  const creatorName = video?.owner_name || 'Creator unavailable';
+  const creatorName = getCreatorLabel(video);
   const likeCount = interactionSummary?.like_count;
   const commentCount = interactionSummary?.comment_count;
   const subscriberCount = interactionSummary?.subscriber_count;
@@ -734,7 +735,7 @@ export default function PublicVideoDetailPage() {
                     level={2}
                     style={{ margin: '0 0 6px', lineHeight: 1.3 }}
                   >
-                    {video.title || `Video #${video.id}`}
+                    {safeText(video.title, `Video #${video.id}`)}
                   </Title>
                   <Text
                     type="secondary"
@@ -898,8 +899,10 @@ export default function PublicVideoDetailPage() {
                     <Paragraph
                       style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}
                     >
-                      {video.description ||
-                        'No description has been added for this video yet. Check the recommendation panel for more public content to explore.'}
+                      {safeText(
+                        video.description,
+                        'No description has been added for this video yet. Check the recommendation panel for more public content to explore.',
+                      )}
                     </Paragraph>
 
                     <Divider style={{ margin: '4px 0' }} />
@@ -1017,7 +1020,7 @@ export default function PublicVideoDetailPage() {
                                         marginBottom: 2,
                                       }}
                                     >
-                                      {comment.user?.name || 'Viewer'}
+                                      {safeText(comment.user?.name, 'Viewer')}
                                     </Text>
                                     <Text
                                       type="secondary"
@@ -1033,7 +1036,7 @@ export default function PublicVideoDetailPage() {
                                       type="secondary"
                                       style={{ display: 'block' }}
                                     >
-                                      {comment.content}
+                                      {safeOptionalText(comment.content)}
                                     </Text>
                                   </div>
                                 </Space>

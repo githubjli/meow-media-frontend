@@ -31,6 +31,33 @@ export type LiveBroadcast = {
   started_at?: string;
   ended_at?: string;
   [key: string]: any;
+  normalized_status?: FrontendLiveStatus;
+};
+
+export type FrontendLiveStatus = 'ready' | 'live' | 'ended' | 'waiting';
+
+export const normalizeLiveStatus = (
+  value?: string | null,
+): FrontendLiveStatus => {
+  const status = String(value || '').toLowerCase().trim();
+
+  if (['live', 'started', 'broadcasting', 'publishing'].includes(status)) {
+    return 'live';
+  }
+
+  if (['ready', 'created', 'prepared'].includes(status)) {
+    return 'ready';
+  }
+
+  if (['ended', 'finished', 'completed', 'stopped'].includes(status)) {
+    return 'ended';
+  }
+
+  if (['waiting', 'waiting_for_signal', 'pending', 'starting'].includes(status)) {
+    return 'waiting';
+  }
+
+  return 'waiting';
 };
 
 const withAuth = async (options: RequestInit = {}) => {
@@ -54,34 +81,42 @@ const withOptionalAuth = (options: RequestInit = {}) => {
   };
 };
 
-const normalizeBroadcast = (item: any): LiveBroadcast => ({
-  ...item,
-  id: item?.id ?? item?.pk ?? item?.stream_id ?? item?.streamId,
-  title: item?.title || item?.name || 'Untitled live stream',
-  name: item?.name || item?.title || 'Untitled live stream',
-  category: item?.category || item?.category_name || item?.category_display,
-  status: item?.status || item?.live_status || 'created',
-  viewer_count: item?.viewer_count ?? item?.viewerCount ?? 0,
-  viewerCount: item?.viewerCount ?? item?.viewer_count ?? 0,
-  stream_key: item?.stream_key || item?.streamKey || '',
-  rtmp_url: item?.rtmp_url || item?.rtmpUrl || '',
-  playback_url: item?.playback_url || item?.playbackUrl || '',
-  payment_address: item?.payment_address || item?.wallet_address || '',
-  thumbnail_url: item?.thumbnail_url || item?.thumbnailUrl || '',
-  preview_image_url:
-    item?.preview_image_url || item?.previewImageUrl || item?.poster_url || '',
-  snapshot_url: item?.snapshot_url || item?.snapshotUrl || '',
-  creator: item?.creator
-    ? {
-        ...item.creator,
-        name:
-          item.creator?.name ||
-          item.creator?.username ||
-          item.creator?.email ||
-          'Creator',
-      }
-    : undefined,
-});
+const normalizeBroadcast = (item: any): LiveBroadcast => {
+  const rawStatus = item?.status || item?.live_status || 'created';
+
+  return {
+    ...item,
+    id: item?.id ?? item?.pk ?? item?.stream_id ?? item?.streamId,
+    title: item?.title || item?.name || 'Untitled live stream',
+    name: item?.name || item?.title || 'Untitled live stream',
+    category: item?.category || item?.category_name || item?.category_display,
+    status: rawStatus,
+    normalized_status: normalizeLiveStatus(rawStatus),
+    viewer_count: item?.viewer_count ?? item?.viewerCount ?? 0,
+    viewerCount: item?.viewerCount ?? item?.viewer_count ?? 0,
+    stream_key: item?.stream_key || item?.streamKey || '',
+    rtmp_url: item?.rtmp_url || item?.rtmpUrl || '',
+    playback_url: item?.playback_url || item?.playbackUrl || '',
+    payment_address: item?.payment_address || item?.wallet_address || '',
+    thumbnail_url:
+      (item?.thumbnail_url || item?.thumbnailUrl || '').toString().trim(),
+    preview_image_url:
+      (item?.preview_image_url || item?.previewImageUrl || item?.poster_url || '')
+        .toString()
+        .trim(),
+    snapshot_url: (item?.snapshot_url || item?.snapshotUrl || '').toString().trim(),
+    creator: item?.creator
+      ? {
+          ...item.creator,
+          name:
+            item.creator?.name ||
+            item.creator?.username ||
+            item.creator?.email ||
+            'Creator',
+        }
+      : undefined,
+  };
+};
 
 const normalizeBroadcastList = (payload: any): LiveBroadcast[] => {
   if (Array.isArray(payload)) {
