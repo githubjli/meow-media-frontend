@@ -96,41 +96,41 @@ const getLiveChildIcon = (path: string, slug?: string) => {
 };
 
 const CONTENT_CATEGORY_FALLBACKS = [
-  { key: 'nav.category.technology', slug: 'technology' },
-  { key: 'nav.category.education', slug: 'education' },
-  { key: 'nav.category.gaming', slug: 'gaming' },
-  { key: 'nav.category.entertainment', slug: 'entertainment' },
-  { label: 'Travel', slug: 'travel' },
-  { label: 'Finance', slug: 'finance' },
-  { label: 'Movies', slug: 'movies' },
-  { label: 'Beauty', slug: 'beauty' },
+  { key: 'menu.categories.technology', slug: 'technology' },
+  { key: 'menu.categories.education', slug: 'education' },
+  { key: 'menu.categories.gaming', slug: 'gaming' },
+  { key: 'menu.categories.entertainment', slug: 'entertainment' },
+  { key: 'menu.categories.travel', slug: 'travel' },
+  { key: 'menu.categories.finance', slug: 'finance' },
+  { key: 'menu.categories.movies', slug: 'movies' },
+  { key: 'menu.categories.beauty', slug: 'beauty' },
 ];
 
 const COMMERCE_CATEGORY_ITEMS = [
-  { label: 'Food', slug: 'food' },
-  { label: 'Shops', slug: 'shops' },
-  { label: 'Real Estate', slug: 'real-estate' },
-  { label: 'Vehicles', slug: 'vehicles' },
-  { label: 'Creators', slug: 'creators' },
+  { key: 'menu.categories.food', slug: 'food' },
+  { key: 'menu.categories.shops', slug: 'shops' },
+  { key: 'menu.categories.realEstate', slug: 'real-estate' },
+  { key: 'menu.categories.vehicles', slug: 'vehicles' },
+  { key: 'menu.categories.creators', slug: 'creators' },
 ];
 
 const LIVE_SECTION_ITEMS = [
-  { key: 'nav.exploreLive', path: '/live', slug: 'live' },
-  { label: 'Create Live', path: '/live/create', slug: 'live-create' },
-  { label: 'My Sessions', path: '/live?scope=my', slug: 'live-sessions' },
+  { key: 'menu.live.explore', path: '/live', slug: 'live' },
+  { key: 'menu.live.create', path: '/live/create', slug: 'live-create' },
+  { key: 'menu.live.sessions', path: '/live?scope=my', slug: 'live-sessions' },
 ];
 
 const NEWS_SECTION_ITEMS = [
   {
-    label: 'News Live',
+    key: 'menu.news.live',
     path: '/news/live',
   },
   {
-    label: 'News Channel',
+    key: 'menu.news.channel',
     path: '/news/channel',
   },
   {
-    label: <span style={{ color: '#1677ff' }}>News Articles</span>,
+    key: 'menu.news.articles',
     path: 'https://meownews.online/',
     target: '_blank',
   },
@@ -283,9 +283,9 @@ export const layout: RunTimeLayoutConfig = ({
         path,
         name:
           path === '/home'
-            ? intl.formatMessage({ id: 'nav.home' })
+            ? intl.formatMessage({ id: 'menu.home' })
             : path === '/browse'
-            ? intl.formatMessage({ id: 'nav.browse' })
+            ? intl.formatMessage({ id: 'menu.browse' })
             : undefined,
         icon: stableItemMap.get(path),
         className: 'sidebar-menu-item sidebar-menu-item-primary',
@@ -318,9 +318,7 @@ export const layout: RunTimeLayoutConfig = ({
           const slug = matchedCategory?.slug || fallbackCategory.slug;
           const name =
             matchedCategory?.name ||
-            (fallbackCategory.key
-              ? intl.formatMessage({ id: fallbackCategory.key })
-              : fallbackCategory.label);
+            intl.formatMessage({ id: fallbackCategory.key });
 
           return {
             name,
@@ -332,12 +330,12 @@ export const layout: RunTimeLayoutConfig = ({
       );
 
       const commerceItem = {
-        name: 'Commerce',
+        name: intl.formatMessage({ id: 'menu.commerce' }),
         path: '/categories/food',
         icon: <ShopOutlined />,
         className: 'sidebar-menu-item sidebar-menu-item-category',
         children: COMMERCE_CATEGORY_ITEMS.map((item) => ({
-          name: item.label,
+          name: intl.formatMessage({ id: item.key }),
           path: `/categories/${item.slug}`,
           icon: getCommerceIcon(item.slug),
           className: 'sidebar-menu-item sidebar-menu-item-category',
@@ -346,11 +344,18 @@ export const layout: RunTimeLayoutConfig = ({
 
       const newsItem = {
         path: '/news',
-        name: 'News',
+        name: intl.formatMessage({ id: 'menu.news' }),
         icon: stableItemMap.get('/news'),
         className: 'sidebar-menu-item sidebar-menu-item-primary',
         children: NEWS_SECTION_ITEMS.map((item) => ({
-          name: item.label,
+          name:
+            item.key === 'menu.news.articles' ? (
+              <span style={{ color: '#1677ff' }}>
+                {intl.formatMessage({ id: item.key })}
+              </span>
+            ) : (
+              intl.formatMessage({ id: item.key })
+            ),
           path: item.path,
           target: item.target,
           className: 'sidebar-menu-item sidebar-menu-item-live-child',
@@ -366,11 +371,11 @@ export const layout: RunTimeLayoutConfig = ({
       const liveItem = {
         ...(stableItemByPath.get('/live') || {}),
         path: '/live',
-        name: intl.formatMessage({ id: 'nav.live' }),
+        name: intl.formatMessage({ id: 'menu.live' }),
         icon: stableItemMap.get('/live'),
         className: 'sidebar-menu-item sidebar-menu-item-live',
         children: LIVE_SECTION_ITEMS.map((item) => ({
-          name: item.key ? intl.formatMessage({ id: item.key }) : item.label,
+          name: intl.formatMessage({ id: item.key }),
           path: item.path,
           icon: getLiveChildIcon(item.path, item.slug),
           className: 'sidebar-menu-item sidebar-menu-item-live-child',
