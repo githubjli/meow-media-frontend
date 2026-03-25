@@ -116,11 +116,20 @@ const COMMERCE_CATEGORY_ITEMS = [
 
 const LIVE_SECTION_ITEMS = [
   { key: 'nav.exploreLive', path: '/live', slug: 'live' },
-  { key: 'nav.goLive', path: '/live/create', slug: 'live-create' },
-  { label: 'Selling', path: '/categories/live-selling', slug: 'selling' },
-  { label: 'News', path: '/categories/live-news', slug: 'news' },
-  { label: 'Reporting', path: '/categories/live-reporting', slug: 'reporting' },
-  { label: 'Food', path: '/categories/live-food', slug: 'food' },
+  { label: 'Create Live', path: '/live/create', slug: 'live-create' },
+  { label: 'My Sessions', path: '/live?scope=my', slug: 'live-sessions' },
+];
+
+const NEWS_SECTION_ITEMS = [
+  {
+    label: 'External News Site',
+    path: 'https://meownews.online/',
+    target: '_blank',
+  },
+  {
+    label: 'News Videos',
+    path: '/news/videos',
+  },
 ];
 
 const normalizeCategoryKey = (value?: string) => {
@@ -254,6 +263,7 @@ export const layout: RunTimeLayoutConfig = ({
       const stableItemMap = new Map<string, any>([
         ['/home', <VideoCameraOutlined />],
         ['/browse', <CompassOutlined />],
+        ['/news', <NotificationOutlined />],
         ['/live', <ThunderboltOutlined />],
         ['/admin/videos', <SettingOutlined />],
       ]);
@@ -330,6 +340,25 @@ export const layout: RunTimeLayoutConfig = ({
         })),
       };
 
+      const newsItem = {
+        path: '/news',
+        name: 'News',
+        icon: stableItemMap.get('/news'),
+        className: 'sidebar-menu-item sidebar-menu-item-primary',
+        children: NEWS_SECTION_ITEMS.map((item) => ({
+          name: item.label,
+          path: item.path,
+          target: item.target,
+          className: 'sidebar-menu-item sidebar-menu-item-live-child',
+          icon:
+            item.path === '/news/videos' ? (
+              <PlayCircleOutlined />
+            ) : (
+              <GlobalOutlined />
+            ),
+        })),
+      };
+
       const liveItem = {
         ...(stableItemByPath.get('/live') || {}),
         path: '/live',
@@ -346,13 +375,13 @@ export const layout: RunTimeLayoutConfig = ({
 
       return [
         ...primaryItems,
+        newsItem,
+        liveItem,
         ...adminItems,
         { type: 'divider', key: 'sidebar-divider-primary' } as any,
         ...categoryItems,
         { type: 'divider', key: 'sidebar-divider-commerce' } as any,
         commerceItem,
-        { type: 'divider', key: 'sidebar-divider-live' } as any,
-        liveItem,
       ];
     },
     headerTitleRender: () => (
