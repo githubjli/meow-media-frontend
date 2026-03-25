@@ -143,7 +143,6 @@ export default function LiveRoomPage() {
   );
   const [playerPhase, setPlayerPhase] = useState<PlayerPhase>('idle');
   const [qrPayload, setQrPayload] = useState('');
-  const [uploadedQrImageDataUrl, setUploadedQrImageDataUrl] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const playbackUrl = broadcast?.playback_url || '';
@@ -183,14 +182,7 @@ export default function LiveRoomPage() {
     try {
       const data = await getLiveBroadcast(id);
       setBroadcast(data);
-      const savedQrConfig = getLiveQrConfig(data?.id);
-      setQrPayload(
-        savedQrConfig?.payload ||
-          data?.payment_address ||
-          data?.wallet_address ||
-          '',
-      );
-      setUploadedQrImageDataUrl(savedQrConfig?.uploadedImageDataUrl || '');
+      setQrPayload(data?.payment_address || data?.wallet_address || '');
       setErrorMessage('');
       setPlayerPhase(data?.playback_url ? 'loading' : 'waiting');
       setPlayerStatus(
@@ -493,16 +485,16 @@ export default function LiveRoomPage() {
                     title={
                       <Space size={8}>
                         <QrcodeOutlined />
-                        <span>Watch QR</span>
+                        <span>Pay QR</span>
                       </Space>
                     }
                   >
                     <QrCodePanel
-                      payload={watchUrl || qrPayload}
+                      payload={qrPayload}
                       uploadedImageDataUrl={uploadedQrImageDataUrl}
-                      emptyText="Watch QR will appear once a watch link is available."
+                      emptyText="Payment address is not available yet."
                     />
-                    <Text type="secondary">Scan to open this live stream.</Text>
+                    <Text type="secondary">Scan to support this stream.</Text>
                   </Card>
                 </Space>
               </Col>
@@ -515,16 +507,21 @@ export default function LiveRoomPage() {
                     title={
                       <Space size={8}>
                         <QrcodeOutlined />
-                        <span>Pay QR</span>
+                        <span>
+                          {qrPayload ? 'Pay QR' : 'Pay QR unavailable'}
+                        </span>
                       </Space>
                     }
                   >
                     <QrCodePanel
                       payload={qrPayload}
-                      uploadedImageDataUrl={uploadedQrImageDataUrl}
                       emptyText="Payment address is not available yet."
                     />
-                    <Text type="secondary">Scan to support this stream.</Text>
+                    <Text type="secondary">
+                      {qrPayload
+                        ? 'Scan to support this stream.'
+                        : 'No payment address has been saved for this stream yet.'}
+                    </Text>
                   </Card>
                   <Card
                     bordered={false}

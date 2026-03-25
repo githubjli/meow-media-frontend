@@ -191,7 +191,10 @@ export default function LiveCreatePage() {
     setErrorMessage('');
 
     try {
-      const nextLive = await createLiveBroadcast(values);
+      const nextLive = await createLiveBroadcast({
+        ...values,
+        payment_address: qrPayload || undefined,
+      });
       setCreatedLive(nextLive);
       setBroadcastMode('camera');
       setDevicePermissionStatus('idle');
@@ -204,7 +207,7 @@ export default function LiveCreatePage() {
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
       const existingQr = getLiveQrConfig(nextLive.id);
-      setQrPayload(existingQr?.payload || '');
+      setQrPayload(nextLive.payment_address || existingQr?.payload || '');
       setUploadedQrImageDataUrl(existingQr?.uploadedImageDataUrl || '');
     } catch (error: any) {
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
