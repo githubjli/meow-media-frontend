@@ -153,13 +153,7 @@ export default function LiveRoomPage() {
     broadcast?.creator?.email ||
     'Creator';
   const viewerCount = broadcast?.viewer_count ?? broadcast?.viewerCount ?? 0;
-  const watchUrl = useMemo(() => {
-    if (!id || typeof window === 'undefined') {
-      return '';
-    }
-
-    return `${window.location.origin}/live/${id}`;
-  }, [id]);
+  const payQrPayload = String(qrPayload || '').trim();
 
   const detailItems = useMemo(
     () => [
@@ -485,16 +479,21 @@ export default function LiveRoomPage() {
                     title={
                       <Space size={8}>
                         <QrcodeOutlined />
-                        <span>Pay QR</span>
+                        <span>
+                          {qrPayload ? 'Pay QR' : 'Pay QR unavailable'}
+                        </span>
                       </Space>
                     }
                   >
                     <QrCodePanel
                       payload={qrPayload}
-                      uploadedImageDataUrl={uploadedQrImageDataUrl}
                       emptyText="Payment address is not available yet."
                     />
-                    <Text type="secondary">Scan to support this stream.</Text>
+                    <Text type="secondary">
+                      {qrPayload
+                        ? 'Scan to support this stream.'
+                        : 'No payment address has been saved for this stream yet.'}
+                    </Text>
                   </Card>
                 </Space>
               </Col>
@@ -508,17 +507,17 @@ export default function LiveRoomPage() {
                       <Space size={8}>
                         <QrcodeOutlined />
                         <span>
-                          {qrPayload ? 'Pay QR' : 'Pay QR unavailable'}
+                          {payQrPayload ? 'Pay QR' : 'Pay QR unavailable'}
                         </span>
                       </Space>
                     }
                   >
                     <QrCodePanel
-                      payload={qrPayload}
+                      payload={payQrPayload}
                       emptyText="Payment address is not available yet."
                     />
                     <Text type="secondary">
-                      {qrPayload
+                      {payQrPayload
                         ? 'Scan to support this stream.'
                         : 'No payment address has been saved for this stream yet.'}
                     </Text>
