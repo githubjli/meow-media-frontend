@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 
 export default function NewsRedirectPage() {
   useEffect(() => {
-    history.replace('/browse?category=news');
+    history.replace('/categories/news');
   }, []);
 
   return null;

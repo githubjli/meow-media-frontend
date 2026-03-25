@@ -22,13 +22,17 @@ import {
   Row,
   Select,
   Space,
+  Tabs,
   Tag,
   Typography,
+  Upload,
   message,
 } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import QrCodePanel from '@/components/QrCodePanel';
 import { createLiveBroadcast, type LiveBroadcast } from '@/services/live';
+import { getLiveQrConfig, saveLiveQrConfig } from '@/utils/liveQr';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -140,6 +144,9 @@ export default function LiveCreatePage() {
   const [publishingMessage, setPublishingMessage] = useState(
     'Browser publishing is standing by.',
   );
+  const [qrMode, setQrMode] = useState<'upload' | 'generate'>('generate');
+  const [qrPayload, setQrPayload] = useState('');
+  const [uploadedQrImageDataUrl, setUploadedQrImageDataUrl] = useState('');
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -184,7 +191,10 @@ export default function LiveCreatePage() {
     setErrorMessage('');
 
     try {
-      const nextLive = await createLiveBroadcast(values);
+      const nextLive = await createLiveBroadcast({
+        ...values,
+        payment_address: qrPayload || undefined,
+      });
       setCreatedLive(nextLive);
       setBroadcastMode('camera');
       setDevicePermissionStatus('idle');
@@ -196,6 +206,9 @@ export default function LiveCreatePage() {
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
+      const existingQr = getLiveQrConfig(nextLive.id);
+      setQrPayload(nextLive.payment_address || existingQr?.payload || '');
+      setUploadedQrImageDataUrl(existingQr?.uploadedImageDataUrl || '');
     } catch (error: any) {
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
     } finally {
@@ -425,6 +438,17 @@ export default function LiveCreatePage() {
     },
   ];
 
+  useEffect(() => {
+    if (!createdLive?.id) {
+      return;
+    }
+
+    saveLiveQrConfig(createdLive.id, {
+      payload: qrPayload,
+      uploadedImageDataUrl: uploadedQrImageDataUrl,
+    });
+  }, [createdLive?.id, qrPayload, uploadedQrImageDataUrl]);
+
   const deviceChecklist = [
     {
       label: 'Camera',
@@ -530,11 +554,81 @@ export default function LiveCreatePage() {
                       ]}
                     />
                   </Form.Item>
+                  <Form.Item
+                    label="QR Code (Optional)"
+                    style={{ marginBottom: 16 }}
+                  >
+                    <Space
+                      direction="vertical"
+                      size={12}
+                      style={{ width: '100%' }}
+                    >
+                      <Tabs
+                        size="small"
+                        activeKey={qrMode}
+                        onChange={(value) =>
+                          setQrMode(value as 'upload' | 'generate')
+                        }
+                        items={[
+                          { key: 'generate', label: 'Generate Pay QR' },
+                          { key: 'upload', label: 'Upload QR' },
+                        ]}
+                      />
+                      {qrMode === 'generate' ? (
+                        <Space
+                          direction="vertical"
+                          size={8}
+                          style={{ width: '100%' }}
+                        >
+                          <Text type="secondary">
+                            Enter a wallet/payment address to generate the Pay
+                            QR. This QR is used for payment/support, not for
+                            watching the stream.
+                          </Text>
+                          <Input
+                            placeholder="Payment Address"
+                            value={qrPayload}
+                            onChange={(event) =>
+                              setQrPayload(event.target.value.trim())
+                            }
+                          />
+                        </Space>
+                      ) : (
+                        <Upload
+                          maxCount={1}
+                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                          beforeUpload={(file) => {
+                            const reader = new FileReader();
+                            reader.onload = () =>
+                              setUploadedQrImageDataUrl(
+                                String(reader.result || ''),
+                              );
+                            reader.readAsDataURL(file);
+                            return false;
+                          }}
+                          onRemove={() => {
+                            setUploadedQrImageDataUrl('');
+                          }}
+                        >
+                          <Button>Upload QR Image</Button>
+                        </Upload>
+                      )}
+                      <QrCodePanel
+                        payload={qrMode === 'generate' ? qrPayload : ''}
+                        uploadedImageDataUrl={
+                          qrMode === 'upload' ? uploadedQrImageDataUrl : ''
+                        }
+                        size={160}
+                        emptyText="Enter a payment address to generate the Pay QR."
+                      />
+                    </Space>
+                  </Form.Item>
                   <div
                     style={{
                       display: 'flex',
                       justifyContent: 'flex-end',
                       gap: 12,
+                      marginTop: 4,
                     }}
                   >
                     <Button onClick={() => history.push('/live')}>
