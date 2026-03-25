@@ -100,6 +100,45 @@ const toLiveVideoCardData = (item: LiveBroadcast) => {
   };
 };
 
+const isNotStartedStatus = (status: FrontendLiveStatus) =>
+  status === 'ready' || status === 'waiting';
+
+const isNewsLiveStream = (stream: LiveBroadcast) => {
+  const categoryValue = String(stream.category || '').toLowerCase();
+  return categoryValue.includes('news');
+};
+
+const toLiveVideoCardData = (item: LiveBroadcast) => {
+  const normalizedStatus = item.normalized_status || 'waiting';
+  const status = getStatusPresentation(normalizedStatus);
+  const creatorName =
+    item.creator?.name || item.creator?.username || item.creator?.email || 'Creator';
+  const viewerCount = item.viewer_count ?? item.viewerCount ?? 0;
+  const posterUrl = getPosterUrl(item);
+  const shouldUseFallbackCover =
+    !posterUrl || isNotStartedStatus(normalizedStatus);
+
+  return {
+    id: item.id,
+    routePath: `/live/${item.id}`,
+    title: item.title || item.name || `Stream ${item.id}`,
+    name: item.title || item.name || `Stream ${item.id}`,
+    author: creatorName,
+    owner_name: creatorName,
+    created_at: item.started_at || item.created_at,
+    date: item.started_at || item.created_at,
+    thumbnail_url: shouldUseFallbackCover ? LIVE_FALLBACK_COVER : posterUrl,
+    thumbnail: shouldUseFallbackCover ? LIVE_FALLBACK_COVER : posterUrl,
+    category_name: item.category || 'Live broadcast',
+    category_display: item.category || 'Live broadcast',
+    views: `${viewerCount.toLocaleString()} viewers`,
+    description: `${status.description} · ${status.label.toUpperCase()}`,
+    description_preview: `${status.description} · ${status.label.toUpperCase()}`,
+    status: status.isLive ? 'broadcasting' : String(item.status || '').toLowerCase(),
+    duration_display: 'LIVE',
+  };
+};
+
 export default function ExploreLivePage() {
   const intl = useIntl();
   const location = useLocation();
