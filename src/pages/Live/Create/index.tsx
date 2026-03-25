@@ -147,6 +147,13 @@ export default function LiveCreatePage() {
   const [qrMode, setQrMode] = useState<'upload' | 'generate'>('generate');
   const [qrPayload, setQrPayload] = useState('');
   const [uploadedQrImageDataUrl, setUploadedQrImageDataUrl] = useState('');
+  const watchUrl = useMemo(() => {
+    if (!createdLive?.id || typeof window === 'undefined') {
+      return '';
+    }
+
+    return `${window.location.origin}/live/${createdLive.id}`;
+  }, [createdLive?.id]);
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -205,10 +212,7 @@ export default function LiveCreatePage() {
       );
       const existingQr = getLiveQrConfig(nextLive.id);
       setQrPayload(
-        existingQr?.payload ||
-          nextLive.playback_url ||
-          nextLive.stream_key ||
-          '',
+        existingQr?.payload || `${window.location.origin}/live/${nextLive.id}`,
       );
       setUploadedQrImageDataUrl(existingQr?.uploadedImageDataUrl || '');
     } catch (error: any) {
@@ -577,11 +581,20 @@ export default function LiveCreatePage() {
                         ]}
                       />
                       {qrMode === 'generate' ? (
-                        <Input
-                          placeholder="Paste token or share URL"
-                          value={qrPayload}
-                          onChange={(event) => setQrPayload(event.target.value)}
-                        />
+                        <Space
+                          direction="vertical"
+                          size={8}
+                          style={{ width: '100%' }}
+                        >
+                          <Text type="secondary">
+                            QR for viewers to scan and open the live stream.
+                          </Text>
+                          <Input
+                            readOnly
+                            placeholder="Watch QR will be generated after session creation"
+                            value={watchUrl || ''}
+                          />
+                        </Space>
                       ) : (
                         <Upload
                           maxCount={1}
@@ -603,12 +616,14 @@ export default function LiveCreatePage() {
                         </Upload>
                       )}
                       <QrCodePanel
-                        payload={qrMode === 'generate' ? qrPayload : undefined}
+                        payload={
+                          qrMode === 'generate' ? watchUrl || qrPayload : ''
+                        }
                         uploadedImageDataUrl={
                           qrMode === 'upload' ? uploadedQrImageDataUrl : ''
                         }
                         size={160}
-                        emptyText="Add a token/URL or upload a QR image."
+                        emptyText="Watch QR will be generated from the live watch link after session creation."
                       />
                     </Space>
                   </Form.Item>

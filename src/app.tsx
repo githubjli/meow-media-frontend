@@ -127,7 +127,7 @@ const NEWS_SECTION_ITEMS = [
     target: '_blank',
   },
   {
-    label: 'News Videos',
+    label: 'News Category',
     path: '/news/videos',
   },
 ];

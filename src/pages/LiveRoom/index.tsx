@@ -154,6 +154,13 @@ export default function LiveRoomPage() {
     broadcast?.creator?.email ||
     'Creator';
   const viewerCount = broadcast?.viewer_count ?? broadcast?.viewerCount ?? 0;
+  const watchUrl = useMemo(() => {
+    if (!id || typeof window === 'undefined') {
+      return '';
+    }
+
+    return `${window.location.origin}/live/${id}`;
+  }, [id]);
 
   const detailItems = useMemo(
     () => [
@@ -177,7 +184,7 @@ export default function LiveRoomPage() {
       const data = await getLiveBroadcast(id);
       setBroadcast(data);
       const savedQrConfig = getLiveQrConfig(data?.id);
-      setQrPayload(savedQrConfig?.payload || data?.playback_url || '');
+      setQrPayload(savedQrConfig?.payload || watchUrl || '');
       setUploadedQrImageDataUrl(savedQrConfig?.uploadedImageDataUrl || '');
       setErrorMessage('');
       setPlayerPhase(data?.playback_url ? 'loading' : 'waiting');
@@ -437,47 +444,44 @@ export default function LiveRoomPage() {
 
             <Row gutter={[20, 20]}>
               <Col xs={24} xl={16}>
-                <Card
-                  bordered={false}
-                  style={{ borderRadius: 20, overflow: 'hidden' }}
-                >
-                  {playbackUrl ? (
-                    <Space
-                      direction="vertical"
-                      size={16}
-                      style={{ width: '100%' }}
-                    >
-                      <div
-                        style={{
-                          borderRadius: 16,
-                          overflow: 'hidden',
-                          background: '#000',
-                          minHeight: 420,
-                        }}
-                      >
-                        <video
-                          ref={videoElementRef}
-                          autoPlay
-                          controls
-                          playsInline
-                          preload="auto"
-                          style={{
-                            width: '100%',
-                            minHeight: 420,
-                            background: '#000',
-                          }}
-                        />
-                      </div>
-                      <Alert type="info" showIcon message={playerStatus} />
-                    </Space>
-                  ) : (
-                    <Empty description="Playback URL is not available yet. Start your encoder and refresh this room once Django provides the playback endpoint." />
-                  )}
-                </Card>
-              </Col>
-
-              <Col xs={24} xl={8}>
                 <Space direction="vertical" size={20} style={{ width: '100%' }}>
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20, overflow: 'hidden' }}
+                  >
+                    {playbackUrl ? (
+                      <Space
+                        direction="vertical"
+                        size={16}
+                        style={{ width: '100%' }}
+                      >
+                        <div
+                          style={{
+                            borderRadius: 16,
+                            overflow: 'hidden',
+                            background: '#000',
+                            minHeight: 420,
+                          }}
+                        >
+                          <video
+                            ref={videoElementRef}
+                            autoPlay
+                            controls
+                            playsInline
+                            preload="auto"
+                            style={{
+                              width: '100%',
+                              minHeight: 420,
+                              background: '#000',
+                            }}
+                          />
+                        </div>
+                        <Alert type="info" showIcon message={playerStatus} />
+                      </Space>
+                    ) : (
+                      <Empty description="Playback URL is not available yet. Start your encoder and refresh this room once Django provides the playback endpoint." />
+                    )}
+                  </Card>
                   <Card
                     bordered={false}
                     style={{ borderRadius: 20 }}
@@ -493,6 +497,28 @@ export default function LiveRoomPage() {
                       uploadedImageDataUrl={uploadedQrImageDataUrl}
                       emptyText="QR will appear after a payload or uploaded image is available."
                     />
+                  </Card>
+                </Space>
+              </Col>
+
+              <Col xs={24} xl={8}>
+                <Space direction="vertical" size={20} style={{ width: '100%' }}>
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20 }}
+                    title={
+                      <Space size={8}>
+                        <QrcodeOutlined />
+                        <span>Watch QR</span>
+                      </Space>
+                    }
+                  >
+                    <QrCodePanel
+                      payload={watchUrl || qrPayload}
+                      uploadedImageDataUrl={uploadedQrImageDataUrl}
+                      emptyText="Watch QR will appear once a watch link is available."
+                    />
+                    <Text type="secondary">Scan to open this live stream.</Text>
                   </Card>
                   <Card
                     bordered={false}
