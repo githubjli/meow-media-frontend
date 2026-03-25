@@ -204,7 +204,7 @@ export default function LiveCreatePage() {
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
-      setQrPayload(nextLive.payment_address || qrPayload);
+      setQrPayload(nextLive.payment_address || '');
     } catch (error: any) {
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
     } finally {
