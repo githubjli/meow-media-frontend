@@ -3,6 +3,7 @@ import {
   EyeOutlined,
   PlayCircleOutlined,
   PoweroffOutlined,
+  QrcodeOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
@@ -24,6 +25,7 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import QrCodePanel from '@/components/QrCodePanel';
 import {
   endLiveBroadcast,
   getLiveBroadcast,
@@ -80,7 +82,27 @@ const copyValue = async (value: string, label: string) => {
   }
 
   try {
-    await navigator.clipboard.writeText(value);
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      message.success(`${label} copied.`);
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.setAttribute('readonly', 'true');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    if (!copied) {
+      throw new Error('copy_failed');
+    }
+
     message.success(`${label} copied.`);
   } catch (error) {
     message.info(`Copy ${label.toLowerCase()} manually.`);
@@ -139,6 +161,7 @@ export default function LiveRoomPage() {
     'Waiting for a playback URL from Django.',
   );
   const [playerPhase, setPlayerPhase] = useState<PlayerPhase>('idle');
+  const [qrPayload, setQrPayload] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const playbackUrl = broadcast?.playback_url || '';
@@ -171,6 +194,7 @@ export default function LiveRoomPage() {
     try {
       const data = await getLiveBroadcast(id);
       setBroadcast(data);
+      setQrPayload(data?.payment_address || data?.wallet_address || '');
       setErrorMessage('');
       setPlayerPhase(data?.playback_url ? 'loading' : 'waiting');
       setPlayerStatus(
@@ -428,48 +452,45 @@ export default function LiveRoomPage() {
             </Card>
 
             <Row gutter={[20, 20]}>
-              <Col xs={24} xl={16}>
-                <Card
-                  bordered={false}
-                  style={{ borderRadius: 20, overflow: 'hidden' }}
-                >
-                  {playbackUrl ? (
-                    <Space
-                      direction="vertical"
-                      size={16}
-                      style={{ width: '100%' }}
-                    >
-                      <div
-                        style={{
-                          borderRadius: 16,
-                          overflow: 'hidden',
-                          background: '#000',
-                          minHeight: 420,
-                        }}
-                      >
-                        <video
-                          ref={videoElementRef}
-                          autoPlay
-                          controls
-                          playsInline
-                          preload="auto"
-                          style={{
-                            width: '100%',
-                            minHeight: 420,
-                            background: '#000',
-                          }}
-                        />
-                      </div>
-                      <Alert type="info" showIcon message={playerStatus} />
-                    </Space>
-                  ) : (
-                    <Empty description="Playback URL is not available yet. Start your encoder and refresh this room once Django provides the playback endpoint." />
-                  )}
-                </Card>
-              </Col>
-
-              <Col xs={24} xl={8}>
+              <Col xs={24} md={16} xl={16}>
                 <Space direction="vertical" size={20} style={{ width: '100%' }}>
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20, overflow: 'hidden' }}
+                  >
+                    {playbackUrl ? (
+                      <Space
+                        direction="vertical"
+                        size={16}
+                        style={{ width: '100%' }}
+                      >
+                        <div
+                          style={{
+                            borderRadius: 16,
+                            overflow: 'hidden',
+                            background: '#000',
+                            minHeight: 420,
+                          }}
+                        >
+                          <video
+                            ref={videoElementRef}
+                            autoPlay
+                            controls
+                            playsInline
+                            preload="auto"
+                            style={{
+                              width: '100%',
+                              minHeight: 420,
+                              background: '#000',
+                            }}
+                          />
+                        </div>
+                        <Alert type="info" showIcon message={playerStatus} />
+                      </Space>
+                    ) : (
+                      <Empty description="Playback URL is not available yet. Start your encoder and refresh this room once Django provides the playback endpoint." />
+                    )}
+                  </Card>
                   <Card
                     bordered={false}
                     style={{ borderRadius: 20 }}
@@ -510,7 +531,38 @@ export default function LiveRoomPage() {
                       ))}
                     </Space>
                   </Card>
+                </Space>
+              </Col>
 
+              <Col xs={24} md={8} xl={8}>
+                <Space direction="vertical" size={20} style={{ width: '100%' }}>
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20 }}
+                    title={
+                      <Space size={8}>
+                        <QrcodeOutlined />
+                        <span>Pay QR</span>
+                      </Space>
+                    }
+                  >
+                    <QrCodePanel
+                      payload={qrPayload}
+                      emptyText="Payment address is not available yet."
+                    />
+                    <Text type="secondary">
+                      {qrPayload
+                        ? 'Scan to support this stream.'
+                        : 'No payment address has been saved for this stream yet.'}
+                    </Text>
+                    <Button
+                      size="small"
+                      icon={<CopyOutlined />}
+                      onClick={() => copyValue(qrPayload, 'Payment address')}
+                    >
+                      Copy payment address
+                    </Button>
+                  </Card>
                   <Card
                     bordered={false}
                     style={{ borderRadius: 20 }}
