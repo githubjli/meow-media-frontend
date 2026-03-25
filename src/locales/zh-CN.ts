@@ -41,7 +41,8 @@ export default {
 
   'home.hero.eyebrow': '公共片库',
   'home.hero.title': '发现新内容、直播时刻与最新发布。',
-  'home.hero.description': '浏览平台最新上传内容，关注你喜欢的主题，并一键进入直播。',
+  'home.hero.description':
+    '浏览平台最新上传内容，关注你喜欢的主题，并一键进入直播。',
   'home.latest.description': '查看平台最新公开发布的视频。',
   'home.category.description': '浏览 {category} 的最新视频。',
   'home.error': '暂时无法加载公开视频。',
@@ -73,6 +74,70 @@ export default {
   'upload.success': '视频上传成功。',
   'upload.error': '暂时无法上传视频。',
 
+  'categories.fallbackTitle': 'Category',
+  'categories.subtitle': 'Browse the latest public videos in this category.',
+  'categories.backToAll': 'Back to all videos',
+  'categories.empty': 'No public videos found in {category}.',
+  'categories.error': 'Unable to load this category right now.',
+  'publicVideoDetail.creatorUnavailable': 'Creator unavailable',
+  'publicVideoDetail.error.loadVideo': 'Unable to load this video.',
+  'publicVideoDetail.error.recommendations':
+    'Unable to load recommendations right now.',
+  'publicVideoDetail.error.comments': 'Comments are unavailable right now.',
+  'publicVideoDetail.error.updateLike': 'Unable to update like status.',
+  'publicVideoDetail.error.updateSubscription':
+    'Unable to update subscription status.',
+  'publicVideoDetail.error.publishComment': 'Unable to publish your comment.',
+  'publicVideoDetail.viewsUnavailable': 'Views unavailable',
+  'publicVideoDetail.followersCount': '{count} followers',
+  'publicVideoDetail.followersUnavailable': 'Followers unavailable',
+  'publicVideoDetail.commentsCount': '{count} comments',
+  'publicVideoDetail.commentsUnavailable': 'Comments unavailable',
+  'publicVideoDetail.message.linkCopied':
+    'Video link copied to your clipboard.',
+  'publicVideoDetail.message.copyPageUrl':
+    'Copy the current page URL to share this video.',
+  'publicVideoDetail.creatorInfoUnavailable':
+    'Creator information is unavailable for this video.',
+  'publicVideoDetail.you': 'You',
+  'publicVideoDetail.action.like': 'Like',
+  'publicVideoDetail.action.liked': 'Liked',
+  'publicVideoDetail.action.share': 'Share',
+  'publicVideoDetail.action.subscribe': 'Subscribe',
+  'publicVideoDetail.action.subscribed': 'Subscribed',
+  'publicVideoDetail.action.comment': 'Comment',
+  'publicVideoDetail.meta.published': 'Published',
+  'publicVideoDetail.meta.category': 'Category',
+  'publicVideoDetail.meta.videoId': 'Video ID',
+  'publicVideoDetail.videoNotFound': 'Video not found.',
+  'publicVideoDetail.playbackUnavailable':
+    'This video is not available for playback yet.',
+  'publicVideoDetail.publicWatchPage': 'Public watch page',
+  'publicVideoDetail.backToBrowse': 'Back to browse',
+  'publicVideoDetail.contentSummary':
+    'Published content with creator context, engagement signals, and related videos nearby.',
+  'publicVideoDetail.loadingAudience': 'Loading audience details…',
+  'publicVideoDetail.creatorProfileFromRecord':
+    'Creator profile pulled from the published video record.',
+  'publicVideoDetail.creatorDetailsUnavailable':
+    'Creator details are not available for this video yet.',
+  'publicVideoDetail.noDescription':
+    'No description has been added for this video yet. Check the recommendation panel for more public content to explore.',
+  'publicVideoDetail.commentsTitle': 'Comments',
+  'publicVideoDetail.commentPlaceholder.auth': 'Add a public comment',
+  'publicVideoDetail.commentPlaceholder.guest':
+    'Log in to join the conversation.',
+  'publicVideoDetail.viewerInitial': 'V',
+  'publicVideoDetail.viewer': 'Viewer',
+  'publicVideoDetail.loadMore': 'Load more',
+  'publicVideoDetail.noComments': 'No comments yet.',
+  'publicVideoDetail.upNext': 'Up next',
+  'publicVideoDetail.upNextDescription':
+    'More public videos from the same category when available, with latest uploads as backup.',
+  'publicVideoDetail.noRecommendations': 'No recommendations available yet.',
+  'publicVideoDetail.authModal.title': 'Continue with your account',
+  'publicVideoDetail.authModal.description':
+    'Log in or create an account to like videos, subscribe to creators, and join the comments.',
   'videoCard.justNow': '刚刚',
   'videoCard.recentlyAdded': '最近添加',
   'videoCard.time.minute': '{count} 分钟前',
@@ -85,5 +150,13 @@ export default {
   'videoCard.time.months': '{count} 个月前',
   'videoCard.time.year': '{count} 年前',
   'videoCard.time.years': '{count} 年前',
+  'live.status.live': 'LIVE',
+  'live.status.starting': 'STARTING',
+  'live.status.notStarted': 'NOT STARTED',
+  'live.status.ended': 'ENDED',
+  'live.status.onAir': '正在直播',
+  'live.status.readyToGoLive': '已准备好开播',
+  'live.status.broadcastEnded': '直播已结束',
+  'live.status.streamStarting': '直播启动中',
   'videoCard.live': '直播中',
 };

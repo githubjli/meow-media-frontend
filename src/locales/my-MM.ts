@@ -40,11 +40,14 @@ export default {
   'common.noVideosInSection': '{section} တွင် ဗီဒီယိုမရှိသေးပါ',
 
   'home.hero.eyebrow': 'အများသုံးစာကြည့်တိုက်',
-  'home.hero.title': 'ဇာတ်လမ်းအသစ်များ၊ Live အချိန်များနှင့် နောက်ဆုံးတင်ထားသောအရာများကို ရှာဖွေပါ။',
+  'home.hero.title':
+    'ဇာတ်လမ်းအသစ်များ၊ Live အချိန်များနှင့် နောက်ဆုံးတင်ထားသောအရာများကို ရှာဖွေပါ။',
   'home.hero.description':
     'ပလက်ဖောင်းပေါ်ရှိ နောက်ဆုံးတင်ထားသော ဗီဒီယိုများကို ကြည့်ရှုပါ၊ စိတ်ဝင်စားသောအမျိုးအစားများကို လိုက်နာပါ၊ Live သို့ ချက်ချင်းဝင်နိုင်ပါသည်။',
-  'home.latest.description': 'ပလက်ဖောင်းတစ်လျှောက် နောက်ဆုံးထုတ် အများသုံးဗီဒီယိုများ။',
-  'home.category.description': '{category} အမျိုးအစားရှိ နောက်ဆုံးဗီဒီယိုများကို ကြည့်ရှုပါ။',
+  'home.latest.description':
+    'ပလက်ဖောင်းတစ်လျှောက် နောက်ဆုံးထုတ် အများသုံးဗီဒီယိုများ။',
+  'home.category.description':
+    '{category} အမျိုးအစားရှိ နောက်ဆုံးဗီဒီယိုများကို ကြည့်ရှုပါ။',
   'home.error': 'အများသုံးဗီဒီယိုများကို ယခုမတင်နိုင်ပါ။',
 
   'browse.title': 'ဗီဒီယိုများကို ကြည့်ရှုရန်',
@@ -69,13 +72,79 @@ export default {
   'upload.placeholder.title': 'ဗီဒီယိုခေါင်းစဉ် ရိုက်ထည့်ပါ',
   'upload.placeholder.description': 'ဖော်ပြချက် (လိုချင်လျှင်)',
   'upload.placeholder.category': 'အမျိုးအစားရွေးပါ',
-  'upload.dropzone.text': 'ဗီဒီယိုဖိုင်ကို ဤနေရာသို့ နှိပ်၍ သို့မဟုတ် ဆွဲချပြီး ထည့်ပါ',
-  'upload.dropzone.hint': 'Submit လုပ်ပြီးနောက် ဖိုင်ကို သင့်အကောင့်သို့ တင်မည်။',
+  'upload.dropzone.text':
+    'ဗီဒီယိုဖိုင်ကို ဤနေရာသို့ နှိပ်၍ သို့မဟုတ် ဆွဲချပြီး ထည့်ပါ',
+  'upload.dropzone.hint':
+    'Submit လုပ်ပြီးနောက် ဖိုင်ကို သင့်အကောင့်သို့ တင်မည်။',
   'upload.validation.file': 'တင်ရန် ဗီဒီယိုဖိုင်တစ်ခု ရွေးပါ။',
   'upload.validation.title': 'ခေါင်းစဉ်ထည့်ပါ။',
   'upload.success': 'ဗီဒီယိုတင်ခြင်း အောင်မြင်ပါသည်။',
   'upload.error': 'ယခု ဗီဒီယိုမတင်နိုင်ပါ။',
 
+  'categories.fallbackTitle': 'Category',
+  'categories.subtitle': 'Browse the latest public videos in this category.',
+  'categories.backToAll': 'Back to all videos',
+  'categories.empty': 'No public videos found in {category}.',
+  'categories.error': 'Unable to load this category right now.',
+  'publicVideoDetail.creatorUnavailable': 'Creator unavailable',
+  'publicVideoDetail.error.loadVideo': 'Unable to load this video.',
+  'publicVideoDetail.error.recommendations':
+    'Unable to load recommendations right now.',
+  'publicVideoDetail.error.comments': 'Comments are unavailable right now.',
+  'publicVideoDetail.error.updateLike': 'Unable to update like status.',
+  'publicVideoDetail.error.updateSubscription':
+    'Unable to update subscription status.',
+  'publicVideoDetail.error.publishComment': 'Unable to publish your comment.',
+  'publicVideoDetail.viewsUnavailable': 'Views unavailable',
+  'publicVideoDetail.followersCount': '{count} followers',
+  'publicVideoDetail.followersUnavailable': 'Followers unavailable',
+  'publicVideoDetail.commentsCount': '{count} comments',
+  'publicVideoDetail.commentsUnavailable': 'Comments unavailable',
+  'publicVideoDetail.message.linkCopied':
+    'Video link copied to your clipboard.',
+  'publicVideoDetail.message.copyPageUrl':
+    'Copy the current page URL to share this video.',
+  'publicVideoDetail.creatorInfoUnavailable':
+    'Creator information is unavailable for this video.',
+  'publicVideoDetail.you': 'You',
+  'publicVideoDetail.action.like': 'Like',
+  'publicVideoDetail.action.liked': 'Liked',
+  'publicVideoDetail.action.share': 'Share',
+  'publicVideoDetail.action.subscribe': 'Subscribe',
+  'publicVideoDetail.action.subscribed': 'Subscribed',
+  'publicVideoDetail.action.comment': 'Comment',
+  'publicVideoDetail.meta.published': 'Published',
+  'publicVideoDetail.meta.category': 'Category',
+  'publicVideoDetail.meta.videoId': 'Video ID',
+  'publicVideoDetail.videoNotFound': 'Video not found.',
+  'publicVideoDetail.playbackUnavailable':
+    'This video is not available for playback yet.',
+  'publicVideoDetail.publicWatchPage': 'Public watch page',
+  'publicVideoDetail.backToBrowse': 'Back to browse',
+  'publicVideoDetail.contentSummary':
+    'Published content with creator context, engagement signals, and related videos nearby.',
+  'publicVideoDetail.loadingAudience': 'Loading audience details…',
+  'publicVideoDetail.creatorProfileFromRecord':
+    'Creator profile pulled from the published video record.',
+  'publicVideoDetail.creatorDetailsUnavailable':
+    'Creator details are not available for this video yet.',
+  'publicVideoDetail.noDescription':
+    'No description has been added for this video yet. Check the recommendation panel for more public content to explore.',
+  'publicVideoDetail.commentsTitle': 'Comments',
+  'publicVideoDetail.commentPlaceholder.auth': 'Add a public comment',
+  'publicVideoDetail.commentPlaceholder.guest':
+    'Log in to join the conversation.',
+  'publicVideoDetail.viewerInitial': 'V',
+  'publicVideoDetail.viewer': 'Viewer',
+  'publicVideoDetail.loadMore': 'Load more',
+  'publicVideoDetail.noComments': 'No comments yet.',
+  'publicVideoDetail.upNext': 'Up next',
+  'publicVideoDetail.upNextDescription':
+    'More public videos from the same category when available, with latest uploads as backup.',
+  'publicVideoDetail.noRecommendations': 'No recommendations available yet.',
+  'publicVideoDetail.authModal.title': 'Continue with your account',
+  'publicVideoDetail.authModal.description':
+    'Log in or create an account to like videos, subscribe to creators, and join the comments.',
   'videoCard.justNow': 'ယခုပဲ',
   'videoCard.recentlyAdded': 'မကြာသေးမီက ထည့်ထားသည်',
   'videoCard.time.minute': '{count} မိနစ်ခန့်က',
@@ -88,5 +157,13 @@ export default {
   'videoCard.time.months': '{count} လခန့်က',
   'videoCard.time.year': '{count} နှစ်ခန့်က',
   'videoCard.time.years': '{count} နှစ်ခန့်က',
+  'live.status.live': 'LIVE',
+  'live.status.starting': 'STARTING',
+  'live.status.notStarted': 'NOT STARTED',
+  'live.status.ended': 'ENDED',
+  'live.status.onAir': 'On air now',
+  'live.status.readyToGoLive': 'Ready to go live',
+  'live.status.broadcastEnded': 'Broadcast ended',
+  'live.status.streamStarting': 'Stream starting',
   'videoCard.live': 'တိုက်ရိုက်',
 };
