@@ -434,7 +434,7 @@ export default function LiveRoomPage() {
             </Card>
 
             <Row gutter={[20, 20]}>
-              <Col xs={24} xl={16}>
+              <Col xs={24} md={16} xl={16}>
                 <Space direction="vertical" size={20} style={{ width: '100%' }}>
                   <Card
                     bordered={false}
@@ -496,7 +496,7 @@ export default function LiveRoomPage() {
                 </Space>
               </Col>
 
-              <Col xs={24} xl={8}>
+              <Col xs={24} md={8} xl={8}>
                 <Space direction="vertical" size={20} style={{ width: '100%' }}>
                   <Card
                     bordered={false}
