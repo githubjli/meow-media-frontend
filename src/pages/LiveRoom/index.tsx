@@ -512,6 +512,13 @@ export default function LiveRoomPage() {
                         ? 'Scan to support this stream.'
                         : 'No payment address has been saved for this stream yet.'}
                     </Text>
+                    <Button
+                      size="small"
+                      icon={<CopyOutlined />}
+                      onClick={() => copyValue(qrPayload, 'Payment address')}
+                    >
+                      Copy payment address
+                    </Button>
                   </Card>
                 </Space>
               </Col>

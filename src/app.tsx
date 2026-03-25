@@ -122,7 +122,7 @@ const LIVE_SECTION_ITEMS = [
 
 const NEWS_SECTION_ITEMS = [
   {
-    label: 'External News Site',
+    label: <span style={{ color: '#1677ff' }}>News Articles</span>,
     path: 'https://meownews.online/',
     target: '_blank',
   },
