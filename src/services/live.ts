@@ -15,6 +15,7 @@ export type LiveBroadcast = {
   stream_key?: string;
   rtmp_url?: string;
   playback_url?: string;
+  payment_address?: string;
   thumbnail_url?: string;
   preview_image_url?: string;
   snapshot_url?: string;
@@ -65,6 +66,7 @@ const normalizeBroadcast = (item: any): LiveBroadcast => ({
   stream_key: item?.stream_key || item?.streamKey || '',
   rtmp_url: item?.rtmp_url || item?.rtmpUrl || '',
   playback_url: item?.playback_url || item?.playbackUrl || '',
+  payment_address: item?.payment_address || item?.wallet_address || '',
   thumbnail_url: item?.thumbnail_url || item?.thumbnailUrl || '',
   preview_image_url:
     item?.preview_image_url || item?.previewImageUrl || item?.poster_url || '',
@@ -113,6 +115,7 @@ export async function createLiveBroadcast(payload: {
   category?: string;
   visibility: string;
   description?: string;
+  payment_address?: string;
 }): Promise<LiveBroadcast> {
   const response = await requestJson<any>(
     '/api/live/create/',
