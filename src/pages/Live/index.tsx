@@ -60,14 +60,23 @@ const getStatusPresentation = (status?: string) => {
   };
 };
 
+const LIVE_FALLBACK_COVER = '/assets/frame.png';
+
 const getPosterUrl = (item: LiveBroadcast) =>
   item.thumbnail_url || item.preview_image_url || item.snapshot_url || '';
+
+const isNotStartedStatus = (status?: string) =>
+  ['ready', 'created', 'prepared', 'waiting', 'pending', 'starting'].includes(
+    String(status || '').toLowerCase(),
+  );
 
 const toLiveVideoCardData = (item: LiveBroadcast) => {
   const status = getStatusPresentation(item.status);
   const creatorName =
     item.creator?.name || item.creator?.username || item.creator?.email || 'Creator';
   const viewerCount = item.viewer_count ?? item.viewerCount ?? 0;
+  const posterUrl = getPosterUrl(item);
+  const shouldUseFallbackCover = !posterUrl || isNotStartedStatus(item.status);
 
   return {
     id: item.id,
@@ -78,8 +87,8 @@ const toLiveVideoCardData = (item: LiveBroadcast) => {
     owner_name: creatorName,
     created_at: item.started_at || item.created_at,
     date: item.started_at || item.created_at,
-    thumbnail_url: getPosterUrl(item),
-    thumbnail: getPosterUrl(item),
+    thumbnail_url: shouldUseFallbackCover ? LIVE_FALLBACK_COVER : posterUrl,
+    thumbnail: shouldUseFallbackCover ? LIVE_FALLBACK_COVER : posterUrl,
     category_name: item.category || 'Live broadcast',
     category_display: item.category || 'Live broadcast',
     views: `${viewerCount.toLocaleString()} viewers`,
