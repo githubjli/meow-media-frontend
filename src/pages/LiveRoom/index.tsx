@@ -83,7 +83,27 @@ const copyValue = async (value: string, label: string) => {
   }
 
   try {
-    await navigator.clipboard.writeText(value);
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      message.success(`${label} copied.`);
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.setAttribute('readonly', 'true');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    if (!copied) {
+      throw new Error('copy_failed');
+    }
+
     message.success(`${label} copied.`);
   } catch (error) {
     message.info(`Copy ${label.toLowerCase()} manually.`);
@@ -517,6 +537,13 @@ export default function LiveRoomPage() {
                         ? 'Scan to support this stream.'
                         : 'No payment address has been saved for this stream yet.'}
                     </Text>
+                    <Button
+                      size="small"
+                      icon={<CopyOutlined />}
+                      onClick={() => copyValue(qrPayload, 'Payment address')}
+                    >
+                      Copy payment address
+                    </Button>
                   </Card>
                   <Card
                     bordered={false}
