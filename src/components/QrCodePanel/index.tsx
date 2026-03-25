@@ -4,7 +4,6 @@ const { Text } = Typography;
 
 type QrCodePanelProps = {
   payload?: string;
-  uploadedImageDataUrl?: string;
   size?: number;
   emptyText?: string;
 };
@@ -16,17 +15,11 @@ const buildQrImageUrl = (payload: string, size: number) =>
 
 export default function QrCodePanel({
   payload,
-  uploadedImageDataUrl,
   size = 220,
   emptyText = 'QR code is not available yet.',
 }: QrCodePanelProps) {
-  const hasUploadedImage = Boolean(uploadedImageDataUrl);
   const hasPayload = Boolean(payload);
-  const previewUrl = hasUploadedImage
-    ? uploadedImageDataUrl
-    : hasPayload
-    ? buildQrImageUrl(String(payload), size)
-    : '';
+  const previewUrl = hasPayload ? buildQrImageUrl(String(payload), size) : '';
 
   if (!previewUrl) {
     return (
