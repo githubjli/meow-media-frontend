@@ -254,7 +254,7 @@ export const layout: RunTimeLayoutConfig = ({
   };
 
   return {
-    title: 'Meow Media Stream',
+    title: intl.formatMessage({ id: 'app.name' }),
     layout: 'mix',
     splitMenus: false,
     defaultCollapsed: true,
@@ -416,7 +416,7 @@ export const layout: RunTimeLayoutConfig = ({
             letterSpacing: '-0.01em',
           }}
         >
-          {intl.formatMessage({ id: 'app.brand.name' })}
+          {intl.formatMessage({ id: 'app.name' })}
         </span>
       </div>
     ),

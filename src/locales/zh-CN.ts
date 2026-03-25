@@ -1,5 +1,6 @@
 export default {
   'app.brand.name': '喵媒体流',
+  'app.name': '喵流媒体',
   'app.user.defaultName': '媒体流用户',
   'app.user.uploaderFallback': '喵媒体',
 

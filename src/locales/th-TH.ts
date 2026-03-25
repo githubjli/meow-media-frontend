@@ -1,5 +1,6 @@
 export default {
   'app.brand.name': 'Meow Media Stream',
+  'app.name': 'Meow Stream',
   'app.user.defaultName': 'ผู้ใช้ Media Stream',
   'app.user.uploaderFallback': 'Meow Media',
 
