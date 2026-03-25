@@ -1,5 +1,5 @@
 import VideoCard from '@/components/VideoCard';
-import { getLiveList, type LiveBroadcast } from '@/services/live';
+import { getLiveList, type FrontendLiveStatus, type LiveBroadcast } from '@/services/live';
 import { VideoCameraOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useLocation, useModel } from '@umijs/max';
@@ -18,10 +18,8 @@ import { useEffect, useState } from 'react';
 
 const { Title, Text } = Typography;
 
-const getStatusPresentation = (status?: string) => {
-  const value = String(status || '').toLowerCase();
-
-  if (['live', 'started', 'broadcasting', 'publishing'].includes(value)) {
+const getStatusPresentation = (status: FrontendLiveStatus) => {
+  if (status === 'live') {
     return {
       label: 'LIVE',
       description: 'On air now',
@@ -29,7 +27,7 @@ const getStatusPresentation = (status?: string) => {
     };
   }
 
-  if (['ready', 'created', 'prepared'].includes(value)) {
+  if (status === 'ready') {
     return {
       label: 'ready',
       description: 'Ready to go live',
@@ -37,15 +35,7 @@ const getStatusPresentation = (status?: string) => {
     };
   }
 
-  if (['waiting', 'pending', 'starting'].includes(value)) {
-    return {
-      label: 'waiting',
-      description: 'Stream warming up',
-      isLive: false,
-    };
-  }
-
-  if (['ended', 'finished', 'completed', 'stopped'].includes(value)) {
+  if (status === 'ended') {
     return {
       label: 'ended',
       description: 'Broadcast ended',
@@ -55,7 +45,7 @@ const getStatusPresentation = (status?: string) => {
 
   return {
     label: 'waiting',
-    description: 'Checking stream status',
+    description: 'Stream warming up',
     isLive: false,
   };
 };
@@ -65,10 +55,8 @@ const LIVE_FALLBACK_COVER = '/assets/NotStart.png';
 const getPosterUrl = (item: LiveBroadcast) =>
   item.thumbnail_url || item.preview_image_url || item.snapshot_url || '';
 
-const isNotStartedStatus = (status?: string) =>
-  ['ready', 'created', 'prepared', 'waiting', 'pending', 'starting'].includes(
-    String(status || '').toLowerCase(),
-  );
+const isNotStartedStatus = (status: FrontendLiveStatus) =>
+  status === 'ready' || status === 'waiting';
 
 const isNewsLiveStream = (stream: LiveBroadcast) => {
   const categoryValue = String(stream.category || '').toLowerCase();
@@ -76,12 +64,14 @@ const isNewsLiveStream = (stream: LiveBroadcast) => {
 };
 
 const toLiveVideoCardData = (item: LiveBroadcast) => {
-  const status = getStatusPresentation(item.status);
+  const normalizedStatus = item.normalized_status || 'waiting';
+  const status = getStatusPresentation(normalizedStatus);
   const creatorName =
     item.creator?.name || item.creator?.username || item.creator?.email || 'Creator';
   const viewerCount = item.viewer_count ?? item.viewerCount ?? 0;
   const posterUrl = getPosterUrl(item);
-  const shouldUseFallbackCover = !posterUrl || isNotStartedStatus(item.status);
+  const shouldUseFallbackCover =
+    !posterUrl || isNotStartedStatus(normalizedStatus);
 
   return {
     id: item.id,
