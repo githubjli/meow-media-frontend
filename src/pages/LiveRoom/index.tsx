@@ -480,17 +480,17 @@ export default function LiveRoomPage() {
                       <Space size={8}>
                         <QrcodeOutlined />
                         <span>
-                          {payQrPayload ? 'Pay QR' : 'Pay QR unavailable'}
+                          {qrPayload ? 'Pay QR' : 'Pay QR unavailable'}
                         </span>
                       </Space>
                     }
                   >
                     <QrCodePanel
-                      payload={payQrPayload}
+                      payload={qrPayload}
                       emptyText="Payment address is not available yet."
                     />
                     <Text type="secondary">
-                      {payQrPayload
+                      {qrPayload
                         ? 'Scan to support this stream.'
                         : 'No payment address has been saved for this stream yet.'}
                     </Text>

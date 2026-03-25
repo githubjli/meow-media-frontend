@@ -144,9 +144,7 @@ export default function LiveCreatePage() {
   const [publishingMessage, setPublishingMessage] = useState(
     'Browser publishing is standing by.',
   );
-  const [qrMode, setQrMode] = useState<'upload' | 'generate'>('generate');
   const [qrPayload, setQrPayload] = useState('');
-  const [uploadedQrImageDataUrl, setUploadedQrImageDataUrl] = useState('');
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -206,9 +204,7 @@ export default function LiveCreatePage() {
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
-      const existingQr = getLiveQrConfig(nextLive.id);
-      setQrPayload(nextLive.payment_address || existingQr?.payload || '');
-      setUploadedQrImageDataUrl(existingQr?.uploadedImageDataUrl || '');
+      setQrPayload(nextLive.payment_address || qrPayload);
     } catch (error: any) {
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
     } finally {
@@ -563,61 +559,26 @@ export default function LiveCreatePage() {
                       size={12}
                       style={{ width: '100%' }}
                     >
-                      <Tabs
-                        size="small"
-                        activeKey={qrMode}
-                        onChange={(value) =>
-                          setQrMode(value as 'upload' | 'generate')
-                        }
-                        items={[
-                          { key: 'generate', label: 'Generate Pay QR' },
-                          { key: 'upload', label: 'Upload QR' },
-                        ]}
-                      />
-                      {qrMode === 'generate' ? (
-                        <Space
-                          direction="vertical"
-                          size={8}
-                          style={{ width: '100%' }}
-                        >
-                          <Text type="secondary">
-                            Enter a wallet/payment address to generate the Pay
-                            QR. This QR is used for payment/support, not for
-                            watching the stream.
-                          </Text>
-                          <Input
-                            placeholder="Payment Address"
-                            value={qrPayload}
-                            onChange={(event) =>
-                              setQrPayload(event.target.value.trim())
-                            }
-                          />
-                        </Space>
-                      ) : (
-                        <Upload
-                          maxCount={1}
-                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                          beforeUpload={(file) => {
-                            const reader = new FileReader();
-                            reader.onload = () =>
-                              setUploadedQrImageDataUrl(
-                                String(reader.result || ''),
-                              );
-                            reader.readAsDataURL(file);
-                            return false;
-                          }}
-                          onRemove={() => {
-                            setUploadedQrImageDataUrl('');
-                          }}
-                        >
-                          <Button>Upload QR Image</Button>
-                        </Upload>
-                      )}
+                      <Space
+                        direction="vertical"
+                        size={8}
+                        style={{ width: '100%' }}
+                      >
+                        <Text type="secondary">
+                          Enter a wallet/payment address to generate the Pay QR.
+                          This QR is used for payment/support, not for watching
+                          the stream.
+                        </Text>
+                        <Input
+                          placeholder="Payment Address"
+                          value={qrPayload}
+                          onChange={(event) =>
+                            setQrPayload(event.target.value.trim())
+                          }
+                        />
+                      </Space>
                       <QrCodePanel
-                        payload={qrMode === 'generate' ? qrPayload : ''}
-                        uploadedImageDataUrl={
-                          qrMode === 'upload' ? uploadedQrImageDataUrl : ''
-                        }
+                        payload={qrPayload}
                         size={160}
                         emptyText="Enter a payment address to generate the Pay QR."
                       />
