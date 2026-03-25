@@ -122,13 +122,17 @@ const LIVE_SECTION_ITEMS = [
 
 const NEWS_SECTION_ITEMS = [
   {
-    label: <span style={{ color: '#1677ff' }}>News Articles</span>,
-    path: 'https://meownews.online/',
-    target: '_blank',
+    label: 'News Live',
+    path: '/news/live',
   },
   {
     label: 'News Channel',
     path: '/news/channel',
+  },
+  {
+    label: <span style={{ color: '#1677ff' }}>News Articles</span>,
+    path: 'https://meownews.online/',
+    target: '_blank',
   },
 ];
 
@@ -351,7 +355,7 @@ export const layout: RunTimeLayoutConfig = ({
           target: item.target,
           className: 'sidebar-menu-item sidebar-menu-item-live-child',
           icon:
-            item.path === '/news/channel' ? (
+            item.path === '/news/channel' || item.path === '/news/live' ? (
               <PlayCircleOutlined />
             ) : (
               <GlobalOutlined />

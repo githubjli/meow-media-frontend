@@ -2,7 +2,7 @@ import VideoCard from '@/components/VideoCard';
 import { getLiveList, type LiveBroadcast } from '@/services/live';
 import { VideoCameraOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useIntl, useModel } from '@umijs/max';
+import { history, useIntl, useLocation, useModel } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -70,6 +70,11 @@ const isNotStartedStatus = (status?: string) =>
     String(status || '').toLowerCase(),
   );
 
+const isNewsLiveStream = (stream: LiveBroadcast) => {
+  const categoryValue = String(stream.category || '').toLowerCase();
+  return categoryValue.includes('news');
+};
+
 const toLiveVideoCardData = (item: LiveBroadcast) => {
   const status = getStatusPresentation(item.status);
   const creatorName =
@@ -101,12 +106,17 @@ const toLiveVideoCardData = (item: LiveBroadcast) => {
 
 export default function ExploreLivePage() {
   const intl = useIntl();
+  const location = useLocation();
   const { initialState } = useModel('@@initialState');
   const [streams, setStreams] = useState<LiveBroadcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
+  const showNewsOnly = location.pathname === '/news/live';
+  const visibleStreams = streams.filter((item) =>
+    showNewsOnly ? isNewsLiveStream(item) : true,
+  );
   const getLiveCreateUrl = () => '/live/create';
   const handleGoLiveClick = () => {
     history.push(
@@ -185,7 +195,7 @@ export default function ExploreLivePage() {
           <Card bordered={false} style={{ borderRadius: 20 }}>
             <Skeleton active paragraph={{ rows: 8 }} />
           </Card>
-        ) : streams.length === 0 ? (
+        ) : visibleStreams.length === 0 ? (
           <Card bordered={false} style={{ borderRadius: 20 }}>
             <Empty description="No live streams are available yet.">
               <Button type="primary" onClick={handleGoLiveClick}>
@@ -195,7 +205,7 @@ export default function ExploreLivePage() {
           </Card>
         ) : (
           <Row gutter={[14, 18]}>
-            {streams.map((item) => (
+            {visibleStreams.map((item) => (
               <Col xs={24} sm={12} md={8} lg={6} xl={6} key={String(item.id)}>
                 <VideoCard data={toLiveVideoCardData(item)} />
               </Col>
