@@ -20,36 +20,80 @@ const formatRelativeTime = (value: any, intl: any) => {
   }
   const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
   if (diffMinutes < 60) {
-    return intl.formatMessage({
-      id: diffMinutes === 1 ? 'videoCard.time.minute' : 'videoCard.time.minutes',
-    }, { count: diffMinutes });
+    return intl.formatMessage(
+      {
+        id:
+          diffMinutes === 1
+            ? 'videoCard.time.minute'
+            : 'videoCard.time.minutes',
+      },
+      { count: diffMinutes },
+    );
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
-    return intl.formatMessage({
-      id: diffHours === 1 ? 'videoCard.time.hour' : 'videoCard.time.hours',
-    }, { count: diffHours });
+    return intl.formatMessage(
+      {
+        id: diffHours === 1 ? 'videoCard.time.hour' : 'videoCard.time.hours',
+      },
+      { count: diffHours },
+    );
   }
 
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays < 30) {
-    return intl.formatMessage({
-      id: diffDays === 1 ? 'videoCard.time.day' : 'videoCard.time.days',
-    }, { count: diffDays });
+    return intl.formatMessage(
+      {
+        id: diffDays === 1 ? 'videoCard.time.day' : 'videoCard.time.days',
+      },
+      { count: diffDays },
+    );
   }
 
   const diffMonths = Math.floor(diffDays / 30);
   if (diffMonths < 12) {
-    return intl.formatMessage({
-      id: diffMonths === 1 ? 'videoCard.time.month' : 'videoCard.time.months',
-    }, { count: diffMonths });
+    return intl.formatMessage(
+      {
+        id: diffMonths === 1 ? 'videoCard.time.month' : 'videoCard.time.months',
+      },
+      { count: diffMonths },
+    );
   }
 
   const diffYears = Math.floor(diffMonths / 12);
-  return intl.formatMessage({
-    id: diffYears === 1 ? 'videoCard.time.year' : 'videoCard.time.years',
-  }, { count: diffYears });
+  return intl.formatMessage(
+    {
+      id: diffYears === 1 ? 'videoCard.time.year' : 'videoCard.time.years',
+    },
+    { count: diffYears },
+  );
+};
+
+const normalizeCardStatus = (value?: any) => {
+  const status = String(value || '')
+    .toLowerCase()
+    .trim();
+
+  if (['live', 'started', 'broadcasting', 'publishing'].includes(status)) {
+    return 'live';
+  }
+
+  if (['ready', 'created', 'prepared', 'not_started'].includes(status)) {
+    return 'ready';
+  }
+
+  if (['ended', 'finished', 'completed', 'stopped'].includes(status)) {
+    return 'ended';
+  }
+
+  if (
+    ['waiting', 'waiting_for_signal', 'pending', 'starting'].includes(status)
+  ) {
+    return 'waiting_for_signal';
+  }
+
+  return '';
 };
 
 const formatDuration = (value: any) => {
@@ -85,8 +129,12 @@ export default ({ data }: { data: any }) => {
   const isDark = Boolean(initialState?.darkTheme);
   const title = data.title || data.name;
   const description = data.description_preview || data.description;
-  const normalizedTitle = String(title || '').trim().toLowerCase();
-  const normalizedDescription = String(description || '').trim().toLowerCase();
+  const normalizedTitle = String(title || '')
+    .trim()
+    .toLowerCase();
+  const normalizedDescription = String(description || '')
+    .trim()
+    .toLowerCase();
   const shouldShowDescription = Boolean(
     normalizedDescription && normalizedDescription !== normalizedTitle,
   );
@@ -111,6 +159,23 @@ export default ({ data }: { data: any }) => {
   const descriptionColor = isDark ? '#CBBBAA' : '#745f40';
   const metaColor = isDark ? '#CBBBAA' : '#948261';
   const thumbBackground = isDark ? '#211c18' : '#2c2c2c';
+  const normalizedStatus = normalizeCardStatus(
+    data.normalized_status || data.status,
+  );
+  const isLive = normalizedStatus === 'live';
+  const isEnded = normalizedStatus === 'ended';
+  const isStarting = normalizedStatus === 'waiting_for_signal';
+  const isReady = normalizedStatus === 'ready';
+
+  const statusLabel = isLive
+    ? intl.formatMessage({ id: 'videoCard.live' })
+    : isStarting
+    ? intl.formatMessage({ id: 'live.status.starting' })
+    : isReady
+    ? intl.formatMessage({ id: 'live.status.notStarted' })
+    : isEnded
+    ? intl.formatMessage({ id: 'live.status.ended' })
+    : '';
 
   return (
     <div
@@ -122,13 +187,13 @@ export default ({ data }: { data: any }) => {
         border: cardBorder,
         background: cardBackground,
         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        opacity: isEnded ? 0.74 : 1,
       }}
       onMouseEnter={(event) => {
         event.currentTarget.style.transform = 'translateY(-2px)';
-        event.currentTarget.style.boxShadow =
-          isDark
-            ? '0 10px 24px rgba(0, 0, 0, 0.34)'
-            : '0 10px 22px rgba(116, 95, 64, 0.12)';
+        event.currentTarget.style.boxShadow = isDark
+          ? '0 10px 24px rgba(0, 0, 0, 0.34)'
+          : '0 10px 22px rgba(116, 95, 64, 0.12)';
         const image = event.currentTarget.querySelector('img');
         if (image) {
           (image as HTMLImageElement).style.transform = 'scale(1.02)';
@@ -167,9 +232,9 @@ export default ({ data }: { data: any }) => {
             transition: 'transform 0.2s ease',
           }}
         />
-        {data.status === 'broadcasting' && (
+        {statusLabel ? (
           <Tag
-            color="red"
+            color={isLive ? 'red' : isEnded ? 'default' : 'default'}
             style={{
               position: 'absolute',
               top: 10,
@@ -178,11 +243,12 @@ export default ({ data }: { data: any }) => {
               fontWeight: 700,
               borderRadius: 999,
               paddingInline: 8,
+              opacity: isLive ? 1 : 0.85,
             }}
           >
-            {intl.formatMessage({ id: 'videoCard.live' })}
+            {statusLabel}
           </Tag>
-        )}
+        ) : null}
         <div
           style={{
             position: 'absolute',

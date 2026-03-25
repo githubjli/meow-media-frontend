@@ -8,7 +8,7 @@ import {
   UserAddOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel, useParams } from '@umijs/max';
+import { history, useIntl, useModel, useParams } from '@umijs/max';
 import {
   Alert,
   Avatar,
@@ -69,11 +69,11 @@ const formatDate = (value?: string) => {
   });
 };
 
-const getCreatorLabel = (video?: PublicVideo | null) =>
+const getCreatorLabel = (video: PublicVideo | null | undefined, intl: any) =>
   video?.owner_name ||
   video?.channel_name ||
   video?.author ||
-  'Creator unavailable';
+  intl.formatMessage({ id: 'publicVideoDetail.creatorUnavailable' });
 
 const getThumbnail = (video: PublicVideo) =>
   video.thumbnail_url ||
@@ -85,9 +85,15 @@ const getRecommendationMeta = (video: PublicVideo) =>
     .filter(Boolean)
     .join(' • ');
 
-const RecommendationItem = ({ video }: { video: PublicVideo }) => {
+const RecommendationItem = ({
+  video,
+  intl,
+}: {
+  video: PublicVideo;
+  intl: any;
+}) => {
   const title = video.title || `Video #${video.id}`;
-  const authorLabel = getCreatorLabel(video);
+  const authorLabel = getCreatorLabel(video, intl);
 
   return (
     <div
@@ -152,7 +158,8 @@ const RecommendationItem = ({ video }: { video: PublicVideo }) => {
           </Text>
         </Space>
         <Text type="secondary" style={{ fontSize: 12, lineHeight: 1.5 }}>
-          {getRecommendationMeta(video) || 'Recently added'}
+          {getRecommendationMeta(video) ||
+            intl.formatMessage({ id: 'videoCard.recentlyAdded' })}
         </Text>
       </div>
     </div>
@@ -160,6 +167,7 @@ const RecommendationItem = ({ video }: { video: PublicVideo }) => {
 };
 
 export default function PublicVideoDetailPage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const { id } = useParams<{ id: string }>();
   const [video, setVideo] = useState<PublicVideo | null>(null);
@@ -192,10 +200,13 @@ export default function PublicVideoDetailPage() {
       .then((data) => setVideo(data))
       .catch((error: any) => {
         setVideo(null);
-        setErrorMessage(error?.message || 'Unable to load this video.');
+        setErrorMessage(
+          error?.message ||
+            intl.formatMessage({ id: 'publicVideoDetail.error.loadVideo' }),
+        );
       })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, intl]);
 
   useEffect(() => {
     if (!video?.id) {
@@ -256,7 +267,10 @@ export default function PublicVideoDetailPage() {
         if (active) {
           setRecommendations([]);
           setRecommendationsError(
-            error?.message || 'Unable to load recommendations right now.',
+            error?.message ||
+              intl.formatMessage({
+                id: 'publicVideoDetail.error.recommendations',
+              }),
           );
         }
       } finally {
@@ -271,7 +285,7 @@ export default function PublicVideoDetailPage() {
     return () => {
       active = false;
     };
-  }, [video?.id, video?.category]);
+  }, [video?.id, video?.category, intl]);
 
   useEffect(() => {
     if (!video?.id) {
@@ -303,7 +317,7 @@ export default function PublicVideoDetailPage() {
     return () => {
       active = false;
     };
-  }, [video?.id]);
+  }, [video?.id, intl]);
 
   useEffect(() => {
     if (!video?.id) {
@@ -313,16 +327,18 @@ export default function PublicVideoDetailPage() {
       return;
     }
     loadComments(true);
-  }, [video?.id]);
+  }, [video?.id, intl]);
 
   const isAuthenticated = Boolean(initialState?.currentUser?.email);
   const viewsLabel =
     video?.views || video?.view_count
       ? String(video.views || video.view_count)
-      : 'Views unavailable';
+      : intl.formatMessage({ id: 'publicVideoDetail.viewsUnavailable' });
   const videoId = String(video?.id || '');
   const channelId = video?.owner_id;
-  const creatorName = video?.owner_name || 'Creator unavailable';
+  const creatorName =
+    video?.owner_name ||
+    intl.formatMessage({ id: 'publicVideoDetail.creatorUnavailable' });
   const likeCount = interactionSummary?.like_count;
   const commentCount = interactionSummary?.comment_count;
   const subscriberCount = interactionSummary?.subscriber_count;
@@ -330,18 +346,28 @@ export default function PublicVideoDetailPage() {
   const isSubscribed = Boolean(interactionSummary?.viewer_is_subscribed);
   const followerLabel =
     typeof subscriberCount === 'number'
-      ? `${subscriberCount.toLocaleString()} followers`
-      : 'Followers unavailable';
+      ? intl.formatMessage(
+          { id: 'publicVideoDetail.followersCount' },
+          { count: subscriberCount.toLocaleString() },
+        )
+      : intl.formatMessage({ id: 'publicVideoDetail.followersUnavailable' });
   const likeLabel =
     typeof likeCount === 'number'
-      ? `${isLiked ? 'Liked' : 'Like'} · ${likeCount.toLocaleString()}`
+      ? `${intl.formatMessage({
+          id: isLiked
+            ? 'publicVideoDetail.action.liked'
+            : 'publicVideoDetail.action.like',
+        })} · ${likeCount.toLocaleString()}`
       : isLiked
-      ? 'Liked'
-      : 'Like';
+      ? intl.formatMessage({ id: 'publicVideoDetail.action.liked' })
+      : intl.formatMessage({ id: 'publicVideoDetail.action.like' });
   const commentLabel =
     typeof commentCount === 'number'
-      ? `${commentCount.toLocaleString()} comments`
-      : 'Comments unavailable';
+      ? intl.formatMessage(
+          { id: 'publicVideoDetail.commentsCount' },
+          { count: commentCount.toLocaleString() },
+        )
+      : intl.formatMessage({ id: 'publicVideoDetail.commentsUnavailable' });
   const commentPreview = comments?.results || [];
 
   const getReturnUrl = () =>
@@ -394,7 +420,10 @@ export default function PublicVideoDetailPage() {
       if (reset) {
         setComments(null);
       }
-      setCommentsError(error?.message || 'Comments are unavailable right now.');
+      setCommentsError(
+        error?.message ||
+          intl.formatMessage({ id: 'publicVideoDetail.error.comments' }),
+      );
     } finally {
       setCommentsLoading(false);
     }
@@ -410,12 +439,16 @@ export default function PublicVideoDetailPage() {
     try {
       if (navigator?.clipboard?.writeText && shareUrl) {
         await navigator.clipboard.writeText(shareUrl);
-        message.success('Video link copied to your clipboard.');
+        message.success(
+          intl.formatMessage({ id: 'publicVideoDetail.message.linkCopied' }),
+        );
         return;
       }
     } catch (error) {}
 
-    message.info('Copy the current page URL to share this video.');
+    message.info(
+      intl.formatMessage({ id: 'publicVideoDetail.message.copyPageUrl' }),
+    );
   };
 
   const handleLike = async () => {
@@ -459,7 +492,10 @@ export default function PublicVideoDetailPage() {
       }));
     } catch (error: any) {
       setInteractionSummary(previousSummary);
-      message.error(error?.message || 'Unable to update like status.');
+      message.error(
+        error?.message ||
+          intl.formatMessage({ id: 'publicVideoDetail.error.updateLike' }),
+      );
     } finally {
       setLikeSubmitting(false);
     }
@@ -467,7 +503,9 @@ export default function PublicVideoDetailPage() {
 
   const handleSubscribe = async () => {
     if (!channelId) {
-      message.info('Creator information is unavailable for this video.');
+      message.info(
+        intl.formatMessage({ id: 'publicVideoDetail.creatorInfoUnavailable' }),
+      );
       return;
     }
 
@@ -500,7 +538,12 @@ export default function PublicVideoDetailPage() {
       }
     } catch (error: any) {
       setInteractionSummary(previousSummary);
-      message.error(error?.message || 'Unable to update subscription status.');
+      message.error(
+        error?.message ||
+          intl.formatMessage({
+            id: 'publicVideoDetail.error.updateSubscription',
+          }),
+      );
     } finally {
       setSubscribeSubmitting(false);
     }
@@ -537,7 +580,7 @@ export default function PublicVideoDetailPage() {
         name:
           initialState?.currentUser?.username ||
           initialState?.currentUser?.email ||
-          'You',
+          intl.formatMessage({ id: 'publicVideoDetail.you' }),
         avatar_url: initialState?.currentUser?.avatar_url,
       },
     };
@@ -596,7 +639,10 @@ export default function PublicVideoDetailPage() {
         ...(current || { video_id: video.id }),
         comment_count: Math.max((current?.comment_count || 1) - 1, 0),
       }));
-      setCommentsError(error?.message || 'Unable to publish your comment.');
+      setCommentsError(
+        error?.message ||
+          intl.formatMessage({ id: 'publicVideoDetail.error.publishComment' }),
+      );
     } finally {
       setCommentsSubmitting(false);
     }
@@ -614,13 +660,13 @@ export default function PublicVideoDetailPage() {
       },
       {
         key: 'share',
-        label: 'Share',
+        label: intl.formatMessage({ id: 'publicVideoDetail.action.share' }),
         icon: <ShareAltOutlined />,
         type: 'default' as const,
         onClick: handleShare,
       },
     ],
-    [isLiked, likeLabel, likeSubmitting],
+    [intl, isLiked, likeLabel, likeSubmitting],
   );
 
   const metadataItems = useMemo(() => {
@@ -633,7 +679,9 @@ export default function PublicVideoDetailPage() {
         ? {
             key: 'published',
             icon: <ClockCircleOutlined />,
-            label: 'Published',
+            label: intl.formatMessage({
+              id: 'publicVideoDetail.meta.published',
+            }),
             value: formatDate(video.created_at),
           }
         : null,
@@ -641,13 +689,15 @@ export default function PublicVideoDetailPage() {
         ? {
             key: 'category',
             icon: <FolderOpenOutlined />,
-            label: 'Category',
+            label: intl.formatMessage({
+              id: 'publicVideoDetail.meta.category',
+            }),
             value: video.category_display,
           }
         : null,
       {
         key: 'video-id',
-        label: 'Video ID',
+        label: intl.formatMessage({ id: 'publicVideoDetail.meta.videoId' }),
         value: String(video.id),
       },
     ].filter(Boolean) as Array<{
@@ -656,7 +706,7 @@ export default function PublicVideoDetailPage() {
       label: string;
       value: string;
     }>;
-  }, [video]);
+  }, [intl, video]);
 
   return (
     <PageContainer title={false}>
@@ -669,7 +719,11 @@ export default function PublicVideoDetailPage() {
           <Alert type="error" showIcon message={errorMessage} />
         ) : !video ? (
           <Card bordered={false} style={{ borderRadius: 20 }}>
-            <Empty description="Video not found." />
+            <Empty
+              description={intl.formatMessage({
+                id: 'publicVideoDetail.videoNotFound',
+              })}
+            />
           </Card>
         ) : (
           <Row gutter={[20, 20]} align="top">
@@ -703,7 +757,9 @@ export default function PublicVideoDetailPage() {
                       }}
                     >
                       <Text type="secondary">
-                        This video is not available for playback yet.
+                        {intl.formatMessage({
+                          id: 'publicVideoDetail.playbackUnavailable',
+                        })}
                       </Text>
                     </Card>
                   )}
@@ -723,10 +779,16 @@ export default function PublicVideoDetailPage() {
                       {video.category_display ? (
                         <Tag color="processing">{video.category_display}</Tag>
                       ) : null}
-                      <Text type="secondary">Public watch page</Text>
+                      <Text type="secondary">
+                        {intl.formatMessage({
+                          id: 'publicVideoDetail.publicWatchPage',
+                        })}
+                      </Text>
                     </Space>
                     <Button onClick={() => history.push('/browse')}>
-                      Back to browse
+                      {intl.formatMessage({
+                        id: 'publicVideoDetail.backToBrowse',
+                      })}
                     </Button>
                   </Space>
 
@@ -740,8 +802,9 @@ export default function PublicVideoDetailPage() {
                     type="secondary"
                     style={{ display: 'block', marginBottom: 16, fontSize: 14 }}
                   >
-                    Published content with creator context, engagement signals,
-                    and related videos nearby.
+                    {intl.formatMessage({
+                      id: 'publicVideoDetail.contentSummary',
+                    })}
                   </Text>
 
                   <Row gutter={[10, 10]} style={{ marginBottom: 16 }}>
@@ -873,13 +936,19 @@ export default function PublicVideoDetailPage() {
                             style={{ display: 'block', marginBottom: 4 }}
                           >
                             {interactionLoading
-                              ? 'Loading audience details…'
+                              ? intl.formatMessage({
+                                  id: 'publicVideoDetail.loadingAudience',
+                                })
                               : followerLabel}
                           </Text>
                           <Text type="secondary" style={{ display: 'block' }}>
                             {video.owner_name
-                              ? 'Creator profile pulled from the published video record.'
-                              : 'Creator details are not available for this video yet.'}
+                              ? intl.formatMessage({
+                                  id: 'publicVideoDetail.creatorProfileFromRecord',
+                                })
+                              : intl.formatMessage({
+                                  id: 'publicVideoDetail.creatorDetailsUnavailable',
+                                })}
                           </Text>
                         </div>
                       </Space>
@@ -891,7 +960,13 @@ export default function PublicVideoDetailPage() {
                         loading={subscribeSubmitting}
                         disabled={!channelId}
                       >
-                        {isSubscribed ? 'Subscribed' : 'Subscribe'}
+                        {isSubscribed
+                          ? intl.formatMessage({
+                              id: 'publicVideoDetail.action.subscribed',
+                            })
+                          : intl.formatMessage({
+                              id: 'publicVideoDetail.action.subscribe',
+                            })}
                       </Button>
                     </Space>
 
@@ -899,7 +974,9 @@ export default function PublicVideoDetailPage() {
                       style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}
                     >
                       {video.description ||
-                        'No description has been added for this video yet. Check the recommendation panel for more public content to explore.'}
+                        intl.formatMessage({
+                          id: 'publicVideoDetail.noDescription',
+                        })}
                     </Paragraph>
 
                     <Divider style={{ margin: '4px 0' }} />
@@ -928,7 +1005,9 @@ export default function PublicVideoDetailPage() {
                         >
                           <div>
                             <Title level={5} style={{ margin: 0 }}>
-                              Comments
+                              {intl.formatMessage({
+                                id: 'publicVideoDetail.commentsTitle',
+                              })}
                             </Title>
                             <Text type="secondary">{commentLabel}</Text>
                           </div>
@@ -939,8 +1018,12 @@ export default function PublicVideoDetailPage() {
                           value={commentInput}
                           placeholder={
                             isAuthenticated
-                              ? 'Add a public comment'
-                              : 'Log in to join the conversation.'
+                              ? intl.formatMessage({
+                                  id: 'publicVideoDetail.commentPlaceholder.auth',
+                                })
+                              : intl.formatMessage({
+                                  id: 'publicVideoDetail.commentPlaceholder.guest',
+                                })
                           }
                           onChange={(event) =>
                             setCommentInput(event.target.value)
@@ -963,7 +1046,9 @@ export default function PublicVideoDetailPage() {
                             disabled={isAuthenticated && !commentInput.trim()}
                             onClick={handleSubmitComment}
                           >
-                            Comment
+                            {intl.formatMessage({
+                              id: 'publicVideoDetail.action.comment',
+                            })}
                           </Button>
                         </div>
 
@@ -1005,7 +1090,12 @@ export default function PublicVideoDetailPage() {
                               >
                                 <Space align="start" size={12}>
                                   <Avatar src={comment.user?.avatar_url}>
-                                    {String(comment.user?.name || 'V')
+                                    {String(
+                                      comment.user?.name ||
+                                        intl.formatMessage({
+                                          id: 'publicVideoDetail.viewerInitial',
+                                        }),
+                                    )
                                       .charAt(0)
                                       .toUpperCase()}
                                   </Avatar>
@@ -1017,7 +1107,10 @@ export default function PublicVideoDetailPage() {
                                         marginBottom: 2,
                                       }}
                                     >
-                                      {comment.user?.name || 'Viewer'}
+                                      {comment.user?.name ||
+                                        intl.formatMessage({
+                                          id: 'publicVideoDetail.viewer',
+                                        })}
                                     </Text>
                                     <Text
                                       type="secondary"
@@ -1045,14 +1138,18 @@ export default function PublicVideoDetailPage() {
                                 loading={commentsLoading}
                                 style={{ alignSelf: 'flex-start' }}
                               >
-                                Load more
+                                {intl.formatMessage({
+                                  id: 'publicVideoDetail.loadMore',
+                                })}
                               </Button>
                             ) : null}
                           </Space>
                         ) : (
                           <Empty
                             image={Empty.PRESENTED_IMAGE_SIMPLE}
-                            description="No comments yet."
+                            description={intl.formatMessage({
+                              id: 'publicVideoDetail.noComments',
+                            })}
                           />
                         )}
                       </Space>
@@ -1065,7 +1162,7 @@ export default function PublicVideoDetailPage() {
             <Col xs={24} lg={8} xl={7}>
               <Card
                 bordered={false}
-                title="Up next"
+                title={intl.formatMessage({ id: 'publicVideoDetail.upNext' })}
                 style={{ borderRadius: 18 }}
                 styles={{ body: { padding: 10 } }}
               >
@@ -1077,15 +1174,20 @@ export default function PublicVideoDetailPage() {
                     paddingInline: 4,
                   }}
                 >
-                  More public videos from the same category when available, with
-                  latest uploads as backup.
+                  {intl.formatMessage({
+                    id: 'publicVideoDetail.upNextDescription',
+                  })}
                 </Text>
                 {recommendationsLoading ? (
                   <Skeleton active paragraph={{ rows: 6 }} title={false} />
                 ) : recommendationsError ? (
                   <Alert type="error" showIcon message={recommendationsError} />
                 ) : recommendations.length === 0 ? (
-                  <Empty description="No recommendations available yet." />
+                  <Empty
+                    description={intl.formatMessage({
+                      id: 'publicVideoDetail.noRecommendations',
+                    })}
+                  />
                 ) : (
                   <Space
                     direction="vertical"
@@ -1093,7 +1195,11 @@ export default function PublicVideoDetailPage() {
                     style={{ width: '100%' }}
                   >
                     {recommendations.map((item) => (
-                      <RecommendationItem key={item.id} video={item} />
+                      <RecommendationItem
+                        key={item.id}
+                        video={item}
+                        intl={intl}
+                      />
                     ))}
                   </Space>
                 )}
@@ -1107,18 +1213,21 @@ export default function PublicVideoDetailPage() {
         onCancel={() => setAuthModalOpen(false)}
         footer={null}
         centered
-        title="Continue with your account"
+        title={intl.formatMessage({ id: 'publicVideoDetail.authModal.title' })}
       >
         <Space direction="vertical" size={16} style={{ width: '100%' }}>
           <Text type="secondary">
-            Log in or create an account to like videos, subscribe to creators,
-            and join the comments.
+            {intl.formatMessage({
+              id: 'publicVideoDetail.authModal.description',
+            })}
           </Text>
           <Space size={12}>
             <Button type="primary" onClick={() => navigateToAuth('/login')}>
-              Log In
+              {intl.formatMessage({ id: 'nav.logIn' })}
             </Button>
-            <Button onClick={() => navigateToAuth('/register')}>Sign Up</Button>
+            <Button onClick={() => navigateToAuth('/register')}>
+              {intl.formatMessage({ id: 'nav.signUp' })}
+            </Button>
           </Space>
         </Space>
       </Modal>
