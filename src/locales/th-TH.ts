@@ -88,5 +88,13 @@ export default {
   'videoCard.time.months': '{count} เดือนที่แล้ว',
   'videoCard.time.year': '{count} ปีที่แล้ว',
   'videoCard.time.years': '{count} ปีที่แล้ว',
+  'live.status.live': 'LIVE',
+  'live.status.starting': 'STARTING',
+  'live.status.notStarted': 'NOT STARTED',
+  'live.status.ended': 'ENDED',
+  'live.status.onAir': 'กำลังถ่ายทอดสด',
+  'live.status.readyToGoLive': 'พร้อมเริ่มไลฟ์',
+  'live.status.broadcastEnded': 'ไลฟ์จบแล้ว',
+  'live.status.streamStarting': 'กำลังเริ่มไลฟ์',
   'videoCard.live': 'สด',
 };

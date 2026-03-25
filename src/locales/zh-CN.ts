@@ -41,7 +41,8 @@ export default {
 
   'home.hero.eyebrow': '公共片库',
   'home.hero.title': '发现新内容、直播时刻与最新发布。',
-  'home.hero.description': '浏览平台最新上传内容，关注你喜欢的主题，并一键进入直播。',
+  'home.hero.description':
+    '浏览平台最新上传内容，关注你喜欢的主题，并一键进入直播。',
   'home.latest.description': '查看平台最新公开发布的视频。',
   'home.category.description': '浏览 {category} 的最新视频。',
   'home.error': '暂时无法加载公开视频。',
@@ -85,5 +86,13 @@ export default {
   'videoCard.time.months': '{count} 个月前',
   'videoCard.time.year': '{count} 年前',
   'videoCard.time.years': '{count} 年前',
+  'live.status.live': 'LIVE',
+  'live.status.starting': 'STARTING',
+  'live.status.notStarted': 'NOT STARTED',
+  'live.status.ended': 'ENDED',
+  'live.status.onAir': '正在直播',
+  'live.status.readyToGoLive': '已准备好开播',
+  'live.status.broadcastEnded': '直播已结束',
+  'live.status.streamStarting': '直播启动中',
   'videoCard.live': '直播中',
 };
