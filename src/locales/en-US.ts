@@ -90,5 +90,13 @@ export default {
   'videoCard.time.months': '{count} months ago',
   'videoCard.time.year': '{count} year ago',
   'videoCard.time.years': '{count} years ago',
+  'live.status.live': 'LIVE',
+  'live.status.starting': 'STARTING',
+  'live.status.notStarted': 'NOT STARTED',
+  'live.status.ended': 'ENDED',
+  'live.status.onAir': 'On air now',
+  'live.status.readyToGoLive': 'Ready to go live',
+  'live.status.broadcastEnded': 'Broadcast ended',
+  'live.status.streamStarting': 'Stream starting',
   'videoCard.live': 'LIVE',
 };

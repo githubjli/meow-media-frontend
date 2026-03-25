@@ -40,11 +40,14 @@ export default {
   'common.noVideosInSection': '{section} တွင် ဗီဒီယိုမရှိသေးပါ',
 
   'home.hero.eyebrow': 'အများသုံးစာကြည့်တိုက်',
-  'home.hero.title': 'ဇာတ်လမ်းအသစ်များ၊ Live အချိန်များနှင့် နောက်ဆုံးတင်ထားသောအရာများကို ရှာဖွေပါ။',
+  'home.hero.title':
+    'ဇာတ်လမ်းအသစ်များ၊ Live အချိန်များနှင့် နောက်ဆုံးတင်ထားသောအရာများကို ရှာဖွေပါ။',
   'home.hero.description':
     'ပလက်ဖောင်းပေါ်ရှိ နောက်ဆုံးတင်ထားသော ဗီဒီယိုများကို ကြည့်ရှုပါ၊ စိတ်ဝင်စားသောအမျိုးအစားများကို လိုက်နာပါ၊ Live သို့ ချက်ချင်းဝင်နိုင်ပါသည်။',
-  'home.latest.description': 'ပလက်ဖောင်းတစ်လျှောက် နောက်ဆုံးထုတ် အများသုံးဗီဒီယိုများ။',
-  'home.category.description': '{category} အမျိုးအစားရှိ နောက်ဆုံးဗီဒီယိုများကို ကြည့်ရှုပါ။',
+  'home.latest.description':
+    'ပလက်ဖောင်းတစ်လျှောက် နောက်ဆုံးထုတ် အများသုံးဗီဒီယိုများ။',
+  'home.category.description':
+    '{category} အမျိုးအစားရှိ နောက်ဆုံးဗီဒီယိုများကို ကြည့်ရှုပါ။',
   'home.error': 'အများသုံးဗီဒီယိုများကို ယခုမတင်နိုင်ပါ။',
 
   'browse.title': 'ဗီဒီယိုများကို ကြည့်ရှုရန်',
@@ -69,8 +72,10 @@ export default {
   'upload.placeholder.title': 'ဗီဒီယိုခေါင်းစဉ် ရိုက်ထည့်ပါ',
   'upload.placeholder.description': 'ဖော်ပြချက် (လိုချင်လျှင်)',
   'upload.placeholder.category': 'အမျိုးအစားရွေးပါ',
-  'upload.dropzone.text': 'ဗီဒီယိုဖိုင်ကို ဤနေရာသို့ နှိပ်၍ သို့မဟုတ် ဆွဲချပြီး ထည့်ပါ',
-  'upload.dropzone.hint': 'Submit လုပ်ပြီးနောက် ဖိုင်ကို သင့်အကောင့်သို့ တင်မည်။',
+  'upload.dropzone.text':
+    'ဗီဒီယိုဖိုင်ကို ဤနေရာသို့ နှိပ်၍ သို့မဟုတ် ဆွဲချပြီး ထည့်ပါ',
+  'upload.dropzone.hint':
+    'Submit လုပ်ပြီးနောက် ဖိုင်ကို သင့်အကောင့်သို့ တင်မည်။',
   'upload.validation.file': 'တင်ရန် ဗီဒီယိုဖိုင်တစ်ခု ရွေးပါ။',
   'upload.validation.title': 'ခေါင်းစဉ်ထည့်ပါ။',
   'upload.success': 'ဗီဒီယိုတင်ခြင်း အောင်မြင်ပါသည်။',
@@ -88,5 +93,13 @@ export default {
   'videoCard.time.months': '{count} လခန့်က',
   'videoCard.time.year': '{count} နှစ်ခန့်က',
   'videoCard.time.years': '{count} နှစ်ခန့်က',
+  'live.status.live': 'LIVE',
+  'live.status.starting': 'STARTING',
+  'live.status.notStarted': 'NOT STARTED',
+  'live.status.ended': 'ENDED',
+  'live.status.onAir': 'On air now',
+  'live.status.readyToGoLive': 'Ready to go live',
+  'live.status.broadcastEnded': 'Broadcast ended',
+  'live.status.streamStarting': 'Stream starting',
   'videoCard.live': 'တိုက်ရိုက်',
 };
