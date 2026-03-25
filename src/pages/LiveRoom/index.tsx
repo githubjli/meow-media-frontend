@@ -32,6 +32,7 @@ import {
   startLiveBroadcast,
   type LiveBroadcast,
 } from '@/services/live';
+import { getLiveQrConfig } from '@/utils/liveQr';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -152,6 +153,7 @@ export default function LiveRoomPage() {
     broadcast?.creator?.email ||
     'Creator';
   const viewerCount = broadcast?.viewer_count ?? broadcast?.viewerCount ?? 0;
+  const payQrPayload = String(qrPayload || '').trim();
 
   const detailItems = useMemo(
     () => [
@@ -474,42 +476,24 @@ export default function LiveRoomPage() {
                   <Card
                     bordered={false}
                     style={{ borderRadius: 20 }}
-                    title="Stream details"
+                    title={
+                      <Space size={8}>
+                        <QrcodeOutlined />
+                        <span>
+                          {payQrPayload ? 'Pay QR' : 'Pay QR unavailable'}
+                        </span>
+                      </Space>
+                    }
                   >
-                    <Space
-                      direction="vertical"
-                      size={16}
-                      style={{ width: '100%' }}
-                    >
-                      {detailItems.map((item) => (
-                        <div key={item.label}>
-                          <Text
-                            strong
-                            style={{ display: 'block', marginBottom: 6 }}
-                          >
-                            {item.label}
-                          </Text>
-                          <Space
-                            align="start"
-                            style={{
-                              width: '100%',
-                              justifyContent: 'space-between',
-                            }}
-                          >
-                            <Text code style={{ wordBreak: 'break-all' }}>
-                              {item.value || 'Not available'}
-                            </Text>
-                            <Button
-                              size="small"
-                              icon={<CopyOutlined />}
-                              onClick={() => copyValue(item.value, item.label)}
-                            >
-                              Copy
-                            </Button>
-                          </Space>
-                        </div>
-                      ))}
-                    </Space>
+                    <QrCodePanel
+                      payload={payQrPayload}
+                      emptyText="Payment address is not available yet."
+                    />
+                    <Text type="secondary">
+                      {payQrPayload
+                        ? 'Scan to support this stream.'
+                        : 'No payment address has been saved for this stream yet.'}
+                    </Text>
                   </Card>
                 </Space>
               </Col>
@@ -563,6 +547,39 @@ export default function LiveRoomPage() {
                 </Space>
               </Col>
             </Row>
+            <Card
+              bordered={false}
+              style={{ borderRadius: 20 }}
+              title="Stream details"
+            >
+              <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                {detailItems.map((item) => (
+                  <div key={item.label}>
+                    <Text strong style={{ display: 'block', marginBottom: 6 }}>
+                      {item.label}
+                    </Text>
+                    <Space
+                      align="start"
+                      style={{
+                        width: '100%',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Text code style={{ wordBreak: 'break-all' }}>
+                        {item.value || 'Not available'}
+                      </Text>
+                      <Button
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => copyValue(item.value, item.label)}
+                      >
+                        Copy
+                      </Button>
+                    </Space>
+                  </div>
+                ))}
+              </Space>
+            </Card>
           </Space>
         ) : (
           <Empty description="Live room unavailable." />

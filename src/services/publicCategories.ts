@@ -27,6 +27,7 @@ const normalizeCategories = (payload: any): PublicCategory[] => {
 };
 
 export async function listPublicCategories(): Promise<PublicCategory[]> {
+  console.log('FETCH categories triggered');
   const payload = await requestJson<any>('/api/public/categories/', {
     method: 'GET',
   });
