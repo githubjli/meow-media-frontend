@@ -3,6 +3,7 @@ import {
   EyeOutlined,
   PlayCircleOutlined,
   PoweroffOutlined,
+  QrcodeOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
@@ -24,6 +25,7 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import QrCodePanel from '@/components/QrCodePanel';
 import {
   endLiveBroadcast,
   getLiveBroadcast,
@@ -139,6 +141,7 @@ export default function LiveRoomPage() {
     'Waiting for a playback URL from Django.',
   );
   const [playerPhase, setPlayerPhase] = useState<PlayerPhase>('idle');
+  const [qrPayload, setQrPayload] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const playbackUrl = broadcast?.playback_url || '';
@@ -149,6 +152,7 @@ export default function LiveRoomPage() {
     broadcast?.creator?.email ||
     'Creator';
   const viewerCount = broadcast?.viewer_count ?? broadcast?.viewerCount ?? 0;
+  const payQrPayload = String(qrPayload || '').trim();
 
   const detailItems = useMemo(
     () => [
@@ -171,6 +175,7 @@ export default function LiveRoomPage() {
     try {
       const data = await getLiveBroadcast(id);
       setBroadcast(data);
+      setQrPayload(data?.payment_address || data?.wallet_address || '');
       setErrorMessage('');
       setPlayerPhase(data?.playback_url ? 'loading' : 'waiting');
       setPlayerStatus(
@@ -429,47 +434,44 @@ export default function LiveRoomPage() {
 
             <Row gutter={[20, 20]}>
               <Col xs={24} xl={16}>
-                <Card
-                  bordered={false}
-                  style={{ borderRadius: 20, overflow: 'hidden' }}
-                >
-                  {playbackUrl ? (
-                    <Space
-                      direction="vertical"
-                      size={16}
-                      style={{ width: '100%' }}
-                    >
-                      <div
-                        style={{
-                          borderRadius: 16,
-                          overflow: 'hidden',
-                          background: '#000',
-                          minHeight: 420,
-                        }}
-                      >
-                        <video
-                          ref={videoElementRef}
-                          autoPlay
-                          controls
-                          playsInline
-                          preload="auto"
-                          style={{
-                            width: '100%',
-                            minHeight: 420,
-                            background: '#000',
-                          }}
-                        />
-                      </div>
-                      <Alert type="info" showIcon message={playerStatus} />
-                    </Space>
-                  ) : (
-                    <Empty description="Playback URL is not available yet. Start your encoder and refresh this room once Django provides the playback endpoint." />
-                  )}
-                </Card>
-              </Col>
-
-              <Col xs={24} xl={8}>
                 <Space direction="vertical" size={20} style={{ width: '100%' }}>
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20, overflow: 'hidden' }}
+                  >
+                    {playbackUrl ? (
+                      <Space
+                        direction="vertical"
+                        size={16}
+                        style={{ width: '100%' }}
+                      >
+                        <div
+                          style={{
+                            borderRadius: 16,
+                            overflow: 'hidden',
+                            background: '#000',
+                            minHeight: 420,
+                          }}
+                        >
+                          <video
+                            ref={videoElementRef}
+                            autoPlay
+                            controls
+                            playsInline
+                            preload="auto"
+                            style={{
+                              width: '100%',
+                              minHeight: 420,
+                              background: '#000',
+                            }}
+                          />
+                        </div>
+                        <Alert type="info" showIcon message={playerStatus} />
+                      </Space>
+                    ) : (
+                      <Empty description="Playback URL is not available yet. Start your encoder and refresh this room once Django provides the playback endpoint." />
+                    )}
+                  </Card>
                   <Card
                     bordered={false}
                     style={{ borderRadius: 20 }}
@@ -510,7 +512,33 @@ export default function LiveRoomPage() {
                       ))}
                     </Space>
                   </Card>
+                </Space>
+              </Col>
 
+              <Col xs={24} xl={8}>
+                <Space direction="vertical" size={20} style={{ width: '100%' }}>
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20 }}
+                    title={
+                      <Space size={8}>
+                        <QrcodeOutlined />
+                        <span>
+                          {payQrPayload ? 'Pay QR' : 'Pay QR unavailable'}
+                        </span>
+                      </Space>
+                    }
+                  >
+                    <QrCodePanel
+                      payload={payQrPayload}
+                      emptyText="Payment address is not available yet."
+                    />
+                    <Text type="secondary">
+                      {payQrPayload
+                        ? 'Scan to support this stream.'
+                        : 'No payment address has been saved for this stream yet.'}
+                    </Text>
+                  </Card>
                   <Card
                     bordered={false}
                     style={{ borderRadius: 20 }}
