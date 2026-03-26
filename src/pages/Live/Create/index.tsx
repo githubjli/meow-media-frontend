@@ -29,19 +29,20 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import QrCodePanel from '@/components/QrCodePanel';
-import { createLiveBroadcast, type LiveBroadcast } from '@/services/live';
+import { liveConfig } from '@/config/live';
+import {
+  createLiveBroadcast,
+  getSafeWatchUrl,
+  type LiveBroadcast,
+} from '@/services/live';
 import { saveLiveQrConfig } from '@/utils/liveQr';
 
 const { Title, Text, Paragraph } = Typography;
 
-const ANT_MEDIA_WEBSOCKET_URL =
-  'wss://streaming-api-live.pttblockchain.online:5443/live/websocket';
-const ANT_MEDIA_ADAPTOR_SCRIPT =
-  'https://streaming-api-live.pttblockchain.online:5443/live/js/webrtc_adaptor.js';
-
 type BroadcastMode = 'camera' | 'stream-key';
 type DevicePermissionStatus = 'idle' | 'requesting' | 'ready' | 'error';
-type PublishingStatus = 'idle' | 'connecting' | 'publishing' | 'live' | 'error';
+// Browser publish status is transport-level only. Backend live status remains source of truth.
+type PublishingStatus = 'idle' | 'connecting' | 'publishing' | 'error';
 
 type AntMediaWebRTCAdaptor = {
   publish: (streamId: string) => void;
@@ -93,8 +94,13 @@ const loadWebRTCAdaptorScript = async () => {
       return;
     }
 
+    if (!liveConfig.antMediaWebRtcAdaptorScriptUrl) {
+      reject(new Error('Missing Ant Media adaptor script URL configuration.'));
+      return;
+    }
+
     const script = document.createElement('script');
-    script.src = ANT_MEDIA_ADAPTOR_SCRIPT;
+    script.src = liveConfig.antMediaWebRtcAdaptorScriptUrl;
     script.async = true;
     script.dataset.antMediaAdaptor = 'true';
     script.onload = () => resolve();
@@ -142,7 +148,7 @@ export default function LiveCreatePage() {
   const [publishingMessage, setPublishingMessage] = useState(
     'Browser publishing is standing by.',
   );
-  const [qrPayload, setQrPayload] = useState('');
+  const [payQrPayload, setPayQrPayload] = useState('');
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -183,7 +189,7 @@ export default function LiveCreatePage() {
     visibility: string;
     description?: string;
   }) => {
-    const paymentAddress = qrPayload.trim();
+    const paymentAddress = payQrPayload.trim();
     setSubmitting(true);
     setErrorMessage('');
 
@@ -203,7 +209,7 @@ export default function LiveCreatePage() {
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
-      setQrPayload(nextLive.payment_address || paymentAddress || '');
+      setPayQrPayload(nextLive.payment_address || paymentAddress || '');
     } catch (error: any) {
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
     } finally {
@@ -296,6 +302,12 @@ export default function LiveCreatePage() {
       return;
     }
 
+    if (!liveConfig.antMediaWebSocketUrl) {
+      setPublishingStatus('error');
+      setPublishingMessage('Missing Ant Media websocket URL configuration.');
+      return;
+    }
+
     setPublishingStatus('connecting');
     setPublishingMessage('Connecting to Ant Media publishing websocket…');
 
@@ -307,7 +319,7 @@ export default function LiveCreatePage() {
 
       webRTCAdaptorRef.current?.closeWebSocket?.();
       webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
-        websocket_url: ANT_MEDIA_WEBSOCKET_URL,
+        websocket_url: liveConfig.antMediaWebSocketUrl,
         mediaConstraints: { video: true, audio: true },
         peerconnection_config: {
           iceServers: [{ urls: 'stun:stun1.l.google.com:19302' }],
@@ -337,7 +349,8 @@ export default function LiveCreatePage() {
           }
 
           if (info === 'ice_connection_state_changed') {
-            setPublishingStatus('live');
+            // Do not mark backend session as live here; this is only transport feedback.
+            setPublishingStatus('publishing');
             setPublishingMessage(
               'Live from browser. Your camera stream is publishing to the Ant Media live app.',
             );
@@ -432,6 +445,7 @@ export default function LiveCreatePage() {
       value: createdLive?.playback_url || '',
     },
   ];
+  const watchQrPayload = getSafeWatchUrl(createdLive);
 
   useEffect(() => {
     if (!createdLive?.id) {
@@ -439,9 +453,10 @@ export default function LiveCreatePage() {
     }
 
     saveLiveQrConfig(createdLive.id, {
-      payload: qrPayload,
+      paymentAddress: payQrPayload,
+      watchUrl: getSafeWatchUrl(createdLive),
     });
-  }, [createdLive?.id, qrPayload]);
+  }, [createdLive, payQrPayload]);
 
   const deviceChecklist = [
     {
@@ -465,7 +480,7 @@ export default function LiveCreatePage() {
     {
       label: 'Publishing pipeline',
       value:
-        publishingStatus === 'live'
+        publishingStatus === 'publishing'
           ? 'Connected to Ant Media live app'
           : 'Ready for Ant Media browser publishing',
     },
@@ -569,12 +584,14 @@ export default function LiveCreatePage() {
                         </Text>
                         <Input
                           placeholder="Payment Address"
-                          value={qrPayload}
-                          onChange={(event) => setQrPayload(event.target.value)}
+                          value={payQrPayload}
+                          onChange={(event) =>
+                            setPayQrPayload(event.target.value)
+                          }
                         />
                       </Space>
                       <QrCodePanel
-                        payload={qrPayload}
+                        payload={payQrPayload}
                         size={160}
                         emptyText="Enter a payment address to generate the Pay QR."
                       />
@@ -823,7 +840,7 @@ export default function LiveCreatePage() {
                         </Tag>
                         <Tag
                           color={
-                            publishingStatus === 'live'
+                            publishingStatus === 'publishing'
                               ? 'error'
                               : publishingStatus === 'publishing'
                               ? 'processing'
@@ -834,7 +851,8 @@ export default function LiveCreatePage() {
                               : 'default'
                           }
                         >
-                          Browser publish: {publishingStatus.toUpperCase()}
+                          Browser publish (local transport):{' '}
+                          {publishingStatus.toUpperCase()}
                         </Tag>
                         <Text type="secondary">{deviceStatusMessage}</Text>
                         <Text type="secondary">{publishingMessage}</Text>
@@ -943,9 +961,15 @@ export default function LiveCreatePage() {
                           <Button
                             type="primary"
                             icon={<PlayCircleOutlined />}
-                            onClick={() =>
-                              history.push(`/live/${createdLive.id}`)
-                            }
+                            onClick={() => {
+                              const nextWatchUrl = getSafeWatchUrl(createdLive);
+                              if (!nextWatchUrl) return;
+                              if (/^https?:\/\//i.test(nextWatchUrl)) {
+                                window.location.href = nextWatchUrl;
+                                return;
+                              }
+                              history.push(nextWatchUrl);
+                            }}
                           >
                             Open Watch Page
                           </Button>
@@ -961,6 +985,19 @@ export default function LiveCreatePage() {
                           >
                             Copy Playback URL
                           </Button>
+                          <div>
+                            <Text
+                              strong
+                              style={{ display: 'block', marginBottom: 8 }}
+                            >
+                              Watch QR
+                            </Text>
+                            <QrCodePanel
+                              payload={watchQrPayload}
+                              size={150}
+                              emptyText="Watch URL is not available yet."
+                            />
+                          </div>
                         </Space>
                       ) : (
                         <Alert

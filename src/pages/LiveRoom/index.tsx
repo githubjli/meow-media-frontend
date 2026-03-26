@@ -26,11 +26,16 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import QrCodePanel from '@/components/QrCodePanel';
+import { liveConfig } from '@/config/live';
 import {
   endLiveBroadcast,
   getLiveBroadcast,
+  getLiveBroadcastStatus,
+  getSafeWatchUrl,
+  normalizeLiveStatus,
   startLiveBroadcast,
   type LiveBroadcast,
+  type LiveBroadcastStatus,
 } from '@/services/live';
 
 const { Title, Text, Paragraph } = Typography;
@@ -55,25 +60,18 @@ declare global {
 }
 
 const getStatusColor = (status?: string) => {
-  switch (String(status || '').toLowerCase()) {
+  const normalized = normalizeLiveStatus(status);
+  switch (normalized) {
     case 'live':
-    case 'started':
-    case 'broadcasting':
       return 'error';
     case 'ended':
-    case 'finished':
       return 'default';
+    case 'ready':
+    case 'waiting_for_signal':
     default:
       return 'processing';
   }
 };
-
-const canStart = (status?: string) =>
-  !['live', 'started', 'broadcasting'].includes(
-    String(status || '').toLowerCase(),
-  );
-const canEnd = (status?: string) =>
-  !['ended', 'finished'].includes(String(status || '').toLowerCase());
 
 const copyValue = async (value: string, label: string) => {
   if (!value) {
@@ -133,8 +131,13 @@ const loadHlsLibrary = async (): Promise<HlsCtor | null> => {
       return;
     }
 
+    if (!liveConfig.hlsScriptUrl) {
+      reject(new Error('Missing HLS script URL configuration.'));
+      return;
+    }
+
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.18/dist/hls.min.js';
+    script.src = liveConfig.hlsScriptUrl;
     script.async = true;
     script.dataset.hlsJsCdn = 'true';
     script.onload = () => resolve();
@@ -152,6 +155,8 @@ export default function LiveRoomPage() {
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<{ destroy: () => void } | null>(null);
   const [broadcast, setBroadcast] = useState<LiveBroadcast | null>(null);
+  const [backendStatus, setBackendStatus] =
+    useState<LiveBroadcastStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<'start' | 'end' | null>(
     null,
@@ -161,17 +166,42 @@ export default function LiveRoomPage() {
     'Waiting for a playback URL from Django.',
   );
   const [playerPhase, setPlayerPhase] = useState<PlayerPhase>('idle');
-  const [qrPayload, setQrPayload] = useState('');
+  const [payQrPayload, setPayQrPayload] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
-  const playbackUrl = broadcast?.playback_url || '';
+  const effectiveBackendStatus =
+    backendStatus?.effective_status ||
+    backendStatus?.status ||
+    backendStatus?.django_status ||
+    broadcast?.normalized_status ||
+    broadcast?.status;
+  const normalizedBusinessStatus = normalizeLiveStatus(effectiveBackendStatus);
+  const playbackUrl =
+    backendStatus?.playback_url || broadcast?.playback_url || '';
+  const watchUrl = getSafeWatchUrl({
+    id: backendStatus?.id || broadcast?.id,
+    watch_url: backendStatus?.watch_url || broadcast?.watch_url,
+  });
   const title = broadcast?.title || broadcast?.name || 'Live Stream';
   const creatorName =
     broadcast?.creator?.name ||
     broadcast?.creator?.username ||
     broadcast?.creator?.email ||
     'Creator';
-  const viewerCount = broadcast?.viewer_count ?? broadcast?.viewerCount ?? 0;
+  const viewerCount =
+    backendStatus?.viewer_count ??
+    backendStatus?.viewerCount ??
+    broadcast?.viewer_count ??
+    broadcast?.viewerCount ??
+    0;
+  const canStartLive =
+    typeof backendStatus?.can_start === 'boolean'
+      ? backendStatus.can_start
+      : normalizedBusinessStatus !== 'live';
+  const canEndLive =
+    typeof backendStatus?.can_end === 'boolean'
+      ? backendStatus.can_end
+      : normalizedBusinessStatus !== 'ended';
 
   const detailItems = useMemo(
     () => [
@@ -194,7 +224,7 @@ export default function LiveRoomPage() {
     try {
       const data = await getLiveBroadcast(id);
       setBroadcast(data);
-      setQrPayload(data?.payment_address || data?.wallet_address || '');
+      setPayQrPayload(data?.payment_address || data?.wallet_address || '');
       setErrorMessage('');
       setPlayerPhase(data?.playback_url ? 'loading' : 'waiting');
       setPlayerStatus(
@@ -208,10 +238,31 @@ export default function LiveRoomPage() {
     }
   };
 
+  const loadBackendStatus = async () => {
+    if (!id) {
+      return;
+    }
+
+    try {
+      const data = await getLiveBroadcastStatus(id);
+      setBackendStatus(data);
+    } catch (error: any) {
+      setBackendStatus(null);
+    }
+  };
+
   useEffect(() => {
     loadBroadcast(true);
-    const interval = window.setInterval(() => loadBroadcast(false), 15000);
-    return () => window.clearInterval(interval);
+    loadBackendStatus();
+    const detailInterval = window.setInterval(
+      () => loadBroadcast(false),
+      20000,
+    );
+    const statusInterval = window.setInterval(() => loadBackendStatus(), 12000);
+    return () => {
+      window.clearInterval(detailInterval);
+      window.clearInterval(statusInterval);
+    };
   }, [id]);
 
   useEffect(() => {
@@ -350,6 +401,8 @@ export default function LiveRoomPage() {
           ? await startLiveBroadcast(id)
           : await endLiveBroadcast(id);
       setBroadcast(next);
+      await loadBackendStatus();
+      await loadBroadcast(false);
       setPlayerPhase(next?.playback_url ? 'loading' : playerPhase);
       setPlayerStatus(
         next?.playback_url ? 'Waiting for stream...' : playerStatus,
@@ -386,8 +439,8 @@ export default function LiveRoomPage() {
                     style={{ width: '100%' }}
                   >
                     <Space wrap>
-                      <Tag color={getStatusColor(broadcast.status)}>
-                        {(broadcast.status || 'Created').toUpperCase()}
+                      <Tag color={getStatusColor(normalizedBusinessStatus)}>
+                        LIVE STATUS: {normalizedBusinessStatus.toUpperCase()}
                       </Tag>
                       {broadcast.category ? (
                         <Tag>{broadcast.category}</Tag>
@@ -403,6 +456,23 @@ export default function LiveRoomPage() {
                       {broadcast.description ||
                         'Professional live room with Django-managed stream lifecycle and Ant Media playback.'}
                     </Paragraph>
+                    {backendStatus?.message ? (
+                      <Alert
+                        type="info"
+                        showIcon
+                        message={backendStatus.message}
+                      />
+                    ) : null}
+                    {backendStatus?.sync_ok === false ? (
+                      <Alert
+                        type="warning"
+                        showIcon
+                        message={
+                          backendStatus.sync_error ||
+                          'Backend and media server status are out of sync.'
+                        }
+                      />
+                    ) : null}
                     <Space align="center" size={12}>
                       <Avatar
                         icon={<UserOutlined />}
@@ -426,7 +496,7 @@ export default function LiveRoomPage() {
                       type="primary"
                       icon={<PlayCircleOutlined />}
                       loading={actionLoading === 'start'}
-                      disabled={!canStart(broadcast.status)}
+                      disabled={!canStartLive}
                       onClick={() => handleAction('start')}
                     >
                       {startButtonLabel}
@@ -435,7 +505,7 @@ export default function LiveRoomPage() {
                       danger
                       icon={<PoweroffOutlined />}
                       loading={actionLoading === 'end'}
-                      disabled={!canEnd(broadcast.status)}
+                      disabled={!canEndLive}
                       onClick={() => handleAction('end')}
                     >
                       End Live
@@ -547,16 +617,42 @@ export default function LiveRoomPage() {
                     }
                   >
                     <QrCodePanel
-                      payload={qrPayload}
+                      payload={payQrPayload}
                       emptyText="Payment address is not available yet."
                     />
                     <Space style={{ width: '100%', justifyContent: 'center' }}>
                       <Button
                         size="small"
                         icon={<CopyOutlined />}
-                        onClick={() => copyValue(qrPayload, 'Payment address')}
+                        onClick={() =>
+                          copyValue(payQrPayload, 'Payment address')
+                        }
                       >
                         Copy address
+                      </Button>
+                    </Space>
+                  </Card>
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20 }}
+                    title={
+                      <Space size={8}>
+                        <QrcodeOutlined />
+                        <span>Watch QR</span>
+                      </Space>
+                    }
+                  >
+                    <QrCodePanel
+                      payload={watchUrl}
+                      emptyText="Watch URL is not available yet."
+                    />
+                    <Space style={{ width: '100%', justifyContent: 'center' }}>
+                      <Button
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => copyValue(watchUrl, 'Watch URL')}
+                      >
+                        Copy watch URL
                       </Button>
                     </Space>
                   </Card>
