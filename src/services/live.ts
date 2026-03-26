@@ -15,6 +15,7 @@ export type LiveBroadcast = {
   stream_key?: string;
   rtmp_url?: string;
   playback_url?: string;
+  watch_url?: string;
   payment_address?: string;
   thumbnail_url?: string;
   preview_image_url?: string;
@@ -34,10 +35,32 @@ export type LiveBroadcast = {
   normalized_status?: FrontendLiveStatus;
 };
 
+export type LiveBroadcastStatus = {
+  status?: string;
+  django_status?: string;
+  effective_status?: string;
+  raw_ant_media_status?: string;
+  sync_ok?: boolean;
+  sync_error?: string;
+  message?: string;
+  can_start?: boolean;
+  can_end?: boolean;
+  viewer_count?: number;
+  viewerCount?: number;
+  playback_url?: string;
+  watch_url?: string;
+  normalized_status?: FrontendLiveStatus;
+  [key: string]: any;
+};
+
 export type FrontendLiveStatus =
+  // Created in backend and ready for configuration, not ingesting media yet.
   | 'ready'
+  // Session exists, backend is waiting for encoder/browser signal.
   | 'waiting_for_signal'
+  // Backend confirms media ingest/broadcast is active.
   | 'live'
+  // Backend marks stream lifecycle as finished.
   | 'ended';
 
 export const normalizeLiveStatus = (
@@ -51,7 +74,7 @@ export const normalizeLiveStatus = (
     return 'live';
   }
 
-  if (['ready', 'created', 'prepared'].includes(status)) {
+  if (['ready', 'created', 'prepared', 'session_created'].includes(status)) {
     return 'ready';
   }
 
@@ -60,7 +83,13 @@ export const normalizeLiveStatus = (
   }
 
   if (
-    ['waiting', 'waiting_for_signal', 'pending', 'starting'].includes(status)
+    [
+      'waiting',
+      'waiting_for_signal',
+      'pending',
+      'starting',
+      'signal_pending',
+    ].includes(status)
   ) {
     return 'waiting_for_signal';
   }
@@ -105,6 +134,7 @@ const normalizeBroadcast = (item: any): LiveBroadcast => {
     stream_key: item?.stream_key || item?.streamKey || '',
     rtmp_url: item?.rtmp_url || item?.rtmpUrl || '',
     playback_url: item?.playback_url || item?.playbackUrl || '',
+    watch_url: item?.watch_url || item?.watchUrl || '',
     payment_address: item?.payment_address || item?.wallet_address || '',
     thumbnail_url: (item?.thumbnail_url || item?.thumbnailUrl || '')
       .toString()
@@ -133,6 +163,42 @@ const normalizeBroadcast = (item: any): LiveBroadcast => {
   };
 };
 
+const normalizeBroadcastStatus = (payload: any): LiveBroadcastStatus => {
+  const rawStatus =
+    payload?.effective_status ||
+    payload?.status ||
+    payload?.django_status ||
+    payload?.live_status ||
+    '';
+  const normalizedStatus = normalizeLiveStatus(rawStatus);
+
+  return {
+    ...payload,
+    status: payload?.status || payload?.django_status || '',
+    django_status: payload?.django_status || payload?.status || '',
+    effective_status:
+      payload?.effective_status || payload?.status || payload?.django_status,
+    raw_ant_media_status:
+      payload?.raw_ant_media_status || payload?.ant_media_status || '',
+    sync_ok: typeof payload?.sync_ok === 'boolean' ? payload.sync_ok : true,
+    sync_error: payload?.sync_error || '',
+    message: payload?.message || '',
+    can_start:
+      typeof payload?.can_start === 'boolean'
+        ? payload.can_start
+        : normalizedStatus !== 'live',
+    can_end:
+      typeof payload?.can_end === 'boolean'
+        ? payload.can_end
+        : normalizedStatus !== 'ended',
+    viewer_count: payload?.viewer_count ?? payload?.viewerCount ?? 0,
+    viewerCount: payload?.viewerCount ?? payload?.viewer_count ?? 0,
+    playback_url: payload?.playback_url || payload?.playbackUrl || '',
+    watch_url: payload?.watch_url || payload?.watchUrl || '',
+    normalized_status: normalizedStatus,
+  };
+};
+
 const normalizeBroadcastList = (payload: any): LiveBroadcast[] => {
   if (Array.isArray(payload)) {
     return payload.map(normalizeBroadcast);
@@ -158,6 +224,16 @@ export async function getLiveBroadcast(
 ): Promise<LiveBroadcast> {
   const payload = await requestJson<any>(`/api/live/${id}/`, { method: 'GET' });
   return normalizeBroadcast(payload);
+}
+
+export async function getLiveBroadcastStatus(
+  id: string | number,
+): Promise<LiveBroadcastStatus> {
+  const payload = await requestJson<any>(
+    `/api/live/${id}/status/`,
+    withOptionalAuth({ method: 'GET' }),
+  );
+  return normalizeBroadcastStatus(payload);
 }
 
 export async function createLiveBroadcast(payload: {
