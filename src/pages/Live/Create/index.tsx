@@ -847,7 +847,8 @@ export default function LiveCreatePage() {
                               : 'default'
                           }
                         >
-                          Browser publish: {publishingStatus.toUpperCase()}
+                          Browser publish (local transport):{' '}
+                          {publishingStatus.toUpperCase()}
                         </Tag>
                         <Text type="secondary">{deviceStatusMessage}</Text>
                         <Text type="secondary">{publishingMessage}</Text>

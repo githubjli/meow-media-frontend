@@ -30,9 +30,11 @@ import { getLiveWatchPageUrl, liveConfig } from '@/config/live';
 import {
   endLiveBroadcast,
   getLiveBroadcast,
+  getLiveBroadcastStatus,
   normalizeLiveStatus,
   startLiveBroadcast,
   type LiveBroadcast,
+  type LiveBroadcastStatus,
 } from '@/services/live';
 
 const { Title, Text, Paragraph } = Typography;
@@ -69,9 +71,6 @@ const getStatusColor = (status?: string) => {
       return 'processing';
   }
 };
-
-const canStart = (status?: string) => normalizeLiveStatus(status) !== 'live';
-const canEnd = (status?: string) => normalizeLiveStatus(status) !== 'ended';
 
 const copyValue = async (value: string, label: string) => {
   if (!value) {
@@ -155,6 +154,8 @@ export default function LiveRoomPage() {
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<{ destroy: () => void } | null>(null);
   const [broadcast, setBroadcast] = useState<LiveBroadcast | null>(null);
+  const [backendStatus, setBackendStatus] =
+    useState<LiveBroadcastStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<'start' | 'end' | null>(
     null,
@@ -167,15 +168,39 @@ export default function LiveRoomPage() {
   const [payQrPayload, setPayQrPayload] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
-  const playbackUrl = broadcast?.playback_url || '';
-  const watchUrl = broadcast?.watch_url || getLiveWatchPageUrl(broadcast?.id);
+  const effectiveBackendStatus =
+    backendStatus?.effective_status ||
+    backendStatus?.status ||
+    backendStatus?.django_status ||
+    broadcast?.normalized_status ||
+    broadcast?.status;
+  const normalizedBusinessStatus = normalizeLiveStatus(effectiveBackendStatus);
+  const playbackUrl =
+    backendStatus?.playback_url || broadcast?.playback_url || '';
+  const watchUrl =
+    backendStatus?.watch_url ||
+    broadcast?.watch_url ||
+    getLiveWatchPageUrl(broadcast?.id);
   const title = broadcast?.title || broadcast?.name || 'Live Stream';
   const creatorName =
     broadcast?.creator?.name ||
     broadcast?.creator?.username ||
     broadcast?.creator?.email ||
     'Creator';
-  const viewerCount = broadcast?.viewer_count ?? broadcast?.viewerCount ?? 0;
+  const viewerCount =
+    backendStatus?.viewer_count ??
+    backendStatus?.viewerCount ??
+    broadcast?.viewer_count ??
+    broadcast?.viewerCount ??
+    0;
+  const canStartLive =
+    typeof backendStatus?.can_start === 'boolean'
+      ? backendStatus.can_start
+      : normalizedBusinessStatus !== 'live';
+  const canEndLive =
+    typeof backendStatus?.can_end === 'boolean'
+      ? backendStatus.can_end
+      : normalizedBusinessStatus !== 'ended';
 
   const detailItems = useMemo(
     () => [
@@ -212,10 +237,31 @@ export default function LiveRoomPage() {
     }
   };
 
+  const loadBackendStatus = async () => {
+    if (!id) {
+      return;
+    }
+
+    try {
+      const data = await getLiveBroadcastStatus(id);
+      setBackendStatus(data);
+    } catch (error: any) {
+      setBackendStatus(null);
+    }
+  };
+
   useEffect(() => {
     loadBroadcast(true);
-    const interval = window.setInterval(() => loadBroadcast(false), 15000);
-    return () => window.clearInterval(interval);
+    loadBackendStatus();
+    const detailInterval = window.setInterval(
+      () => loadBroadcast(false),
+      20000,
+    );
+    const statusInterval = window.setInterval(() => loadBackendStatus(), 12000);
+    return () => {
+      window.clearInterval(detailInterval);
+      window.clearInterval(statusInterval);
+    };
   }, [id]);
 
   useEffect(() => {
@@ -354,6 +400,8 @@ export default function LiveRoomPage() {
           ? await startLiveBroadcast(id)
           : await endLiveBroadcast(id);
       setBroadcast(next);
+      await loadBackendStatus();
+      await loadBroadcast(false);
       setPlayerPhase(next?.playback_url ? 'loading' : playerPhase);
       setPlayerStatus(
         next?.playback_url ? 'Waiting for stream...' : playerStatus,
@@ -390,10 +438,8 @@ export default function LiveRoomPage() {
                     style={{ width: '100%' }}
                   >
                     <Space wrap>
-                      <Tag color={getStatusColor(broadcast.status)}>
-                        {normalizeLiveStatus(
-                          broadcast.normalized_status || broadcast.status,
-                        ).toUpperCase()}
+                      <Tag color={getStatusColor(normalizedBusinessStatus)}>
+                        LIVE STATUS: {normalizedBusinessStatus.toUpperCase()}
                       </Tag>
                       {broadcast.category ? (
                         <Tag>{broadcast.category}</Tag>
@@ -409,6 +455,23 @@ export default function LiveRoomPage() {
                       {broadcast.description ||
                         'Professional live room with Django-managed stream lifecycle and Ant Media playback.'}
                     </Paragraph>
+                    {backendStatus?.message ? (
+                      <Alert
+                        type="info"
+                        showIcon
+                        message={backendStatus.message}
+                      />
+                    ) : null}
+                    {backendStatus?.sync_ok === false ? (
+                      <Alert
+                        type="warning"
+                        showIcon
+                        message={
+                          backendStatus.sync_error ||
+                          'Backend and media server status are out of sync.'
+                        }
+                      />
+                    ) : null}
                     <Space align="center" size={12}>
                       <Avatar
                         icon={<UserOutlined />}
@@ -432,7 +495,7 @@ export default function LiveRoomPage() {
                       type="primary"
                       icon={<PlayCircleOutlined />}
                       loading={actionLoading === 'start'}
-                      disabled={!canStart(broadcast.status)}
+                      disabled={!canStartLive}
                       onClick={() => handleAction('start')}
                     >
                       {startButtonLabel}
@@ -441,7 +504,7 @@ export default function LiveRoomPage() {
                       danger
                       icon={<PoweroffOutlined />}
                       loading={actionLoading === 'end'}
-                      disabled={!canEnd(broadcast.status)}
+                      disabled={!canEndLive}
                       onClick={() => handleAction('end')}
                     >
                       End Live
