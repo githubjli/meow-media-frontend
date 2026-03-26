@@ -389,6 +389,12 @@ export default function LiveCreatePage() {
     }
     console.log('START WITH CAMERA: local preview ready');
 
+    if (!liveConfig.antMediaWebSocketUrl) {
+      setPublishingStatus('error');
+      setPublishingMessage('Missing Ant Media websocket URL configuration.');
+      return;
+    }
+
     setPublishingStatus('connecting');
     setPublishingMessage('Connecting to Ant Media publishing websocket…');
 
