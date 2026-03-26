@@ -40,6 +40,14 @@ export type LivePublishSession = {
   mode?: string;
   session_id?: string;
   expires_at?: string | null;
+  ant_media?: {
+    websocket_url?: string;
+    adaptor_script_url?: string;
+    stream_id?: string;
+    app_name?: string;
+    publish_mode?: string;
+    [key: string]: any;
+  };
   constraints?: {
     video?: boolean;
     audio?: boolean;
@@ -162,6 +170,19 @@ const normalizeBroadcast = (item: any): LiveBroadcast => {
           mode: item.publish_session?.mode || '',
           session_id: item.publish_session?.session_id || '',
           expires_at: item.publish_session?.expires_at || null,
+          ant_media: item.publish_session?.ant_media
+            ? {
+                ...item.publish_session.ant_media,
+                websocket_url:
+                  item.publish_session.ant_media?.websocket_url || '',
+                adaptor_script_url:
+                  item.publish_session.ant_media?.adaptor_script_url || '',
+                stream_id: item.publish_session.ant_media?.stream_id || '',
+                app_name: item.publish_session.ant_media?.app_name || '',
+                publish_mode:
+                  item.publish_session.ant_media?.publish_mode || '',
+              }
+            : undefined,
           constraints: item.publish_session?.constraints || {},
         }
       : undefined,

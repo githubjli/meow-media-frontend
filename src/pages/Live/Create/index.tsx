@@ -74,7 +74,7 @@ const copyValue = async (value: string, label: string) => {
   }
 };
 
-const loadWebRTCAdaptorScript = async () => {
+const loadWebRTCAdaptorScript = async (scriptUrl: string) => {
   if (typeof window === 'undefined') {
     return null;
   }
@@ -98,13 +98,13 @@ const loadWebRTCAdaptorScript = async () => {
       return;
     }
 
-    if (!liveConfig.antMediaWebRtcAdaptorScriptUrl) {
+    if (!scriptUrl) {
       reject(new Error('Missing Ant Media adaptor script URL configuration.'));
       return;
     }
 
     const script = document.createElement('script');
-    script.src = liveConfig.antMediaWebRtcAdaptorScriptUrl;
+    script.src = scriptUrl;
     script.async = true;
     script.dataset.antMediaAdaptor = 'true';
     script.onload = () => resolve();
@@ -114,6 +114,25 @@ const loadWebRTCAdaptorScript = async () => {
   });
 
   return window.WebRTCAdaptor || null;
+};
+
+const resolveAntMediaPublishConfig = (live?: LiveBroadcast | null) => {
+  const antMedia = live?.publish_session?.ant_media;
+  const websocketUrl =
+    String(antMedia?.websocket_url || '').trim() ||
+    String(liveConfig.antMediaWebSocketUrl || '').trim();
+  const adaptorScriptUrl =
+    String(antMedia?.adaptor_script_url || '').trim() ||
+    String(liveConfig.antMediaWebRtcAdaptorScriptUrl || '').trim();
+  const publishStreamId =
+    String(antMedia?.stream_id || '').trim() ||
+    String(live?.stream_key || '').trim();
+
+  return {
+    websocketUrl,
+    adaptorScriptUrl,
+    publishStreamId,
+  };
 };
 
 const getPermissionTagColor = (status: DevicePermissionStatus) => {
@@ -310,6 +329,7 @@ export default function LiveCreatePage() {
       return;
     }
 
+    let preparedLiveForPublish: LiveBroadcast | null = createdLive;
     setPreparePhase('preparing');
     setPrepareMessage('Preparing broadcast session with Django…');
     setPrepareSession(undefined);
@@ -317,6 +337,7 @@ export default function LiveCreatePage() {
     try {
       const preparedLive = await prepareLiveBroadcast(createdLive.id);
       setCreatedLive(preparedLive);
+      preparedLiveForPublish = preparedLive;
       setPreparePhase('prepared');
       setPrepareMessage(
         preparedLive.message || 'Prepared for browser publishing.',
@@ -332,6 +353,24 @@ export default function LiveCreatePage() {
       setPublishingMessage(
         'Browser publishing is blocked because prepare did not complete.',
       );
+      return;
+    }
+
+    const resolvedPublishConfig = resolveAntMediaPublishConfig(
+      preparedLiveForPublish,
+    );
+    const { websocketUrl, adaptorScriptUrl, publishStreamId } =
+      resolvedPublishConfig;
+    if (!websocketUrl && !adaptorScriptUrl && !publishStreamId) {
+      setPublishingStatus('error');
+      setPublishingMessage(
+        'Browser publishing config is missing from prepare response.',
+      );
+      return;
+    }
+    if (!websocketUrl || !adaptorScriptUrl || !publishStreamId) {
+      setPublishingStatus('error');
+      setPublishingMessage('Ant Media browser publish config is incomplete.');
       return;
     }
 
@@ -354,14 +393,14 @@ export default function LiveCreatePage() {
     setPublishingMessage('Connecting to Ant Media publishing websocket…');
 
     try {
-      const WebRTCAdaptorCtor = await loadWebRTCAdaptorScript();
+      const WebRTCAdaptorCtor = await loadWebRTCAdaptorScript(adaptorScriptUrl);
       if (!WebRTCAdaptorCtor) {
         throw new Error('Unable to initialize the Ant Media WebRTC adaptor.');
       }
 
       webRTCAdaptorRef.current?.closeWebSocket?.();
       webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
-        websocket_url: liveConfig.antMediaWebSocketUrl,
+        websocket_url: websocketUrl,
         mediaConstraints: { video: true, audio: true },
         peerconnection_config: {
           iceServers: [{ urls: 'stun:stun1.l.google.com:19302' }],
@@ -380,7 +419,7 @@ export default function LiveCreatePage() {
             setPublishingMessage(
               'WebRTC adaptor initialized. Starting browser publish…',
             );
-            webRTCAdaptorRef.current?.publish(createdLive.stream_key || '');
+            webRTCAdaptorRef.current?.publish(publishStreamId);
             return;
           }
 
