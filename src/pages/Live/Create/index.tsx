@@ -29,8 +29,12 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import QrCodePanel from '@/components/QrCodePanel';
-import { getLiveWatchPageUrl, liveConfig } from '@/config/live';
-import { createLiveBroadcast, type LiveBroadcast } from '@/services/live';
+import { liveConfig } from '@/config/live';
+import {
+  createLiveBroadcast,
+  getSafeWatchUrl,
+  type LiveBroadcast,
+} from '@/services/live';
 import { saveLiveQrConfig } from '@/utils/liveQr';
 
 const { Title, Text, Paragraph } = Typography;
@@ -441,7 +445,7 @@ export default function LiveCreatePage() {
       value: createdLive?.playback_url || '',
     },
   ];
-  const watchQrPayload = createdLive ? getLiveWatchPageUrl(createdLive.id) : '';
+  const watchQrPayload = getSafeWatchUrl(createdLive);
 
   useEffect(() => {
     if (!createdLive?.id) {
@@ -450,9 +454,9 @@ export default function LiveCreatePage() {
 
     saveLiveQrConfig(createdLive.id, {
       paymentAddress: payQrPayload,
-      watchUrl: getLiveWatchPageUrl(createdLive.id),
+      watchUrl: getSafeWatchUrl(createdLive),
     });
-  }, [createdLive?.id, payQrPayload]);
+  }, [createdLive, payQrPayload]);
 
   const deviceChecklist = [
     {
@@ -957,9 +961,15 @@ export default function LiveCreatePage() {
                           <Button
                             type="primary"
                             icon={<PlayCircleOutlined />}
-                            onClick={() =>
-                              history.push(`/live/${createdLive.id}`)
-                            }
+                            onClick={() => {
+                              const nextWatchUrl = getSafeWatchUrl(createdLive);
+                              if (!nextWatchUrl) return;
+                              if (/^https?:\/\//i.test(nextWatchUrl)) {
+                                window.location.href = nextWatchUrl;
+                                return;
+                              }
+                              history.push(nextWatchUrl);
+                            }}
                           >
                             Open Watch Page
                           </Button>

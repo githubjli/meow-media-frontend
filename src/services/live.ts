@@ -36,6 +36,7 @@ export type LiveBroadcast = {
 };
 
 export type LiveBroadcastStatus = {
+  id?: string | number;
   status?: string;
   django_status?: string;
   effective_status?: string;
@@ -163,6 +164,24 @@ const normalizeBroadcast = (item: any): LiveBroadcast => {
   };
 };
 
+export const getSafeWatchUrl = (
+  live?: {
+    id?: string | number;
+    watch_url?: string;
+  } | null,
+) => {
+  if (!live?.id) {
+    return '';
+  }
+
+  const canonicalWatchUrl = String(live.watch_url || '').trim();
+  if (canonicalWatchUrl) {
+    return canonicalWatchUrl;
+  }
+
+  return `/live/${encodeURIComponent(String(live.id))}`;
+};
+
 const normalizeBroadcastStatus = (payload: any): LiveBroadcastStatus => {
   const rawStatus =
     payload?.effective_status ||
@@ -174,6 +193,7 @@ const normalizeBroadcastStatus = (payload: any): LiveBroadcastStatus => {
 
   return {
     ...payload,
+    id: payload?.id ?? payload?.live_id ?? payload?.stream_id ?? undefined,
     status: payload?.status || payload?.django_status || '',
     django_status: payload?.django_status || payload?.status || '',
     effective_status:

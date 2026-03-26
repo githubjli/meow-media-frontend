@@ -26,11 +26,12 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import QrCodePanel from '@/components/QrCodePanel';
-import { getLiveWatchPageUrl, liveConfig } from '@/config/live';
+import { liveConfig } from '@/config/live';
 import {
   endLiveBroadcast,
   getLiveBroadcast,
   getLiveBroadcastStatus,
+  getSafeWatchUrl,
   normalizeLiveStatus,
   startLiveBroadcast,
   type LiveBroadcast,
@@ -177,10 +178,10 @@ export default function LiveRoomPage() {
   const normalizedBusinessStatus = normalizeLiveStatus(effectiveBackendStatus);
   const playbackUrl =
     backendStatus?.playback_url || broadcast?.playback_url || '';
-  const watchUrl =
-    backendStatus?.watch_url ||
-    broadcast?.watch_url ||
-    getLiveWatchPageUrl(broadcast?.id);
+  const watchUrl = getSafeWatchUrl({
+    id: backendStatus?.id || broadcast?.id,
+    watch_url: backendStatus?.watch_url || broadcast?.watch_url,
+  });
   const title = broadcast?.title || broadcast?.name || 'Live Stream';
   const creatorName =
     broadcast?.creator?.name ||
