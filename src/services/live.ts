@@ -149,6 +149,9 @@ const withOptionalAuth = (options: RequestInit = {}) => {
 
 const normalizeBroadcast = (item: any): LiveBroadcast => {
   const rawStatus = item?.status || item?.live_status || 'created';
+  const rawPublishSession = item?.publish_session || item?.publishSession;
+  const rawAntMedia =
+    rawPublishSession?.ant_media || rawPublishSession?.antMedia;
 
   return {
     ...item,
@@ -164,26 +167,29 @@ const normalizeBroadcast = (item: any): LiveBroadcast => {
     rtmp_url: item?.rtmp_url || item?.rtmpUrl || '',
     playback_url: item?.playback_url || item?.playbackUrl || '',
     watch_url: item?.watch_url || item?.watchUrl || '',
-    publish_session: item?.publish_session
+    publish_session: rawPublishSession
       ? {
-          ...item.publish_session,
-          mode: item.publish_session?.mode || '',
-          session_id: item.publish_session?.session_id || '',
-          expires_at: item.publish_session?.expires_at || null,
-          ant_media: item.publish_session?.ant_media
+          ...rawPublishSession,
+          mode: rawPublishSession?.mode || '',
+          session_id: rawPublishSession?.session_id || '',
+          expires_at: rawPublishSession?.expires_at || null,
+          ant_media: rawAntMedia
             ? {
-                ...item.publish_session.ant_media,
+                ...rawAntMedia,
                 websocket_url:
-                  item.publish_session.ant_media?.websocket_url || '',
+                  rawAntMedia?.websocket_url || rawAntMedia?.websocketUrl || '',
                 adaptor_script_url:
-                  item.publish_session.ant_media?.adaptor_script_url || '',
-                stream_id: item.publish_session.ant_media?.stream_id || '',
-                app_name: item.publish_session.ant_media?.app_name || '',
+                  rawAntMedia?.adaptor_script_url ||
+                  rawAntMedia?.adaptorScriptUrl ||
+                  '',
+                stream_id:
+                  rawAntMedia?.stream_id || rawAntMedia?.streamId || '',
+                app_name: rawAntMedia?.app_name || rawAntMedia?.appName || '',
                 publish_mode:
-                  item.publish_session.ant_media?.publish_mode || '',
+                  rawAntMedia?.publish_mode || rawAntMedia?.publishMode || '',
               }
             : undefined,
-          constraints: item.publish_session?.constraints || {},
+          constraints: rawPublishSession?.constraints || {},
         }
       : undefined,
     payment_address: item?.payment_address || item?.wallet_address || '',
@@ -332,8 +338,10 @@ export async function prepareLiveBroadcast(
     `/api/live/${id}/prepare/`,
     await withAuth({ method: 'POST' }),
   );
-
-  return normalizeBroadcast(response);
+  console.log('PREPARE RAW RESPONSE', response);
+  const normalized = normalizeBroadcast(response);
+  console.log('NORMALIZED LIVE', normalized);
+  return normalized;
 }
 
 export async function startLiveBroadcast(

@@ -117,6 +117,7 @@ const loadWebRTCAdaptorScript = async (scriptUrl: string) => {
 };
 
 const resolveAntMediaPublishConfig = (live?: LiveBroadcast | null) => {
+  console.log('RESOLVED CONFIG INPUT', live?.publish_session);
   const antMedia = live?.publish_session?.ant_media;
   const websocketUrl =
     String(antMedia?.websocket_url || '').trim() ||
@@ -358,6 +359,11 @@ export default function LiveCreatePage() {
 
     const resolvedPublishConfig = resolveAntMediaPublishConfig(
       preparedLiveForPublish,
+    );
+    console.log('PUBLISH SESSION', preparedLiveForPublish?.publish_session);
+    console.log(
+      'ANT MEDIA CONFIG',
+      preparedLiveForPublish?.publish_session?.ant_media,
     );
     const { websocketUrl, adaptorScriptUrl, publishStreamId } =
       resolvedPublishConfig;
