@@ -15,6 +15,7 @@ export type LiveBroadcast = {
   stream_key?: string;
   rtmp_url?: string;
   playback_url?: string;
+  watch_url?: string;
   payment_address?: string;
   thumbnail_url?: string;
   preview_image_url?: string;
@@ -35,9 +36,13 @@ export type LiveBroadcast = {
 };
 
 export type FrontendLiveStatus =
+  // Created in backend and ready for configuration, not ingesting media yet.
   | 'ready'
+  // Session exists, backend is waiting for encoder/browser signal.
   | 'waiting_for_signal'
+  // Backend confirms media ingest/broadcast is active.
   | 'live'
+  // Backend marks stream lifecycle as finished.
   | 'ended';
 
 export const normalizeLiveStatus = (
@@ -51,7 +56,7 @@ export const normalizeLiveStatus = (
     return 'live';
   }
 
-  if (['ready', 'created', 'prepared'].includes(status)) {
+  if (['ready', 'created', 'prepared', 'session_created'].includes(status)) {
     return 'ready';
   }
 
@@ -60,7 +65,13 @@ export const normalizeLiveStatus = (
   }
 
   if (
-    ['waiting', 'waiting_for_signal', 'pending', 'starting'].includes(status)
+    [
+      'waiting',
+      'waiting_for_signal',
+      'pending',
+      'starting',
+      'signal_pending',
+    ].includes(status)
   ) {
     return 'waiting_for_signal';
   }
@@ -105,6 +116,7 @@ const normalizeBroadcast = (item: any): LiveBroadcast => {
     stream_key: item?.stream_key || item?.streamKey || '',
     rtmp_url: item?.rtmp_url || item?.rtmpUrl || '',
     playback_url: item?.playback_url || item?.playbackUrl || '',
+    watch_url: item?.watch_url || item?.watchUrl || '',
     payment_address: item?.payment_address || item?.wallet_address || '',
     thumbnail_url: (item?.thumbnail_url || item?.thumbnailUrl || '')
       .toString()

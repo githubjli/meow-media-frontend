@@ -26,9 +26,11 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import QrCodePanel from '@/components/QrCodePanel';
+import { getLiveWatchPageUrl, liveConfig } from '@/config/live';
 import {
   endLiveBroadcast,
   getLiveBroadcast,
+  normalizeLiveStatus,
   startLiveBroadcast,
   type LiveBroadcast,
 } from '@/services/live';
@@ -55,25 +57,21 @@ declare global {
 }
 
 const getStatusColor = (status?: string) => {
-  switch (String(status || '').toLowerCase()) {
+  const normalized = normalizeLiveStatus(status);
+  switch (normalized) {
     case 'live':
-    case 'started':
-    case 'broadcasting':
       return 'error';
     case 'ended':
-    case 'finished':
       return 'default';
+    case 'ready':
+    case 'waiting_for_signal':
     default:
       return 'processing';
   }
 };
 
-const canStart = (status?: string) =>
-  !['live', 'started', 'broadcasting'].includes(
-    String(status || '').toLowerCase(),
-  );
-const canEnd = (status?: string) =>
-  !['ended', 'finished'].includes(String(status || '').toLowerCase());
+const canStart = (status?: string) => normalizeLiveStatus(status) !== 'live';
+const canEnd = (status?: string) => normalizeLiveStatus(status) !== 'ended';
 
 const copyValue = async (value: string, label: string) => {
   if (!value) {
@@ -133,8 +131,13 @@ const loadHlsLibrary = async (): Promise<HlsCtor | null> => {
       return;
     }
 
+    if (!liveConfig.hlsScriptUrl) {
+      reject(new Error('Missing HLS script URL configuration.'));
+      return;
+    }
+
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.18/dist/hls.min.js';
+    script.src = liveConfig.hlsScriptUrl;
     script.async = true;
     script.dataset.hlsJsCdn = 'true';
     script.onload = () => resolve();
@@ -161,10 +164,11 @@ export default function LiveRoomPage() {
     'Waiting for a playback URL from Django.',
   );
   const [playerPhase, setPlayerPhase] = useState<PlayerPhase>('idle');
-  const [qrPayload, setQrPayload] = useState('');
+  const [payQrPayload, setPayQrPayload] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const playbackUrl = broadcast?.playback_url || '';
+  const watchUrl = broadcast?.watch_url || getLiveWatchPageUrl(broadcast?.id);
   const title = broadcast?.title || broadcast?.name || 'Live Stream';
   const creatorName =
     broadcast?.creator?.name ||
@@ -194,7 +198,7 @@ export default function LiveRoomPage() {
     try {
       const data = await getLiveBroadcast(id);
       setBroadcast(data);
-      setQrPayload(data?.payment_address || data?.wallet_address || '');
+      setPayQrPayload(data?.payment_address || data?.wallet_address || '');
       setErrorMessage('');
       setPlayerPhase(data?.playback_url ? 'loading' : 'waiting');
       setPlayerStatus(
@@ -387,7 +391,9 @@ export default function LiveRoomPage() {
                   >
                     <Space wrap>
                       <Tag color={getStatusColor(broadcast.status)}>
-                        {(broadcast.status || 'Created').toUpperCase()}
+                        {normalizeLiveStatus(
+                          broadcast.normalized_status || broadcast.status,
+                        ).toUpperCase()}
                       </Tag>
                       {broadcast.category ? (
                         <Tag>{broadcast.category}</Tag>
@@ -547,16 +553,42 @@ export default function LiveRoomPage() {
                     }
                   >
                     <QrCodePanel
-                      payload={qrPayload}
+                      payload={payQrPayload}
                       emptyText="Payment address is not available yet."
                     />
                     <Space style={{ width: '100%', justifyContent: 'center' }}>
                       <Button
                         size="small"
                         icon={<CopyOutlined />}
-                        onClick={() => copyValue(qrPayload, 'Payment address')}
+                        onClick={() =>
+                          copyValue(payQrPayload, 'Payment address')
+                        }
                       >
                         Copy address
+                      </Button>
+                    </Space>
+                  </Card>
+                  <Card
+                    bordered={false}
+                    style={{ borderRadius: 20 }}
+                    title={
+                      <Space size={8}>
+                        <QrcodeOutlined />
+                        <span>Watch QR</span>
+                      </Space>
+                    }
+                  >
+                    <QrCodePanel
+                      payload={watchUrl}
+                      emptyText="Watch URL is not available yet."
+                    />
+                    <Space style={{ width: '100%', justifyContent: 'center' }}>
+                      <Button
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => copyValue(watchUrl, 'Watch URL')}
+                      >
+                        Copy watch URL
                       </Button>
                     </Space>
                   </Card>
