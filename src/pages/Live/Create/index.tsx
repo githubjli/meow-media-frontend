@@ -117,7 +117,6 @@ const loadWebRTCAdaptorScript = async (scriptUrl: string) => {
 };
 
 const resolveAntMediaPublishConfig = (live?: LiveBroadcast | null) => {
-  console.log('RESOLVED CONFIG INPUT', live?.publish_session);
   const antMedia = live?.publish_session?.ant_media;
   const websocketUrl =
     String(antMedia?.websocket_url || '').trim() ||
@@ -323,10 +322,9 @@ export default function LiveCreatePage() {
   };
 
   const handleStartWithCamera = async () => {
-    if (!createdLive?.stream_key) {
-      message.error(
-        'A Django stream key is required before browser publishing can start.',
-      );
+    console.log('START WITH CAMERA: enter');
+    if (!createdLive?.id) {
+      message.error('Create your live session first.');
       return;
     }
 
@@ -337,6 +335,7 @@ export default function LiveCreatePage() {
 
     try {
       const preparedLive = await prepareLiveBroadcast(createdLive.id);
+      console.log('START WITH CAMERA: prepare returned', preparedLive);
       setCreatedLive(preparedLive);
       preparedLiveForPublish = preparedLive;
       setPreparePhase('prepared');
@@ -360,11 +359,11 @@ export default function LiveCreatePage() {
     const resolvedPublishConfig = resolveAntMediaPublishConfig(
       preparedLiveForPublish,
     );
-    console.log('PUBLISH SESSION', preparedLiveForPublish?.publish_session);
     console.log(
-      'ANT MEDIA CONFIG',
-      preparedLiveForPublish?.publish_session?.ant_media,
+      'START WITH CAMERA: resolved config input',
+      preparedLiveForPublish?.publish_session,
     );
+    console.log('START WITH CAMERA: resolved config', resolvedPublishConfig);
     const { websocketUrl, adaptorScriptUrl, publishStreamId } =
       resolvedPublishConfig;
     if (!websocketUrl && !adaptorScriptUrl && !publishStreamId) {
@@ -388,6 +387,7 @@ export default function LiveCreatePage() {
       );
       return;
     }
+    console.log('START WITH CAMERA: local preview ready');
 
     if (!liveConfig.antMediaWebSocketUrl) {
       setPublishingStatus('error');
@@ -421,10 +421,12 @@ export default function LiveCreatePage() {
         debug: false,
         callback: (info: string) => {
           if (info === 'initialized') {
+            console.log('START WITH CAMERA: adaptor initialized');
             setPublishingStatus('connecting');
             setPublishingMessage(
               'WebRTC adaptor initialized. Starting browser publish…',
             );
+            console.log('START WITH CAMERA: publish called', publishStreamId);
             webRTCAdaptorRef.current?.publish(publishStreamId);
             return;
           }

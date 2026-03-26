@@ -338,10 +338,7 @@ export async function prepareLiveBroadcast(
     `/api/live/${id}/prepare/`,
     await withAuth({ method: 'POST' }),
   );
-  console.log('PREPARE RAW RESPONSE', response);
-  const normalized = normalizeBroadcast(response);
-  console.log('NORMALIZED LIVE', normalized);
-  return normalized;
+  return normalizeBroadcast(response);
 }
 
 export async function startLiveBroadcast(
