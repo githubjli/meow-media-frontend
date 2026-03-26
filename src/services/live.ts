@@ -16,6 +16,7 @@ export type LiveBroadcast = {
   rtmp_url?: string;
   playback_url?: string;
   watch_url?: string;
+  publish_session?: LivePublishSession;
   payment_address?: string;
   thumbnail_url?: string;
   preview_image_url?: string;
@@ -35,11 +36,24 @@ export type LiveBroadcast = {
   normalized_status?: FrontendLiveStatus;
 };
 
+export type LivePublishSession = {
+  mode?: string;
+  session_id?: string;
+  expires_at?: string | null;
+  constraints?: {
+    video?: boolean;
+    audio?: boolean;
+    [key: string]: any;
+  };
+  [key: string]: any;
+};
+
 export type LiveBroadcastStatus = {
   id?: string | number;
   status?: string;
   django_status?: string;
   effective_status?: string;
+  status_source?: string;
   raw_ant_media_status?: string;
   sync_ok?: boolean;
   sync_error?: string;
@@ -51,6 +65,12 @@ export type LiveBroadcastStatus = {
   playback_url?: string;
   watch_url?: string;
   normalized_status?: FrontendLiveStatus;
+  [key: string]: any;
+};
+
+export type LivePrepareResponse = {
+  message?: string;
+  publish_session?: LivePublishSession;
   [key: string]: any;
 };
 
@@ -136,6 +156,15 @@ const normalizeBroadcast = (item: any): LiveBroadcast => {
     rtmp_url: item?.rtmp_url || item?.rtmpUrl || '',
     playback_url: item?.playback_url || item?.playbackUrl || '',
     watch_url: item?.watch_url || item?.watchUrl || '',
+    publish_session: item?.publish_session
+      ? {
+          ...item.publish_session,
+          mode: item.publish_session?.mode || '',
+          session_id: item.publish_session?.session_id || '',
+          expires_at: item.publish_session?.expires_at || null,
+          constraints: item.publish_session?.constraints || {},
+        }
+      : undefined,
     payment_address: item?.payment_address || item?.wallet_address || '',
     thumbnail_url: (item?.thumbnail_url || item?.thumbnailUrl || '')
       .toString()
@@ -198,6 +227,7 @@ const normalizeBroadcastStatus = (payload: any): LiveBroadcastStatus => {
     django_status: payload?.django_status || payload?.status || '',
     effective_status:
       payload?.effective_status || payload?.status || payload?.django_status,
+    status_source: payload?.status_source || '',
     raw_ant_media_status:
       payload?.raw_ant_media_status || payload?.ant_media_status || '',
     sync_ok: typeof payload?.sync_ok === 'boolean' ? payload.sync_ok : true,
@@ -269,6 +299,17 @@ export async function createLiveBroadcast(payload: {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  );
+
+  return normalizeBroadcast(response);
+}
+
+export async function prepareLiveBroadcast(
+  id: string | number,
+): Promise<LiveBroadcast> {
+  const response = await requestJson<any>(
+    `/api/live/${id}/prepare/`,
+    await withAuth({ method: 'POST' }),
   );
 
   return normalizeBroadcast(response);

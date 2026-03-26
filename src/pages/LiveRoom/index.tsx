@@ -463,6 +463,11 @@ export default function LiveRoomPage() {
                         message={backendStatus.message}
                       />
                     ) : null}
+                    {backendStatus?.status_source ? (
+                      <Text type="secondary">
+                        Status source: {backendStatus.status_source}
+                      </Text>
+                    ) : null}
                     {backendStatus?.sync_ok === false ? (
                       <Alert
                         type="warning"

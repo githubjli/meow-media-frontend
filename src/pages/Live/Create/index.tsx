@@ -32,8 +32,11 @@ import QrCodePanel from '@/components/QrCodePanel';
 import { liveConfig } from '@/config/live';
 import {
   createLiveBroadcast,
+  getLiveBroadcastStatus,
   getSafeWatchUrl,
+  prepareLiveBroadcast,
   type LiveBroadcast,
+  type LiveBroadcastStatus,
 } from '@/services/live';
 import { saveLiveQrConfig } from '@/utils/liveQr';
 
@@ -43,6 +46,7 @@ type BroadcastMode = 'camera' | 'stream-key';
 type DevicePermissionStatus = 'idle' | 'requesting' | 'ready' | 'error';
 // Browser publish status is transport-level only. Backend live status remains source of truth.
 type PublishingStatus = 'idle' | 'connecting' | 'publishing' | 'error';
+type PreparePhase = 'idle' | 'preparing' | 'prepared' | 'error';
 
 type AntMediaWebRTCAdaptor = {
   publish: (streamId: string) => void;
@@ -148,6 +152,15 @@ export default function LiveCreatePage() {
   const [publishingMessage, setPublishingMessage] = useState(
     'Browser publishing is standing by.',
   );
+  const [preparePhase, setPreparePhase] = useState<PreparePhase>('idle');
+  const [prepareMessage, setPrepareMessage] = useState(
+    'Preparation handshake has not started.',
+  );
+  const [prepareSession, setPrepareSession] = useState<
+    LiveBroadcast['publish_session'] | undefined
+  >(undefined);
+  const [backendStatus, setBackendStatus] =
+    useState<LiveBroadcastStatus | null>(null);
   const [payQrPayload, setPayQrPayload] = useState('');
 
   useEffect(() => {
@@ -206,6 +219,10 @@ export default function LiveCreatePage() {
       );
       setPublishingStatus('idle');
       setPublishingMessage('Browser publishing is standing by.');
+      setPreparePhase('idle');
+      setPrepareMessage('Preparation handshake has not started.');
+      setPrepareSession(undefined);
+      setBackendStatus(null);
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
@@ -289,6 +306,31 @@ export default function LiveCreatePage() {
     if (!createdLive?.stream_key) {
       message.error(
         'A Django stream key is required before browser publishing can start.',
+      );
+      return;
+    }
+
+    setPreparePhase('preparing');
+    setPrepareMessage('Preparing broadcast session with Django…');
+    setPrepareSession(undefined);
+
+    try {
+      const preparedLive = await prepareLiveBroadcast(createdLive.id);
+      setCreatedLive(preparedLive);
+      setPreparePhase('prepared');
+      setPrepareMessage(
+        preparedLive.message || 'Prepared for browser publishing.',
+      );
+      setPrepareSession(preparedLive.publish_session);
+    } catch (error: any) {
+      setPreparePhase('error');
+      setPrepareMessage(
+        error?.message ||
+          'Prepare handshake failed. Browser publishing has not started.',
+      );
+      setPublishingStatus('error');
+      setPublishingMessage(
+        'Browser publishing is blocked because prepare did not complete.',
       );
       return;
     }
@@ -452,6 +494,34 @@ export default function LiveCreatePage() {
       return;
     }
 
+    let active = true;
+
+    const loadBackendStatus = async () => {
+      try {
+        const status = await getLiveBroadcastStatus(createdLive.id);
+        if (active) {
+          setBackendStatus(status);
+        }
+      } catch (error) {
+        if (active) {
+          setBackendStatus(null);
+        }
+      }
+    };
+
+    loadBackendStatus();
+    const interval = window.setInterval(loadBackendStatus, 12000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [createdLive?.id]);
+
+  useEffect(() => {
+    if (!createdLive?.id) {
+      return;
+    }
+
     saveLiveQrConfig(createdLive.id, {
       paymentAddress: payQrPayload,
       watchUrl: getSafeWatchUrl(createdLive),
@@ -459,6 +529,17 @@ export default function LiveCreatePage() {
   }, [createdLive, payQrPayload]);
 
   const deviceChecklist = [
+    {
+      label: 'Prepare handshake',
+      value:
+        preparePhase === 'prepared'
+          ? 'Prepared for browser publishing'
+          : preparePhase === 'preparing'
+          ? 'Preparing'
+          : preparePhase === 'error'
+          ? 'Prepare failed'
+          : 'Not prepared',
+    },
     {
       label: 'Camera',
       value:
@@ -483,6 +564,12 @@ export default function LiveCreatePage() {
         publishingStatus === 'publishing'
           ? 'Connected to Ant Media live app'
           : 'Ready for Ant Media browser publishing',
+    },
+    {
+      label: 'Live status (backend)',
+      value: backendStatus?.normalized_status
+        ? String(backendStatus.normalized_status).toUpperCase()
+        : 'Unknown',
     },
   ];
 
@@ -854,6 +941,59 @@ export default function LiveCreatePage() {
                           Browser publish (local transport):{' '}
                           {publishingStatus.toUpperCase()}
                         </Tag>
+                        <Tag
+                          color={
+                            preparePhase === 'prepared'
+                              ? 'success'
+                              : preparePhase === 'preparing'
+                              ? 'processing'
+                              : preparePhase === 'error'
+                              ? 'warning'
+                              : 'default'
+                          }
+                        >
+                          Prepare handshake: {preparePhase.toUpperCase()}
+                        </Tag>
+                        <Tag
+                          color={
+                            backendStatus?.normalized_status === 'live'
+                              ? 'error'
+                              : backendStatus?.normalized_status === 'ended'
+                              ? 'default'
+                              : 'processing'
+                          }
+                        >
+                          Live status (backend):{' '}
+                          {String(
+                            backendStatus?.normalized_status || 'unknown',
+                          ).toUpperCase()}
+                        </Tag>
+                        <Text type="secondary">{prepareMessage}</Text>
+                        {prepareSession?.session_id ? (
+                          <Text type="secondary">
+                            Prepare session: {prepareSession.session_id}
+                          </Text>
+                        ) : null}
+                        {backendStatus?.message ? (
+                          <Text type="secondary">
+                            Backend status: {backendStatus.message}
+                          </Text>
+                        ) : null}
+                        {backendStatus?.status_source ? (
+                          <Text type="secondary">
+                            Status source: {backendStatus.status_source}
+                          </Text>
+                        ) : null}
+                        {backendStatus?.sync_ok === false ? (
+                          <Alert
+                            type="warning"
+                            showIcon
+                            message={
+                              backendStatus.sync_error ||
+                              'Backend and media server status are out of sync.'
+                            }
+                          />
+                        ) : null}
                         <Text type="secondary">{deviceStatusMessage}</Text>
                         <Text type="secondary">{publishingMessage}</Text>
                         {typeof window !== 'undefined' &&
