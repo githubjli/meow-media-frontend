@@ -29,19 +29,24 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import QrCodePanel from '@/components/QrCodePanel';
-import { createLiveBroadcast, type LiveBroadcast } from '@/services/live';
+import { liveConfig } from '@/config/live';
+import {
+  createLiveBroadcast,
+  getLiveBroadcastStatus,
+  getSafeWatchUrl,
+  prepareLiveBroadcast,
+  type LiveBroadcast,
+  type LiveBroadcastStatus,
+} from '@/services/live';
 import { saveLiveQrConfig } from '@/utils/liveQr';
 
 const { Title, Text, Paragraph } = Typography;
 
-const ANT_MEDIA_WEBSOCKET_URL =
-  'wss://streaming-api-live.pttblockchain.online:5443/live/websocket';
-const ANT_MEDIA_ADAPTOR_SCRIPT =
-  'https://streaming-api-live.pttblockchain.online:5443/live/js/webrtc_adaptor.js';
-
 type BroadcastMode = 'camera' | 'stream-key';
 type DevicePermissionStatus = 'idle' | 'requesting' | 'ready' | 'error';
-type PublishingStatus = 'idle' | 'connecting' | 'publishing' | 'live' | 'error';
+// Browser publish status is transport-level only. Backend live status remains source of truth.
+type PublishingStatus = 'idle' | 'connecting' | 'publishing' | 'error';
+type PreparePhase = 'idle' | 'preparing' | 'prepared' | 'error';
 
 type AntMediaWebRTCAdaptor = {
   publish: (streamId: string) => void;
@@ -69,7 +74,7 @@ const copyValue = async (value: string, label: string) => {
   }
 };
 
-const loadWebRTCAdaptorScript = async () => {
+const loadWebRTCAdaptorScript = async (scriptUrl: string) => {
   if (typeof window === 'undefined') {
     return null;
   }
@@ -93,8 +98,13 @@ const loadWebRTCAdaptorScript = async () => {
       return;
     }
 
+    if (!scriptUrl) {
+      reject(new Error('Missing Ant Media adaptor script URL configuration.'));
+      return;
+    }
+
     const script = document.createElement('script');
-    script.src = ANT_MEDIA_ADAPTOR_SCRIPT;
+    script.src = scriptUrl;
     script.async = true;
     script.dataset.antMediaAdaptor = 'true';
     script.onload = () => resolve();
@@ -104,6 +114,25 @@ const loadWebRTCAdaptorScript = async () => {
   });
 
   return window.WebRTCAdaptor || null;
+};
+
+const resolveAntMediaPublishConfig = (live?: LiveBroadcast | null) => {
+  const antMedia = live?.publish_session?.ant_media;
+  const websocketUrl =
+    String(antMedia?.websocket_url || '').trim() ||
+    String(liveConfig.antMediaWebSocketUrl || '').trim();
+  const adaptorScriptUrl =
+    String(antMedia?.adaptor_script_url || '').trim() ||
+    String(liveConfig.antMediaWebRtcAdaptorScriptUrl || '').trim();
+  const publishStreamId =
+    String(antMedia?.stream_id || '').trim() ||
+    String(live?.stream_key || '').trim();
+
+  return {
+    websocketUrl,
+    adaptorScriptUrl,
+    publishStreamId,
+  };
 };
 
 const getPermissionTagColor = (status: DevicePermissionStatus) => {
@@ -142,7 +171,16 @@ export default function LiveCreatePage() {
   const [publishingMessage, setPublishingMessage] = useState(
     'Browser publishing is standing by.',
   );
-  const [qrPayload, setQrPayload] = useState('');
+  const [preparePhase, setPreparePhase] = useState<PreparePhase>('idle');
+  const [prepareMessage, setPrepareMessage] = useState(
+    'Preparation handshake has not started.',
+  );
+  const [prepareSession, setPrepareSession] = useState<
+    LiveBroadcast['publish_session'] | undefined
+  >(undefined);
+  const [backendStatus, setBackendStatus] =
+    useState<LiveBroadcastStatus | null>(null);
+  const [payQrPayload, setPayQrPayload] = useState('');
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -183,7 +221,7 @@ export default function LiveCreatePage() {
     visibility: string;
     description?: string;
   }) => {
-    const paymentAddress = qrPayload.trim();
+    const paymentAddress = payQrPayload.trim();
     setSubmitting(true);
     setErrorMessage('');
 
@@ -200,10 +238,14 @@ export default function LiveCreatePage() {
       );
       setPublishingStatus('idle');
       setPublishingMessage('Browser publishing is standing by.');
+      setPreparePhase('idle');
+      setPrepareMessage('Preparation handshake has not started.');
+      setPrepareSession(undefined);
+      setBackendStatus(null);
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
-      setQrPayload(nextLive.payment_address || paymentAddress || '');
+      setPayQrPayload(nextLive.payment_address || paymentAddress || '');
     } catch (error: any) {
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
     } finally {
@@ -287,6 +329,51 @@ export default function LiveCreatePage() {
       return;
     }
 
+    let preparedLiveForPublish: LiveBroadcast | null = createdLive;
+    setPreparePhase('preparing');
+    setPrepareMessage('Preparing broadcast session with Django…');
+    setPrepareSession(undefined);
+
+    try {
+      const preparedLive = await prepareLiveBroadcast(createdLive.id);
+      setCreatedLive(preparedLive);
+      preparedLiveForPublish = preparedLive;
+      setPreparePhase('prepared');
+      setPrepareMessage(
+        preparedLive.message || 'Prepared for browser publishing.',
+      );
+      setPrepareSession(preparedLive.publish_session);
+    } catch (error: any) {
+      setPreparePhase('error');
+      setPrepareMessage(
+        error?.message ||
+          'Prepare handshake failed. Browser publishing has not started.',
+      );
+      setPublishingStatus('error');
+      setPublishingMessage(
+        'Browser publishing is blocked because prepare did not complete.',
+      );
+      return;
+    }
+
+    const resolvedPublishConfig = resolveAntMediaPublishConfig(
+      preparedLiveForPublish,
+    );
+    const { websocketUrl, adaptorScriptUrl, publishStreamId } =
+      resolvedPublishConfig;
+    if (!websocketUrl && !adaptorScriptUrl && !publishStreamId) {
+      setPublishingStatus('error');
+      setPublishingMessage(
+        'Browser publishing config is missing from prepare response.',
+      );
+      return;
+    }
+    if (!websocketUrl || !adaptorScriptUrl || !publishStreamId) {
+      setPublishingStatus('error');
+      setPublishingMessage('Ant Media browser publish config is incomplete.');
+      return;
+    }
+
     const stream = await prepareLocalPreview();
     if (!stream) {
       setPublishingStatus('error');
@@ -300,14 +387,14 @@ export default function LiveCreatePage() {
     setPublishingMessage('Connecting to Ant Media publishing websocket…');
 
     try {
-      const WebRTCAdaptorCtor = await loadWebRTCAdaptorScript();
+      const WebRTCAdaptorCtor = await loadWebRTCAdaptorScript(adaptorScriptUrl);
       if (!WebRTCAdaptorCtor) {
         throw new Error('Unable to initialize the Ant Media WebRTC adaptor.');
       }
 
       webRTCAdaptorRef.current?.closeWebSocket?.();
       webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
-        websocket_url: ANT_MEDIA_WEBSOCKET_URL,
+        websocket_url: websocketUrl,
         mediaConstraints: { video: true, audio: true },
         peerconnection_config: {
           iceServers: [{ urls: 'stun:stun1.l.google.com:19302' }],
@@ -326,7 +413,7 @@ export default function LiveCreatePage() {
             setPublishingMessage(
               'WebRTC adaptor initialized. Starting browser publish…',
             );
-            webRTCAdaptorRef.current?.publish(createdLive.stream_key || '');
+            webRTCAdaptorRef.current?.publish(publishStreamId);
             return;
           }
 
@@ -337,7 +424,8 @@ export default function LiveCreatePage() {
           }
 
           if (info === 'ice_connection_state_changed') {
-            setPublishingStatus('live');
+            // Do not mark backend session as live here; this is only transport feedback.
+            setPublishingStatus('publishing');
             setPublishingMessage(
               'Live from browser. Your camera stream is publishing to the Ant Media live app.',
             );
@@ -432,6 +520,35 @@ export default function LiveCreatePage() {
       value: createdLive?.playback_url || '',
     },
   ];
+  const watchQrPayload = getSafeWatchUrl(createdLive);
+
+  useEffect(() => {
+    if (!createdLive?.id) {
+      return;
+    }
+
+    let active = true;
+
+    const loadBackendStatus = async () => {
+      try {
+        const status = await getLiveBroadcastStatus(createdLive.id);
+        if (active) {
+          setBackendStatus(status);
+        }
+      } catch (error) {
+        if (active) {
+          setBackendStatus(null);
+        }
+      }
+    };
+
+    loadBackendStatus();
+    const interval = window.setInterval(loadBackendStatus, 12000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [createdLive?.id]);
 
   useEffect(() => {
     if (!createdLive?.id) {
@@ -439,11 +556,23 @@ export default function LiveCreatePage() {
     }
 
     saveLiveQrConfig(createdLive.id, {
-      payload: qrPayload,
+      paymentAddress: payQrPayload,
+      watchUrl: getSafeWatchUrl(createdLive),
     });
-  }, [createdLive?.id, qrPayload]);
+  }, [createdLive, payQrPayload]);
 
   const deviceChecklist = [
+    {
+      label: 'Prepare handshake',
+      value:
+        preparePhase === 'prepared'
+          ? 'Prepared for browser publishing'
+          : preparePhase === 'preparing'
+          ? 'Preparing'
+          : preparePhase === 'error'
+          ? 'Prepare failed'
+          : 'Not prepared',
+    },
     {
       label: 'Camera',
       value:
@@ -465,9 +594,15 @@ export default function LiveCreatePage() {
     {
       label: 'Publishing pipeline',
       value:
-        publishingStatus === 'live'
+        publishingStatus === 'publishing'
           ? 'Connected to Ant Media live app'
           : 'Ready for Ant Media browser publishing',
+    },
+    {
+      label: 'Live status (backend)',
+      value: backendStatus?.normalized_status
+        ? String(backendStatus.normalized_status).toUpperCase()
+        : 'Unknown',
     },
   ];
 
@@ -569,12 +704,14 @@ export default function LiveCreatePage() {
                         </Text>
                         <Input
                           placeholder="Payment Address"
-                          value={qrPayload}
-                          onChange={(event) => setQrPayload(event.target.value)}
+                          value={payQrPayload}
+                          onChange={(event) =>
+                            setPayQrPayload(event.target.value)
+                          }
                         />
                       </Space>
                       <QrCodePanel
-                        payload={qrPayload}
+                        payload={payQrPayload}
                         size={160}
                         emptyText="Enter a payment address to generate the Pay QR."
                       />
@@ -823,7 +960,7 @@ export default function LiveCreatePage() {
                         </Tag>
                         <Tag
                           color={
-                            publishingStatus === 'live'
+                            publishingStatus === 'publishing'
                               ? 'error'
                               : publishingStatus === 'publishing'
                               ? 'processing'
@@ -834,8 +971,62 @@ export default function LiveCreatePage() {
                               : 'default'
                           }
                         >
-                          Browser publish: {publishingStatus.toUpperCase()}
+                          Browser publish (local transport):{' '}
+                          {publishingStatus.toUpperCase()}
                         </Tag>
+                        <Tag
+                          color={
+                            preparePhase === 'prepared'
+                              ? 'success'
+                              : preparePhase === 'preparing'
+                              ? 'processing'
+                              : preparePhase === 'error'
+                              ? 'warning'
+                              : 'default'
+                          }
+                        >
+                          Prepare handshake: {preparePhase.toUpperCase()}
+                        </Tag>
+                        <Tag
+                          color={
+                            backendStatus?.normalized_status === 'live'
+                              ? 'error'
+                              : backendStatus?.normalized_status === 'ended'
+                              ? 'default'
+                              : 'processing'
+                          }
+                        >
+                          Live status (backend):{' '}
+                          {String(
+                            backendStatus?.normalized_status || 'unknown',
+                          ).toUpperCase()}
+                        </Tag>
+                        <Text type="secondary">{prepareMessage}</Text>
+                        {prepareSession?.session_id ? (
+                          <Text type="secondary">
+                            Prepare session: {prepareSession.session_id}
+                          </Text>
+                        ) : null}
+                        {backendStatus?.message ? (
+                          <Text type="secondary">
+                            Backend status: {backendStatus.message}
+                          </Text>
+                        ) : null}
+                        {backendStatus?.status_source ? (
+                          <Text type="secondary">
+                            Status source: {backendStatus.status_source}
+                          </Text>
+                        ) : null}
+                        {backendStatus?.sync_ok === false ? (
+                          <Alert
+                            type="warning"
+                            showIcon
+                            message={
+                              backendStatus.sync_error ||
+                              'Backend and media server status are out of sync.'
+                            }
+                          />
+                        ) : null}
                         <Text type="secondary">{deviceStatusMessage}</Text>
                         <Text type="secondary">{publishingMessage}</Text>
                         {typeof window !== 'undefined' &&
@@ -943,9 +1134,15 @@ export default function LiveCreatePage() {
                           <Button
                             type="primary"
                             icon={<PlayCircleOutlined />}
-                            onClick={() =>
-                              history.push(`/live/${createdLive.id}`)
-                            }
+                            onClick={() => {
+                              const nextWatchUrl = getSafeWatchUrl(createdLive);
+                              if (!nextWatchUrl) return;
+                              if (/^https?:\/\//i.test(nextWatchUrl)) {
+                                window.location.href = nextWatchUrl;
+                                return;
+                              }
+                              history.push(nextWatchUrl);
+                            }}
                           >
                             Open Watch Page
                           </Button>
@@ -961,6 +1158,19 @@ export default function LiveCreatePage() {
                           >
                             Copy Playback URL
                           </Button>
+                          <div>
+                            <Text
+                              strong
+                              style={{ display: 'block', marginBottom: 8 }}
+                            >
+                              Watch QR
+                            </Text>
+                            <QrCodePanel
+                              payload={watchQrPayload}
+                              size={150}
+                              emptyText="Watch URL is not available yet."
+                            />
+                          </div>
                         </Space>
                       ) : (
                         <Alert
