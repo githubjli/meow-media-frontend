@@ -1,5 +1,14 @@
 export type LiveQrConfig = {
-  payload?: string;
+  /**
+   * Temporary client-side cache for pay QR payload only.
+   * Preferred source is backend `payment_address`.
+   */
+  paymentAddress?: string;
+  /**
+   * Temporary client-side cache for watch QR URL.
+   * Preferred source is backend `watch_url` or deterministic room URL.
+   */
+  watchUrl?: string;
   uploadedImageDataUrl?: string;
 };
 
