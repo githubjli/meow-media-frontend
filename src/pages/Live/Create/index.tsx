@@ -208,6 +208,7 @@ export default function LiveCreatePage() {
   const [webRtcCallbackEvents, setWebRtcCallbackEvents] = useState<
     Array<{ event: string; at: string }>
   >([]);
+  const [latestWebRtcCallbackInfo, setLatestWebRtcCallbackInfo] = useState('');
   const [webRtcCallbackError, setWebRtcCallbackError] = useState<{
     error?: any;
     messageText?: any;
@@ -302,6 +303,7 @@ export default function LiveCreatePage() {
       });
       setDebugLastError('');
       setWebRtcCallbackEvents([]);
+      setLatestWebRtcCallbackInfo('');
       setWebRtcCallbackError(null);
       setActivePublishStreamId('');
       setBackendStatus(null);
@@ -514,6 +516,8 @@ export default function LiveCreatePage() {
         isPlayMode: false,
         debug: false,
         callback: (info: string) => {
+          console.log('WEBRTC_CALLBACK_INFO:', info);
+          setLatestWebRtcCallbackInfo(info);
           setWebRtcCallbackEvents((current) => [
             ...current.slice(-49),
             { event: info, at: new Date().toISOString() },
@@ -554,6 +558,7 @@ export default function LiveCreatePage() {
           }
         },
         callbackError: (error: any, messageText: any) => {
+          console.log('WEBRTC_CALLBACK_ERROR:', { error, messageText });
           setWebRtcCallbackError({ error, messageText });
           setPublishingStatus('error');
           setPublishingMessage(
@@ -1262,6 +1267,21 @@ export default function LiveCreatePage() {
                         ) : null}
                         <Text type="secondary">{deviceStatusMessage}</Text>
                         <Text type="secondary">{publishingMessage}</Text>
+                        <Text type="secondary">
+                          {intl.formatMessage({
+                            id: 'live.debug.latestWebrtcInfo',
+                          })}
+                          : {latestWebRtcCallbackInfo || '-'}
+                        </Text>
+                        <Text type="secondary">
+                          {intl.formatMessage({
+                            id: 'live.debug.latestWebrtcError',
+                          })}
+                          :{' '}
+                          {webRtcCallbackError
+                            ? JSON.stringify(webRtcCallbackError)
+                            : '-'}
+                        </Text>
                         {typeof window !== 'undefined' &&
                         !window.isSecureContext &&
                         !['localhost', '127.0.0.1'].includes(
