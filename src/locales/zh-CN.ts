@@ -184,5 +184,13 @@ export default {
   'live.status.readyToGoLive': '已准备好开播',
   'live.status.broadcastEnded': '直播已结束',
   'live.status.streamStarting': '直播启动中',
+  'live.explore.subtitle': '浏览直播活动并进入直播间观看回放与状态。',
+  'live.explore.empty': '暂无可用直播。',
+  'live.explore.createFirst': '创建第一场直播',
+  'live.explore.error.load': '暂时无法加载直播列表。',
+  'live.creatorRequired': '需要创作者权限才能管理直播。',
+  'live.creatorRequired.short': '需要创作者权限',
+  'live.creatorRequired.backToLive': '返回直播列表',
+  'live.control.conflictTransition': '该直播已处于当前状态，请刷新后重试。',
   'videoCard.live': '直播中',
 };

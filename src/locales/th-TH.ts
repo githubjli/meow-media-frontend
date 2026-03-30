@@ -186,5 +186,15 @@ export default {
   'live.status.readyToGoLive': 'พร้อมเริ่มไลฟ์',
   'live.status.broadcastEnded': 'ไลฟ์จบแล้ว',
   'live.status.streamStarting': 'กำลังเริ่มไลฟ์',
+  'live.explore.subtitle':
+    'เรียกดูไลฟ์และเปิดห้องเพื่อดูการเล่นสตรีมและสถานะได้',
+  'live.explore.empty': 'ยังไม่มีไลฟ์ในตอนนี้',
+  'live.explore.createFirst': 'สร้างไลฟ์แรก',
+  'live.explore.error.load': 'ไม่สามารถโหลดรายการไลฟ์ได้ในขณะนี้',
+  'live.creatorRequired': 'ต้องมีสิทธิ์ครีเอเตอร์เพื่อจัดการไลฟ์',
+  'live.creatorRequired.short': 'ต้องเป็นครีเอเตอร์',
+  'live.creatorRequired.backToLive': 'กลับไปหน้ารายการไลฟ์',
+  'live.control.conflictTransition':
+    'ไลฟ์นี้อยู่ในสถานะนั้นแล้ว กรุณารีเฟรชสถานะ',
   'videoCard.live': 'สด',
 };

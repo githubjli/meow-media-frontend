@@ -188,5 +188,15 @@ export default {
   'live.status.readyToGoLive': 'Ready to go live',
   'live.status.broadcastEnded': 'Broadcast ended',
   'live.status.streamStarting': 'Stream starting',
+  'live.explore.subtitle':
+    'Browse live events and open a room to watch stream playback and status.',
+  'live.explore.empty': 'No live streams are available yet.',
+  'live.explore.createFirst': 'Create the first stream',
+  'live.explore.error.load': 'Unable to load live broadcasts right now.',
+  'live.creatorRequired': 'Creator access is required to manage live streams.',
+  'live.creatorRequired.short': 'Creator required',
+  'live.creatorRequired.backToLive': 'Back to live list',
+  'live.control.conflictTransition':
+    'This live stream is already in that state. Please refresh status.',
   'videoCard.live': 'LIVE',
 };
