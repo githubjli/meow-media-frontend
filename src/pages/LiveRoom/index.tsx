@@ -7,7 +7,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useLocation, useModel, useParams } from '@umijs/max';
+import { history, useIntl, useLocation, useModel, useParams } from '@umijs/max';
 import {
   Alert,
   Avatar,
@@ -149,6 +149,7 @@ const loadHlsLibrary = async (): Promise<HlsCtor | null> => {
 };
 
 export default function LiveRoomPage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
@@ -169,6 +170,12 @@ export default function LiveRoomPage() {
   const [payQrPayload, setPayQrPayload] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
+  const isCreator = Boolean(
+    initialState?.currentUser &&
+      (initialState.currentUser.is_creator ||
+        initialState.currentUser.role === 'creator' ||
+        initialState.currentUser.user_type === 'creator'),
+  );
   const effectiveBackendStatus =
     backendStatus?.effective_status ||
     backendStatus?.status ||
@@ -180,7 +187,6 @@ export default function LiveRoomPage() {
     backendStatus?.playback_url || broadcast?.playback_url || '';
   const watchUrl = getSafeWatchUrl({
     id: backendStatus?.id || broadcast?.id,
-    watch_url: backendStatus?.watch_url || broadcast?.watch_url,
   });
   const title = broadcast?.title || broadcast?.name || 'Live Stream';
   const creatorName =
@@ -206,10 +212,9 @@ export default function LiveRoomPage() {
   const detailItems = useMemo(
     () => [
       { label: 'RTMP Server', value: broadcast?.rtmp_url || '' },
-      { label: 'Stream Key', value: broadcast?.stream_key || '' },
       { label: 'Playback URL', value: playbackUrl },
     ],
-    [broadcast?.rtmp_url, broadcast?.stream_key, playbackUrl],
+    [broadcast?.rtmp_url, playbackUrl],
   );
 
   const loadBroadcast = async (showLoader = false) => {
@@ -389,8 +394,12 @@ export default function LiveRoomPage() {
     }
 
     if (!isLoggedIn) {
-      message.info('Please log in to manage this live stream.');
+      message.info(intl.formatMessage({ id: 'live.control.loginRequired' }));
       navigateToLogin();
+      return;
+    }
+    if (!isCreator) {
+      message.warning(intl.formatMessage({ id: 'live.creatorRequired' }));
       return;
     }
 
@@ -408,16 +417,37 @@ export default function LiveRoomPage() {
         next?.playback_url ? 'Waiting for stream...' : playerStatus,
       );
       message.success(
-        type === 'start' ? 'Live stream started.' : 'Live stream ended.',
+        type === 'start'
+          ? intl.formatMessage({ id: 'live.control.started' })
+          : intl.formatMessage({ id: 'live.control.ended' }),
       );
     } catch (error: any) {
-      message.error(error?.message || `Unable to ${type} live stream.`);
+      if (error?.status === 409) {
+        message.warning(
+          error?.message ||
+            intl.formatMessage({ id: 'live.control.conflictTransition' }),
+        );
+        await loadBackendStatus();
+        await loadBroadcast(false);
+        return;
+      }
+      message.error(
+        error?.message ||
+          intl.formatMessage(
+            { id: 'live.control.errorAction' },
+            { action: type },
+          ),
+      );
     } finally {
       setActionLoading(null);
     }
   };
 
-  const startButtonLabel = isLoggedIn ? 'Start Live' : 'Log in to Start';
+  const startButtonLabel = !isLoggedIn
+    ? intl.formatMessage({ id: 'live.control.startCtaLogin' })
+    : isCreator
+    ? intl.formatMessage({ id: 'live.control.startCta' })
+    : intl.formatMessage({ id: 'live.creatorRequired.short' });
 
   return (
     <PageContainer title={false}>
@@ -501,7 +531,7 @@ export default function LiveRoomPage() {
                       type="primary"
                       icon={<PlayCircleOutlined />}
                       loading={actionLoading === 'start'}
-                      disabled={!canStartLive}
+                      disabled={!canStartLive || !isCreator}
                       onClick={() => handleAction('start')}
                     >
                       {startButtonLabel}
@@ -510,16 +540,16 @@ export default function LiveRoomPage() {
                       danger
                       icon={<PoweroffOutlined />}
                       loading={actionLoading === 'end'}
-                      disabled={!canEndLive}
+                      disabled={!canEndLive || !isCreator}
                       onClick={() => handleAction('end')}
                     >
-                      End Live
+                      {intl.formatMessage({ id: 'live.control.endCta' })}
                     </Button>
                     <Button
                       icon={<CopyOutlined />}
                       onClick={() => copyValue(playbackUrl, 'Playback URL')}
                     >
-                      Copy Playback URL
+                      {intl.formatMessage({ id: 'live.control.copyPlayback' })}
                     </Button>
                   </Space>
                 </Col>

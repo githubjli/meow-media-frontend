@@ -9,7 +9,7 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -124,9 +124,7 @@ const resolveAntMediaPublishConfig = (live?: LiveBroadcast | null) => {
   const adaptorScriptUrl =
     String(antMedia?.adaptor_script_url || '').trim() ||
     String(liveConfig.antMediaWebRtcAdaptorScriptUrl || '').trim();
-  const publishStreamId =
-    String(antMedia?.stream_id || '').trim() ||
-    String(live?.stream_key || '').trim();
+  const publishStreamId = String(antMedia?.stream_id || '').trim();
 
   return {
     websocketUrl,
@@ -149,6 +147,7 @@ const getPermissionTagColor = (status: DevicePermissionStatus) => {
 };
 
 export default function LiveCreatePage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const [form] = Form.useForm();
   const previewVideoRef = useRef<HTMLVideoElement>(null);
@@ -178,9 +177,16 @@ export default function LiveCreatePage() {
   const [prepareSession, setPrepareSession] = useState<
     LiveBroadcast['publish_session'] | undefined
   >(undefined);
+  const [activePublishStreamId, setActivePublishStreamId] = useState('');
   const [backendStatus, setBackendStatus] =
     useState<LiveBroadcastStatus | null>(null);
   const [payQrPayload, setPayQrPayload] = useState('');
+  const isCreator = Boolean(
+    initialState?.currentUser &&
+      (initialState.currentUser.is_creator ||
+        initialState.currentUser.role === 'creator' ||
+        initialState.currentUser.user_type === 'creator'),
+  );
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -196,7 +202,7 @@ export default function LiveCreatePage() {
 
   useEffect(() => {
     return () => {
-      const streamId = createdLive?.stream_key || '';
+      const streamId = activePublishStreamId || '';
       if (streamId && webRTCAdaptorRef.current) {
         webRTCAdaptorRef.current.stop(streamId);
       }
@@ -204,7 +210,7 @@ export default function LiveCreatePage() {
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
     };
-  }, [createdLive?.stream_key]);
+  }, [activePublishStreamId]);
 
   const categoryOptions = useMemo(
     () =>
@@ -241,6 +247,7 @@ export default function LiveCreatePage() {
       setPreparePhase('idle');
       setPrepareMessage('Preparation handshake has not started.');
       setPrepareSession(undefined);
+      setActivePublishStreamId('');
       setBackendStatus(null);
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
@@ -427,6 +434,7 @@ export default function LiveCreatePage() {
               'WebRTC adaptor initialized. Starting browser publish…',
             );
             console.log('START WITH CAMERA: publish called', publishStreamId);
+            setActivePublishStreamId(publishStreamId);
             webRTCAdaptorRef.current?.publish(publishStreamId);
             return;
           }
@@ -469,13 +477,14 @@ export default function LiveCreatePage() {
   };
 
   const handleStopPublishing = () => {
-    if (!createdLive?.stream_key || !webRTCAdaptorRef.current) {
+    if (!activePublishStreamId || !webRTCAdaptorRef.current) {
       setPublishingStatus('idle');
       setPublishingMessage('Browser publishing is already stopped.');
       return;
     }
 
-    webRTCAdaptorRef.current.stop(createdLive.stream_key);
+    webRTCAdaptorRef.current.stop(activePublishStreamId);
+    setActivePublishStreamId('');
     setPublishingStatus('idle');
     setPublishingMessage(
       'Browser publishing stopped. OBS workflow remains available.',
@@ -521,7 +530,7 @@ export default function LiveCreatePage() {
     {
       key: 'stream-key',
       label: 'Stream Key',
-      value: createdLive?.stream_key || '',
+      value: prepareSession?.ant_media?.stream_id || '',
     },
     {
       key: 'rtmp',
@@ -619,6 +628,29 @@ export default function LiveCreatePage() {
         : 'Unknown',
     },
   ];
+
+  if (
+    !initialState?.authLoading &&
+    initialState?.currentUser?.email &&
+    !isCreator
+  ) {
+    return (
+      <PageContainer title={false}>
+        <div style={{ maxWidth: 920, margin: '0 auto', padding: '8px 0 24px' }}>
+          <Alert
+            type="warning"
+            showIcon
+            message={intl.formatMessage({ id: 'live.creatorRequired' })}
+            action={
+              <Button type="link" onClick={() => history.push('/live')}>
+                {intl.formatMessage({ id: 'live.creatorRequired.backToLive' })}
+              </Button>
+            }
+          />
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer title={false}>
@@ -1170,7 +1202,9 @@ export default function LiveCreatePage() {
                               )
                             }
                           >
-                            Copy Playback URL
+                            {intl.formatMessage({
+                              id: 'live.control.copyPlayback',
+                            })}
                           </Button>
                           <div>
                             <Text
