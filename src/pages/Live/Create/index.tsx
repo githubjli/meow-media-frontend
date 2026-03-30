@@ -47,6 +47,14 @@ type DevicePermissionStatus = 'idle' | 'requesting' | 'ready' | 'error';
 // Browser publish status is transport-level only. Backend live status remains source of truth.
 type PublishingStatus = 'idle' | 'connecting' | 'publishing' | 'error';
 type PreparePhase = 'idle' | 'preparing' | 'prepared' | 'error';
+type PreflightStatus = 'idle' | 'ok' | 'error' | 'skipped';
+type PreflightResults = {
+  https: PreflightStatus;
+  mediaDevices: PreflightStatus;
+  permission: PreflightStatus;
+  websocket: PreflightStatus;
+  adaptor: PreflightStatus;
+};
 
 type AntMediaWebRTCAdaptor = {
   publish: (streamId: string) => void;
@@ -146,6 +154,13 @@ const getPermissionTagColor = (status: DevicePermissionStatus) => {
   }
 };
 
+const getPreflightTagColor = (status: PreflightStatus) => {
+  if (status === 'ok') return 'success';
+  if (status === 'error') return 'error';
+  if (status === 'skipped') return 'default';
+  return 'processing';
+};
+
 export default function LiveCreatePage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
@@ -179,6 +194,11 @@ export default function LiveCreatePage() {
     LiveBroadcast['publish_session'] | undefined
   >(undefined);
   const [prepareDebugPayload, setPrepareDebugPayload] = useState<any>(null);
+  const [resolvedConfigInput, setResolvedConfigInput] = useState({
+    websocketUrl: '',
+    adaptorScriptUrl: '',
+    publishStreamId: '',
+  });
   const [resolvedPublishConfig, setResolvedPublishConfig] = useState({
     websocketUrl: '',
     adaptorScriptUrl: '',
@@ -189,6 +209,13 @@ export default function LiveCreatePage() {
   const [backendStatus, setBackendStatus] =
     useState<LiveBroadcastStatus | null>(null);
   const [payQrPayload, setPayQrPayload] = useState('');
+  const [preflightResults, setPreflightResults] = useState<PreflightResults>({
+    https: 'idle',
+    mediaDevices: 'idle',
+    permission: 'idle',
+    websocket: 'idle',
+    adaptor: 'idle',
+  });
   const isCreator = Boolean(
     initialState?.currentUser &&
       (initialState.currentUser.is_creator ||
@@ -256,6 +283,11 @@ export default function LiveCreatePage() {
       setPrepareMessage('Preparation handshake has not started.');
       setPrepareSession(undefined);
       setPrepareDebugPayload(null);
+      setResolvedConfigInput({
+        websocketUrl: '',
+        adaptorScriptUrl: '',
+        publishStreamId: '',
+      });
       setResolvedPublishConfig({
         websocketUrl: '',
         adaptorScriptUrl: '',
@@ -351,6 +383,11 @@ export default function LiveCreatePage() {
       return;
     }
 
+    const prePrepareChecks = await runPreflightChecks();
+    if (!prePrepareChecks.ok) {
+      return;
+    }
+
     let preparedLiveForPublish: LiveBroadcast | null = createdLive;
     setPreparePhase('preparing');
     setPrepareMessage('Preparing broadcast session with Django…');
@@ -388,6 +425,15 @@ export default function LiveCreatePage() {
     const resolvedPublishConfig = resolveAntMediaPublishConfig(
       preparedLiveForPublish,
     );
+    const preparedAntMediaConfig =
+      preparedLiveForPublish?.publish_session?.ant_media;
+    setResolvedConfigInput({
+      websocketUrl: String(preparedAntMediaConfig?.websocket_url || '').trim(),
+      adaptorScriptUrl: String(
+        preparedAntMediaConfig?.adaptor_script_url || '',
+      ).trim(),
+      publishStreamId: String(preparedAntMediaConfig?.stream_id || '').trim(),
+    });
     setResolvedPublishConfig(resolvedPublishConfig);
     console.log(
       'START WITH CAMERA: resolved config input',
@@ -410,6 +456,14 @@ export default function LiveCreatePage() {
       setPublishingStatus('error');
       setPublishingMessage('Ant Media browser publish config is incomplete.');
       setDebugLastError('Ant Media browser publish config is incomplete.');
+      return;
+    }
+
+    const fullPreflightChecks = await runPreflightChecks({
+      websocketUrl,
+      adaptorScriptUrl,
+    });
+    if (!fullPreflightChecks.ok) {
       return;
     }
 
@@ -526,6 +580,94 @@ export default function LiveCreatePage() {
     setPublishingMessage(
       'Browser publishing stopped. OBS workflow remains available.',
     );
+  };
+
+  const runPreflightChecks = async (options?: {
+    websocketUrl?: string;
+    adaptorScriptUrl?: string;
+  }) => {
+    const checks: PreflightResults = {
+      https: 'idle',
+      mediaDevices: 'idle',
+      permission: 'idle',
+      websocket: options?.websocketUrl ? 'idle' : 'skipped',
+      adaptor: options?.adaptorScriptUrl ? 'idle' : 'skipped',
+    };
+
+    const isSecure = typeof window !== 'undefined' && window.isSecureContext;
+    checks.https = isSecure ? 'ok' : 'error';
+
+    const hasMediaDevices = Boolean(navigator.mediaDevices?.getUserMedia);
+    checks.mediaDevices = hasMediaDevices ? 'ok' : 'error';
+
+    if (isSecure && hasMediaDevices) {
+      try {
+        const testStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        testStream.getTracks().forEach((track) => track.stop());
+        checks.permission = 'ok';
+      } catch (error) {
+        checks.permission = 'error';
+      }
+    } else {
+      checks.permission = 'error';
+    }
+
+    if (options?.adaptorScriptUrl) {
+      try {
+        const response = await fetch(options.adaptorScriptUrl, {
+          method: 'HEAD',
+        });
+        checks.adaptor = response.ok ? 'ok' : 'error';
+      } catch (error) {
+        checks.adaptor = 'error';
+      }
+    }
+
+    if (options?.websocketUrl) {
+      checks.websocket = await new Promise<PreflightStatus>((resolve) => {
+        try {
+          const socket = new WebSocket(options.websocketUrl!);
+          const timeout = window.setTimeout(() => {
+            socket.close();
+            resolve('error');
+          }, 4000);
+
+          socket.onopen = () => {
+            window.clearTimeout(timeout);
+            socket.close();
+            resolve('ok');
+          };
+          socket.onerror = () => {
+            window.clearTimeout(timeout);
+            socket.close();
+            resolve('error');
+          };
+        } catch (error) {
+          resolve('error');
+        }
+      });
+    }
+
+    setPreflightResults(checks);
+
+    const failedEntry = Object.entries(checks).find(
+      ([, status]) => status === 'error',
+    );
+    if (failedEntry) {
+      const messageText = intl.formatMessage(
+        { id: 'live.preflight.failed' },
+        { check: failedEntry[0] },
+      );
+      setDebugLastError(messageText);
+      setPublishingStatus('error');
+      setPublishingMessage(messageText);
+      return { ok: false as const, results: checks };
+    }
+
+    return { ok: true as const, results: checks };
   };
 
   const toggleTrack = (kind: 'audio' | 'video') => {
@@ -1130,6 +1272,79 @@ export default function LiveCreatePage() {
                             message="Browser permissions are required for local camera preview. RTMP mode remains available if you prefer your encoder."
                           />
                         ) : null}
+                        <Space wrap size={[8, 8]}>
+                          <Tag
+                            color={getPreflightTagColor(preflightResults.https)}
+                          >
+                            {intl.formatMessage({ id: 'live.preflight.https' })}
+                            :{' '}
+                            {preflightResults.https === 'ok'
+                              ? 'OK'
+                              : preflightResults.https === 'error'
+                              ? 'ERROR'
+                              : 'PENDING'}
+                          </Tag>
+                          <Tag
+                            color={getPreflightTagColor(
+                              preflightResults.mediaDevices,
+                            )}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.preflight.mediaDevices',
+                            })}
+                            :{' '}
+                            {preflightResults.mediaDevices === 'ok'
+                              ? 'OK'
+                              : preflightResults.mediaDevices === 'error'
+                              ? 'ERROR'
+                              : 'PENDING'}
+                          </Tag>
+                          <Tag
+                            color={getPreflightTagColor(
+                              preflightResults.permission,
+                            )}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.preflight.permission',
+                            })}
+                            :{' '}
+                            {preflightResults.permission === 'ok'
+                              ? 'OK'
+                              : preflightResults.permission === 'error'
+                              ? 'ERROR'
+                              : 'PENDING'}
+                          </Tag>
+                          <Tag
+                            color={getPreflightTagColor(
+                              preflightResults.websocket,
+                            )}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.preflight.websocket',
+                            })}
+                            :{' '}
+                            {preflightResults.websocket === 'ok'
+                              ? 'OK'
+                              : preflightResults.websocket === 'error'
+                              ? 'ERROR'
+                              : 'PENDING'}
+                          </Tag>
+                          <Tag
+                            color={getPreflightTagColor(
+                              preflightResults.adaptor,
+                            )}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.preflight.adaptor',
+                            })}
+                            :{' '}
+                            {preflightResults.adaptor === 'ok'
+                              ? 'OK'
+                              : preflightResults.adaptor === 'error'
+                              ? 'ERROR'
+                              : 'PENDING'}
+                          </Tag>
+                        </Space>
                       </Space>
                     </Card>
                     {isLoggedIn ? (
@@ -1167,6 +1382,26 @@ export default function LiveCreatePage() {
                                 null,
                                 2,
                               )}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.publishConfigInput',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(resolvedConfigInput, null, 2)}
                             </pre>
                           </div>
                           <div>
