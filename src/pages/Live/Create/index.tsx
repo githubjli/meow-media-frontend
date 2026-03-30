@@ -87,51 +87,50 @@ const loadWebRTCAdaptorScript = async (scriptUrl: string) => {
     return null;
   }
 
-  if (window.WebRTCAdaptor) {
-    return window.WebRTCAdaptor;
+  if (!scriptUrl) {
+    throw new Error('Missing Ant Media adaptor script URL configuration.');
   }
 
-  await new Promise<void>((resolve, reject) => {
-    const existingScript = document.querySelector<HTMLScriptElement>(
-      'script[data-ant-media-adaptor="true"]',
-    );
-
-    if (existingScript) {
-      if (
-        existingScript.dataset.antMediaLoaded === 'true' ||
-        existingScript.readyState === 'complete'
-      ) {
-        resolve();
-        return;
-      }
-      existingScript.addEventListener('load', () => resolve(), { once: true });
-      existingScript.addEventListener(
-        'error',
-        () => reject(new Error('Unable to load the Ant Media WebRTC adaptor.')),
-        { once: true },
-      );
-      return;
-    }
-
-    if (!scriptUrl) {
-      reject(new Error('Missing Ant Media adaptor script URL configuration.'));
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = scriptUrl;
-    script.async = true;
-    script.dataset.antMediaAdaptor = 'true';
-    script.onload = () => {
-      script.dataset.antMediaLoaded = 'true';
-      resolve();
-    };
-    script.onerror = () =>
-      reject(new Error('Unable to load the Ant Media WebRTC adaptor.'));
-    document.head.appendChild(script);
+  const adaptorModule = await import(/* webpackIgnore: true */ scriptUrl);
+  console.log('START WITH CAMERA: adaptor module loaded', {
+    scriptUrl,
+    exports: adaptorModule ? Object.keys(adaptorModule) : [],
   });
 
-  return window.WebRTCAdaptor || null;
+  return (
+    adaptorModule?.WebRTCAdaptor ||
+    adaptorModule?.default?.WebRTCAdaptor ||
+    adaptorModule?.default ||
+    window.WebRTCAdaptor ||
+    null
+  );
+};
+
+const upgradeToSecureUrlIfNeeded = (rawUrl: string, label: string) => {
+  const url = String(rawUrl || '').trim();
+  if (!url || typeof window === 'undefined' || window.location.protocol !== 'https:') {
+    return url;
+  }
+
+  if (url.startsWith('http://')) {
+    const secureUrl = `https://${url.slice('http://'.length)}`;
+    console.warn(`[LIVE_CREATE] Mixed Content upgrade for ${label}:`, {
+      from: url,
+      to: secureUrl,
+    });
+    return secureUrl;
+  }
+
+  if (url.startsWith('ws://')) {
+    const secureUrl = `wss://${url.slice('ws://'.length)}`;
+    console.warn(`[LIVE_CREATE] Mixed Content upgrade for ${label}:`, {
+      from: url,
+      to: secureUrl,
+    });
+    return secureUrl;
+  }
+
+  return url;
 };
 
 const upgradeToSecureUrlIfNeeded = (rawUrl: string, label: string) => {
@@ -540,7 +539,8 @@ export default function LiveCreatePage() {
         adaptorScriptUrl,
       });
       const WebRTCAdaptorCtor = await loadWebRTCAdaptorScript(adaptorScriptUrl);
-      console.log('START WITH CAMERA: WebRTC adaptor script loaded');
+      console.log('START WITH CAMERA: adaptor module loaded');
+      console.log('WebRTCAdaptor ctor found:', !!WebRTCAdaptorCtor, WebRTCAdaptorCtor);
       if (!WebRTCAdaptorCtor) {
         throw new Error('Unable to initialize the Ant Media WebRTC adaptor.');
       }
