@@ -14,7 +14,7 @@ import {
   PlusOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -37,6 +37,7 @@ import { useEffect, useState } from 'react';
 const { Title, Text } = Typography;
 
 export default function MyVideosPage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const categoryOptions = (initialState?.publicCategories || []).map(
     (category) => ({
@@ -102,6 +103,7 @@ export default function MyVideosPage() {
       title: video.title || video.name || '',
       description: video.description || '',
       category: video.category || undefined,
+      visibility: video.visibility || 'public',
     });
   };
 
@@ -109,6 +111,7 @@ export default function MyVideosPage() {
     title: string;
     description?: string;
     category?: string;
+    visibility: 'public' | 'private';
   }) => {
     if (!editingVideo) {
       return;
@@ -308,6 +311,21 @@ export default function MyVideosPage() {
                           {video.category_display ? (
                             <Tag>{video.category_display}</Tag>
                           ) : null}
+                          <Tag
+                            color={
+                              video.visibility === 'private'
+                                ? 'default'
+                                : 'processing'
+                            }
+                          >
+                            {video.visibility === 'private'
+                              ? intl.formatMessage({
+                                  id: 'video.visibility.private',
+                                })
+                              : intl.formatMessage({
+                                  id: 'video.visibility.public',
+                                })}
+                          </Tag>
                         </Space>
                         <Text
                           type="secondary"
@@ -369,6 +387,31 @@ export default function MyVideosPage() {
               allowClear
               placeholder="Select a category"
               options={categoryOptions}
+            />
+          </Form.Item>
+          <Form.Item
+            label={intl.formatMessage({ id: 'video.visibility.label' })}
+            name="visibility"
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({
+                  id: 'upload.validation.visibility',
+                }),
+              },
+            ]}
+          >
+            <Select
+              options={[
+                {
+                  value: 'public',
+                  label: intl.formatMessage({ id: 'video.visibility.public' }),
+                },
+                {
+                  value: 'private',
+                  label: intl.formatMessage({ id: 'video.visibility.private' }),
+                },
+              ]}
             />
           </Form.Item>
         </Form>

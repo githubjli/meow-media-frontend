@@ -14,6 +14,7 @@ export type VideoItem = {
   created_at?: string;
   updated_at?: string;
   owner_email?: string;
+  visibility?: 'public' | 'private' | string;
   [key: string]: any;
 };
 
@@ -102,7 +103,12 @@ export async function getVideoDetail(id: string): Promise<VideoItem> {
 
 export async function updateVideo(
   id: string | number,
-  payload: { title: string; description?: string; category?: string },
+  payload: {
+    title: string;
+    description?: string;
+    category?: string;
+    visibility?: 'public' | 'private';
+  },
 ): Promise<VideoItem> {
   return requestJson(
     `/api/videos/${id}/`,
@@ -145,6 +151,7 @@ export async function uploadVideo(payload: {
   title: string;
   description?: string;
   category?: string;
+  visibility?: 'public' | 'private';
   file: File;
 }): Promise<VideoItem> {
   const formData = new FormData();
@@ -154,6 +161,9 @@ export async function uploadVideo(payload: {
   }
   if (payload.category) {
     formData.append('category', payload.category);
+  }
+  if (payload.visibility) {
+    formData.append('visibility', payload.visibility);
   }
   formData.append('file', payload.file);
 
