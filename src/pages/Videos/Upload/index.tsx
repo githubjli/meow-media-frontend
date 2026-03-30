@@ -46,6 +46,7 @@ export default function UploadVideoPage() {
     title: string;
     description?: string;
     category?: string;
+    visibility: 'public' | 'private';
   }) => {
     if (!fileList[0]?.originFileObj) {
       setErrorMessage(intl.formatMessage({ id: 'upload.validation.file' }));
@@ -60,6 +61,7 @@ export default function UploadVideoPage() {
         title: values.title,
         description: values.description,
         category: values.category,
+        visibility: values.visibility,
         file: fileList[0].originFileObj as File,
       });
       message.success(intl.formatMessage({ id: 'upload.success' }));
@@ -77,7 +79,7 @@ export default function UploadVideoPage() {
     <PageContainer title={false}>
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '8px 0 24px' }}>
         <Card
-          bordered={false}
+          variant="borderless"
           style={{
             borderRadius: 20,
             background: isDark ? '#2A241F' : undefined,
@@ -95,6 +97,7 @@ export default function UploadVideoPage() {
             form={form}
             layout="vertical"
             onFinish={handleFinish}
+            initialValues={{ visibility: 'public' }}
             requiredMark={false}
             style={{ marginTop: 24 }}
           >
@@ -112,13 +115,17 @@ export default function UploadVideoPage() {
               rules={[
                 {
                   required: true,
-                  message: intl.formatMessage({ id: 'upload.validation.title' }),
+                  message: intl.formatMessage({
+                    id: 'upload.validation.title',
+                  }),
                 },
               ]}
             >
               <Input
                 size="large"
-                placeholder={intl.formatMessage({ id: 'upload.placeholder.title' })}
+                placeholder={intl.formatMessage({
+                  id: 'upload.placeholder.title',
+                })}
               />
             </Form.Item>
             <Form.Item
@@ -142,6 +149,38 @@ export default function UploadVideoPage() {
                   id: 'upload.placeholder.category',
                 })}
                 options={categoryOptions}
+              />
+            </Form.Item>
+            <Form.Item
+              label={intl.formatMessage({ id: 'upload.label.visibility' })}
+              name="visibility"
+              rules={[
+                {
+                  required: true,
+                  message: intl.formatMessage({
+                    id: 'upload.validation.visibility',
+                  }),
+                },
+              ]}
+            >
+              <Select
+                options={[
+                  {
+                    value: 'public',
+                    label: intl.formatMessage({
+                      id: 'video.visibility.public',
+                    }),
+                  },
+                  {
+                    value: 'private',
+                    label: intl.formatMessage({
+                      id: 'video.visibility.private',
+                    }),
+                  },
+                ]}
+                placeholder={intl.formatMessage({
+                  id: 'upload.placeholder.visibility',
+                })}
               />
             </Form.Item>
             <Form.Item

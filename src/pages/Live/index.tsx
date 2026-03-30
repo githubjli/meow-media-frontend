@@ -74,7 +74,7 @@ const toLiveVideoCardData = (item: LiveBroadcast, intl: any) => {
     item.creator?.name ||
     item.creator?.username ||
     item.creator?.email ||
-    'Creator';
+    intl.formatMessage({ id: 'live.common.creatorFallback' });
   const viewerCount = item.viewer_count ?? item.viewerCount ?? 0;
   const posterUrl = getPosterUrl(item);
   const shouldUseFallbackCover =
@@ -91,9 +91,16 @@ const toLiveVideoCardData = (item: LiveBroadcast, intl: any) => {
     date: item.started_at || item.created_at,
     thumbnail_url: shouldUseFallbackCover ? LIVE_FALLBACK_COVER : posterUrl,
     thumbnail: shouldUseFallbackCover ? LIVE_FALLBACK_COVER : posterUrl,
-    category_name: item.category || 'Live broadcast',
-    category_display: item.category || 'Live broadcast',
-    views: `${viewerCount.toLocaleString()} viewers`,
+    category_name:
+      item.category ||
+      intl.formatMessage({ id: 'live.common.categoryFallback' }),
+    category_display:
+      item.category ||
+      intl.formatMessage({ id: 'live.common.categoryFallback' }),
+    views: intl.formatMessage(
+      { id: 'live.common.viewers' },
+      { count: viewerCount.toLocaleString() },
+    ),
     description: `${status.description} · ${status.label.toUpperCase()}`,
     description_preview: `${
       status.description
@@ -117,6 +124,12 @@ export default function ExploreLivePage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
+  const isCreator = Boolean(
+    initialState?.currentUser &&
+      (initialState.currentUser.is_creator ||
+        initialState.currentUser.role === 'creator' ||
+        initialState.currentUser.user_type === 'creator'),
+  );
   const showNewsOnly = location.pathname === '/news/live';
   const visibleStreams = streams.filter((item) =>
     showNewsOnly ? isNewsLiveStream(item) : true,
@@ -143,7 +156,8 @@ export default function ExploreLivePage() {
         if (active) {
           setStreams([]);
           setErrorMessage(
-            error?.message || 'Unable to load live broadcasts right now.',
+            error?.message ||
+              intl.formatMessage({ id: 'live.explore.error.load' }),
           );
         }
       })
@@ -156,12 +170,12 @@ export default function ExploreLivePage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [intl]);
 
   return (
     <PageContainer title={false}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '8px 0 24px' }}>
-        <Card bordered={false} style={{ borderRadius: 20, marginBottom: 20 }}>
+        <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 20 }}>
           <Space
             align="start"
             style={{ width: '100%', justifyContent: 'space-between' }}
@@ -172,14 +186,14 @@ export default function ExploreLivePage() {
                 {intl.formatMessage({ id: 'nav.exploreLive' })}
               </Title>
               <Text type="secondary">
-                Browse live events and open a room to watch stream playback and
-                status.
+                {intl.formatMessage({ id: 'live.explore.subtitle' })}
               </Text>
             </div>
             <Button
               type="primary"
               icon={<VideoCameraOutlined />}
               onClick={handleGoLiveClick}
+              disabled={isLoggedIn && !isCreator}
             >
               {intl.formatMessage({ id: 'nav.goLive' })}
             </Button>
@@ -196,14 +210,16 @@ export default function ExploreLivePage() {
         ) : null}
 
         {loading ? (
-          <Card bordered={false} style={{ borderRadius: 20 }}>
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
             <Skeleton active paragraph={{ rows: 8 }} />
           </Card>
         ) : visibleStreams.length === 0 ? (
-          <Card bordered={false} style={{ borderRadius: 20 }}>
-            <Empty description="No live streams are available yet.">
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
+            <Empty
+              description={intl.formatMessage({ id: 'live.explore.empty' })}
+            >
               <Button type="primary" onClick={handleGoLiveClick}>
-                Create the first stream
+                {intl.formatMessage({ id: 'live.explore.createFirst' })}
               </Button>
             </Empty>
           </Card>
