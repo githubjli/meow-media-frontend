@@ -9,7 +9,7 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -124,9 +124,7 @@ const resolveAntMediaPublishConfig = (live?: LiveBroadcast | null) => {
   const adaptorScriptUrl =
     String(antMedia?.adaptor_script_url || '').trim() ||
     String(liveConfig.antMediaWebRtcAdaptorScriptUrl || '').trim();
-  const publishStreamId =
-    String(antMedia?.stream_id || '').trim() ||
-    String(live?.stream_key || '').trim();
+  const publishStreamId = String(antMedia?.stream_id || '').trim();
 
   return {
     websocketUrl,
@@ -149,7 +147,9 @@ const getPermissionTagColor = (status: DevicePermissionStatus) => {
 };
 
 export default function LiveCreatePage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
+  const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const [form] = Form.useForm();
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -178,9 +178,23 @@ export default function LiveCreatePage() {
   const [prepareSession, setPrepareSession] = useState<
     LiveBroadcast['publish_session'] | undefined
   >(undefined);
+  const [prepareDebugPayload, setPrepareDebugPayload] = useState<any>(null);
+  const [resolvedPublishConfig, setResolvedPublishConfig] = useState({
+    websocketUrl: '',
+    adaptorScriptUrl: '',
+    publishStreamId: '',
+  });
+  const [debugLastError, setDebugLastError] = useState('');
+  const [activePublishStreamId, setActivePublishStreamId] = useState('');
   const [backendStatus, setBackendStatus] =
     useState<LiveBroadcastStatus | null>(null);
   const [payQrPayload, setPayQrPayload] = useState('');
+  const isCreator = Boolean(
+    initialState?.currentUser &&
+      (initialState.currentUser.is_creator ||
+        initialState.currentUser.role === 'creator' ||
+        initialState.currentUser.user_type === 'creator'),
+  );
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -196,7 +210,7 @@ export default function LiveCreatePage() {
 
   useEffect(() => {
     return () => {
-      const streamId = createdLive?.stream_key || '';
+      const streamId = activePublishStreamId || '';
       if (streamId && webRTCAdaptorRef.current) {
         webRTCAdaptorRef.current.stop(streamId);
       }
@@ -204,7 +218,7 @@ export default function LiveCreatePage() {
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
     };
-  }, [createdLive?.stream_key]);
+  }, [activePublishStreamId]);
 
   const categoryOptions = useMemo(
     () =>
@@ -241,12 +255,21 @@ export default function LiveCreatePage() {
       setPreparePhase('idle');
       setPrepareMessage('Preparation handshake has not started.');
       setPrepareSession(undefined);
+      setPrepareDebugPayload(null);
+      setResolvedPublishConfig({
+        websocketUrl: '',
+        adaptorScriptUrl: '',
+        publishStreamId: '',
+      });
+      setDebugLastError('');
+      setActivePublishStreamId('');
       setBackendStatus(null);
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
       setPayQrPayload(nextLive.payment_address || paymentAddress || '');
     } catch (error: any) {
+      setDebugLastError(error?.message || 'Unable to prepare the live room.');
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
     } finally {
       setSubmitting(false);
@@ -343,9 +366,15 @@ export default function LiveCreatePage() {
         preparedLive.message || 'Prepared for browser publishing.',
       );
       setPrepareSession(preparedLive.publish_session);
+      setPrepareDebugPayload(preparedLive);
+      setDebugLastError('');
     } catch (error: any) {
       setPreparePhase('error');
       setPrepareMessage(
+        error?.message ||
+          'Prepare handshake failed. Browser publishing has not started.',
+      );
+      setDebugLastError(
         error?.message ||
           'Prepare handshake failed. Browser publishing has not started.',
       );
@@ -359,6 +388,7 @@ export default function LiveCreatePage() {
     const resolvedPublishConfig = resolveAntMediaPublishConfig(
       preparedLiveForPublish,
     );
+    setResolvedPublishConfig(resolvedPublishConfig);
     console.log(
       'START WITH CAMERA: resolved config input',
       preparedLiveForPublish?.publish_session,
@@ -371,11 +401,15 @@ export default function LiveCreatePage() {
       setPublishingMessage(
         'Browser publishing config is missing from prepare response.',
       );
+      setDebugLastError(
+        'Browser publishing config is missing from prepare response.',
+      );
       return;
     }
     if (!websocketUrl || !adaptorScriptUrl || !publishStreamId) {
       setPublishingStatus('error');
       setPublishingMessage('Ant Media browser publish config is incomplete.');
+      setDebugLastError('Ant Media browser publish config is incomplete.');
       return;
     }
 
@@ -385,6 +419,9 @@ export default function LiveCreatePage() {
       setPublishingMessage(
         'Browser publishing could not start because camera or microphone access is unavailable.',
       );
+      setDebugLastError(
+        'Browser publishing could not start because camera or microphone access is unavailable.',
+      );
       return;
     }
     console.log('START WITH CAMERA: local preview ready');
@@ -392,6 +429,7 @@ export default function LiveCreatePage() {
     if (!liveConfig.antMediaWebSocketUrl) {
       setPublishingStatus('error');
       setPublishingMessage('Missing Ant Media websocket URL configuration.');
+      setDebugLastError('Missing Ant Media websocket URL configuration.');
       return;
     }
 
@@ -427,6 +465,7 @@ export default function LiveCreatePage() {
               'WebRTC adaptor initialized. Starting browser publish…',
             );
             console.log('START WITH CAMERA: publish called', publishStreamId);
+            setActivePublishStreamId(publishStreamId);
             webRTCAdaptorRef.current?.publish(publishStreamId);
             return;
           }
@@ -458,6 +497,9 @@ export default function LiveCreatePage() {
           setPublishingMessage(
             messageText || error?.toString?.() || 'Browser publishing failed.',
           );
+          setDebugLastError(
+            messageText || error?.toString?.() || 'Browser publishing failed.',
+          );
         },
       });
     } catch (error: any) {
@@ -465,17 +507,21 @@ export default function LiveCreatePage() {
       setPublishingMessage(
         error?.message || 'Unable to connect browser publishing to Ant Media.',
       );
+      setDebugLastError(
+        error?.message || 'Unable to connect browser publishing to Ant Media.',
+      );
     }
   };
 
   const handleStopPublishing = () => {
-    if (!createdLive?.stream_key || !webRTCAdaptorRef.current) {
+    if (!activePublishStreamId || !webRTCAdaptorRef.current) {
       setPublishingStatus('idle');
       setPublishingMessage('Browser publishing is already stopped.');
       return;
     }
 
-    webRTCAdaptorRef.current.stop(createdLive.stream_key);
+    webRTCAdaptorRef.current.stop(activePublishStreamId);
+    setActivePublishStreamId('');
     setPublishingStatus('idle');
     setPublishingMessage(
       'Browser publishing stopped. OBS workflow remains available.',
@@ -521,7 +567,7 @@ export default function LiveCreatePage() {
     {
       key: 'stream-key',
       label: 'Stream Key',
-      value: createdLive?.stream_key || '',
+      value: prepareSession?.ant_media?.stream_id || '',
     },
     {
       key: 'rtmp',
@@ -619,6 +665,29 @@ export default function LiveCreatePage() {
         : 'Unknown',
     },
   ];
+
+  if (
+    !initialState?.authLoading &&
+    initialState?.currentUser?.email &&
+    !isCreator
+  ) {
+    return (
+      <PageContainer title={false}>
+        <div style={{ maxWidth: 920, margin: '0 auto', padding: '8px 0 24px' }}>
+          <Alert
+            type="warning"
+            showIcon
+            message={intl.formatMessage({ id: 'live.creatorRequired' })}
+            action={
+              <Button type="link" onClick={() => history.push('/live')}>
+                {intl.formatMessage({ id: 'live.creatorRequired.backToLive' })}
+              </Button>
+            }
+          />
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer title={false}>
@@ -1063,6 +1132,116 @@ export default function LiveCreatePage() {
                         ) : null}
                       </Space>
                     </Card>
+                    {isLoggedIn ? (
+                      <Card
+                        bordered={false}
+                        style={{ borderRadius: 20 }}
+                        title={intl.formatMessage({
+                          id: 'live.debug.panelTitle',
+                        })}
+                      >
+                        <Space
+                          direction="vertical"
+                          size={12}
+                          style={{ width: '100%' }}
+                        >
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.prepareResponse',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(
+                                prepareDebugPayload || {},
+                                null,
+                                2,
+                              )}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.publishConfig',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(resolvedPublishConfig, null, 2)}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.currentStates',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(
+                                {
+                                  preparePhase,
+                                  publishingStatus,
+                                  devicePermissionStatus,
+                                  backendStatus,
+                                },
+                                null,
+                                2,
+                              )}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.lastError',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {debugLastError ||
+                                intl.formatMessage({ id: 'live.debug.none' })}
+                            </pre>
+                          </div>
+                        </Space>
+                      </Card>
+                    ) : null}
 
                     <Card
                       bordered={false}
@@ -1170,7 +1349,9 @@ export default function LiveCreatePage() {
                               )
                             }
                           >
-                            Copy Playback URL
+                            {intl.formatMessage({
+                              id: 'live.control.copyPlayback',
+                            })}
                           </Button>
                           <div>
                             <Text
