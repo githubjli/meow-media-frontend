@@ -453,14 +453,14 @@ export default function LiveRoomPage() {
     <PageContainer title={false}>
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '8px 0 24px' }}>
         {loading ? (
-          <Card bordered={false} style={{ borderRadius: 20 }}>
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
             <Skeleton active paragraph={{ rows: 10 }} />
           </Card>
         ) : errorMessage ? (
           <Alert type="error" showIcon message={errorMessage} />
         ) : broadcast ? (
           <Space direction="vertical" size={20} style={{ width: '100%' }}>
-            <Card bordered={false} style={{ borderRadius: 20 }}>
+            <Card variant="borderless" style={{ borderRadius: 20 }}>
               <Row gutter={[20, 20]} align="middle">
                 <Col xs={24} lg={16}>
                   <Space
@@ -560,7 +560,7 @@ export default function LiveRoomPage() {
               <Col xs={24} md={16} xl={16}>
                 <Space direction="vertical" size={20} style={{ width: '100%' }}>
                   <Card
-                    bordered={false}
+                    variant="borderless"
                     style={{ borderRadius: 20, overflow: 'hidden' }}
                   >
                     {playbackUrl ? (
@@ -597,7 +597,7 @@ export default function LiveRoomPage() {
                     )}
                   </Card>
                   <Card
-                    bordered={false}
+                    variant="borderless"
                     style={{ borderRadius: 20 }}
                     title="Stream details"
                   >
@@ -642,7 +642,7 @@ export default function LiveRoomPage() {
               <Col xs={24} md={8} xl={8}>
                 <Space direction="vertical" size={20} style={{ width: '100%' }}>
                   <Card
-                    bordered={false}
+                    variant="borderless"
                     style={{ borderRadius: 20 }}
                     title={
                       <Space size={8}>
@@ -668,7 +668,7 @@ export default function LiveRoomPage() {
                     </Space>
                   </Card>
                   <Card
-                    bordered={false}
+                    variant="borderless"
                     style={{ borderRadius: 20 }}
                     title={
                       <Space size={8}>
@@ -692,7 +692,7 @@ export default function LiveRoomPage() {
                     </Space>
                   </Card>
                   <Card
-                    bordered={false}
+                    variant="borderless"
                     style={{ borderRadius: 20 }}
                     title="Viewer & chat"
                   >

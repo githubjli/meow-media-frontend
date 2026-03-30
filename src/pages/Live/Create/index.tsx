@@ -124,14 +124,45 @@ const loadWebRTCAdaptorScript = async (scriptUrl: string) => {
   return window.WebRTCAdaptor || null;
 };
 
+const upgradeToSecureUrlIfNeeded = (rawUrl: string, label: string) => {
+  const url = String(rawUrl || '').trim();
+  if (!url || typeof window === 'undefined' || window.location.protocol !== 'https:') {
+    return url;
+  }
+
+  if (url.startsWith('http://')) {
+    const secureUrl = `https://${url.slice('http://'.length)}`;
+    console.warn(`[LIVE_CREATE] Mixed Content upgrade for ${label}:`, {
+      from: url,
+      to: secureUrl,
+    });
+    return secureUrl;
+  }
+
+  if (url.startsWith('ws://')) {
+    const secureUrl = `wss://${url.slice('ws://'.length)}`;
+    console.warn(`[LIVE_CREATE] Mixed Content upgrade for ${label}:`, {
+      from: url,
+      to: secureUrl,
+    });
+    return secureUrl;
+  }
+
+  return url;
+};
+
 const resolveAntMediaPublishConfig = (live?: LiveBroadcast | null) => {
   const antMedia = live?.publish_session?.ant_media;
-  const websocketUrl =
+  const websocketUrl = upgradeToSecureUrlIfNeeded(
     String(antMedia?.websocket_url || '').trim() ||
-    String(liveConfig.antMediaWebSocketUrl || '').trim();
-  const adaptorScriptUrl =
+      String(liveConfig.antMediaWebSocketUrl || '').trim(),
+    'websocket_url',
+  );
+  const adaptorScriptUrl = upgradeToSecureUrlIfNeeded(
     String(antMedia?.adaptor_script_url || '').trim() ||
-    String(liveConfig.antMediaWebRtcAdaptorScriptUrl || '').trim();
+      String(liveConfig.antMediaWebRtcAdaptorScriptUrl || '').trim(),
+    'adaptor_script_url',
+  );
   const publishStreamId = String(antMedia?.stream_id || '').trim();
 
   return {
@@ -860,7 +891,7 @@ export default function LiveCreatePage() {
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: '8px 0 24px' }}>
         <Row gutter={[20, 20]}>
           <Col xs={24} xl={9}>
-            <Card bordered={false} style={{ borderRadius: 20, height: '100%' }}>
+            <Card variant="borderless" style={{ borderRadius: 20, height: '100%' }}>
               <Space direction="vertical" size={20} style={{ width: '100%' }}>
                 <div>
                   <Text
@@ -993,7 +1024,7 @@ export default function LiveCreatePage() {
 
           <Col xs={24} xl={15}>
             <Space direction="vertical" size={20} style={{ width: '100%' }}>
-              <Card bordered={false} style={{ borderRadius: 20 }}>
+              <Card variant="borderless" style={{ borderRadius: 20 }}>
                 <Row gutter={[16, 16]} align="middle">
                   <Col xs={24} lg={16}>
                     <Space
@@ -1047,7 +1078,7 @@ export default function LiveCreatePage() {
               <Row gutter={[20, 20]}>
                 <Col xs={24} lg={14}>
                   <Card
-                    bordered={false}
+                    variant="borderless"
                     style={{ borderRadius: 20, height: '100%' }}
                   >
                     <Space
@@ -1192,7 +1223,7 @@ export default function LiveCreatePage() {
                     style={{ width: '100%' }}
                   >
                     <Card
-                      bordered={false}
+                      variant="borderless"
                       style={{ borderRadius: 20 }}
                       title="Status area"
                     >
@@ -1388,7 +1419,7 @@ export default function LiveCreatePage() {
                     </Card>
                     {isLoggedIn ? (
                       <Card
-                        bordered={false}
+                        variant="borderless"
                         style={{ borderRadius: 20 }}
                         title={intl.formatMessage({
                           id: 'live.debug.panelTitle',
@@ -1562,7 +1593,7 @@ export default function LiveCreatePage() {
                     ) : null}
 
                     <Card
-                      bordered={false}
+                      variant="borderless"
                       style={{ borderRadius: 20 }}
                       title="Device checklist"
                     >
@@ -1579,7 +1610,7 @@ export default function LiveCreatePage() {
                     </Card>
 
                     <Card
-                      bordered={false}
+                      variant="borderless"
                       style={{ borderRadius: 20 }}
                       title="Stream details card"
                     >

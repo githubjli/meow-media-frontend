@@ -72,7 +72,7 @@ export default function CategoryBrowsePage() {
   return (
     <PageContainer title={false}>
       <div style={{ padding: '8px 8px 20px' }}>
-        <Card bordered={false} style={{ borderRadius: 16, marginBottom: 20 }}>
+        <Card variant="borderless" style={{ borderRadius: 16, marginBottom: 20 }}>
           <Space direction="vertical" size={8}>
             <Title level={2} style={{ margin: 0 }}>
               {pageTitle}

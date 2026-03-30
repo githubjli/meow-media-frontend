@@ -712,13 +712,13 @@ export default function PublicVideoDetailPage() {
     <PageContainer title={false}>
       <div style={{ padding: '8px 8px 20px' }}>
         {loading ? (
-          <Card bordered={false} style={{ borderRadius: 20 }}>
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
             <Skeleton active paragraph={{ rows: 10 }} />
           </Card>
         ) : errorMessage ? (
           <Alert type="error" showIcon message={errorMessage} />
         ) : !video ? (
-          <Card bordered={false} style={{ borderRadius: 20 }}>
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
             <Empty
               description={intl.formatMessage({
                 id: 'publicVideoDetail.videoNotFound',
@@ -730,7 +730,7 @@ export default function PublicVideoDetailPage() {
             <Col xs={24} lg={16} xl={17}>
               <Space direction="vertical" size={16} style={{ width: '100%' }}>
                 <Card
-                  bordered={false}
+                  variant="borderless"
                   style={{ borderRadius: 18, overflow: 'hidden' }}
                 >
                   {video.file_url ? (
@@ -765,7 +765,7 @@ export default function PublicVideoDetailPage() {
                   )}
                 </Card>
 
-                <Card bordered={false} style={{ borderRadius: 18 }}>
+                <Card variant="borderless" style={{ borderRadius: 18 }}>
                   <Space
                     wrap
                     size={[8, 8]}
@@ -900,7 +900,7 @@ export default function PublicVideoDetailPage() {
                   </div>
                 </Card>
 
-                <Card bordered={false} style={{ borderRadius: 18 }}>
+                <Card variant="borderless" style={{ borderRadius: 18 }}>
                   <Space
                     direction="vertical"
                     size={14}
@@ -983,7 +983,7 @@ export default function PublicVideoDetailPage() {
 
                     <Card
                       size="small"
-                      bordered={false}
+                      variant="borderless"
                       style={{
                         borderRadius: 16,
                         background: 'rgba(15, 23, 42, 0.03)',
@@ -1161,7 +1161,7 @@ export default function PublicVideoDetailPage() {
 
             <Col xs={24} lg={8} xl={7}>
               <Card
-                bordered={false}
+                variant="borderless"
                 title={intl.formatMessage({ id: 'publicVideoDetail.upNext' })}
                 style={{ borderRadius: 18 }}
                 styles={{ body: { padding: 10 } }}

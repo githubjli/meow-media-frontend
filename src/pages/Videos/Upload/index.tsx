@@ -79,7 +79,7 @@ export default function UploadVideoPage() {
     <PageContainer title={false}>
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '8px 0 24px' }}>
         <Card
-          bordered={false}
+          variant="borderless"
           style={{
             borderRadius: 20,
             background: isDark ? '#2A241F' : undefined,

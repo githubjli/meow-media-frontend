@@ -175,7 +175,7 @@ export default function ExploreLivePage() {
   return (
     <PageContainer title={false}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '8px 0 24px' }}>
-        <Card bordered={false} style={{ borderRadius: 20, marginBottom: 20 }}>
+        <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 20 }}>
           <Space
             align="start"
             style={{ width: '100%', justifyContent: 'space-between' }}
@@ -210,11 +210,11 @@ export default function ExploreLivePage() {
         ) : null}
 
         {loading ? (
-          <Card bordered={false} style={{ borderRadius: 20 }}>
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
             <Skeleton active paragraph={{ rows: 8 }} />
           </Card>
         ) : visibleStreams.length === 0 ? (
-          <Card bordered={false} style={{ borderRadius: 20 }}>
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
             <Empty
               description={intl.formatMessage({ id: 'live.explore.empty' })}
             >

@@ -151,7 +151,7 @@ export default function MyVideosPage() {
   return (
     <PageContainer title={false}>
       <div style={{ maxWidth: 980, margin: '0 auto', padding: '8px 0 24px' }}>
-        <Card bordered={false} style={{ borderRadius: 20 }}>
+        <Card variant="borderless" style={{ borderRadius: 20 }}>
           <div
             style={{
               display: 'flex',
