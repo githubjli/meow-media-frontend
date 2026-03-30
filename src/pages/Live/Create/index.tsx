@@ -149,6 +149,7 @@ const getPermissionTagColor = (status: DevicePermissionStatus) => {
 export default function LiveCreatePage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
+  const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const [form] = Form.useForm();
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -177,6 +178,13 @@ export default function LiveCreatePage() {
   const [prepareSession, setPrepareSession] = useState<
     LiveBroadcast['publish_session'] | undefined
   >(undefined);
+  const [prepareDebugPayload, setPrepareDebugPayload] = useState<any>(null);
+  const [resolvedPublishConfig, setResolvedPublishConfig] = useState({
+    websocketUrl: '',
+    adaptorScriptUrl: '',
+    publishStreamId: '',
+  });
+  const [debugLastError, setDebugLastError] = useState('');
   const [activePublishStreamId, setActivePublishStreamId] = useState('');
   const [backendStatus, setBackendStatus] =
     useState<LiveBroadcastStatus | null>(null);
@@ -247,6 +255,13 @@ export default function LiveCreatePage() {
       setPreparePhase('idle');
       setPrepareMessage('Preparation handshake has not started.');
       setPrepareSession(undefined);
+      setPrepareDebugPayload(null);
+      setResolvedPublishConfig({
+        websocketUrl: '',
+        adaptorScriptUrl: '',
+        publishStreamId: '',
+      });
+      setDebugLastError('');
       setActivePublishStreamId('');
       setBackendStatus(null);
       message.success(
@@ -254,6 +269,7 @@ export default function LiveCreatePage() {
       );
       setPayQrPayload(nextLive.payment_address || paymentAddress || '');
     } catch (error: any) {
+      setDebugLastError(error?.message || 'Unable to prepare the live room.');
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
     } finally {
       setSubmitting(false);
@@ -350,9 +366,15 @@ export default function LiveCreatePage() {
         preparedLive.message || 'Prepared for browser publishing.',
       );
       setPrepareSession(preparedLive.publish_session);
+      setPrepareDebugPayload(preparedLive);
+      setDebugLastError('');
     } catch (error: any) {
       setPreparePhase('error');
       setPrepareMessage(
+        error?.message ||
+          'Prepare handshake failed. Browser publishing has not started.',
+      );
+      setDebugLastError(
         error?.message ||
           'Prepare handshake failed. Browser publishing has not started.',
       );
@@ -366,6 +388,7 @@ export default function LiveCreatePage() {
     const resolvedPublishConfig = resolveAntMediaPublishConfig(
       preparedLiveForPublish,
     );
+    setResolvedPublishConfig(resolvedPublishConfig);
     console.log(
       'START WITH CAMERA: resolved config input',
       preparedLiveForPublish?.publish_session,
@@ -378,11 +401,15 @@ export default function LiveCreatePage() {
       setPublishingMessage(
         'Browser publishing config is missing from prepare response.',
       );
+      setDebugLastError(
+        'Browser publishing config is missing from prepare response.',
+      );
       return;
     }
     if (!websocketUrl || !adaptorScriptUrl || !publishStreamId) {
       setPublishingStatus('error');
       setPublishingMessage('Ant Media browser publish config is incomplete.');
+      setDebugLastError('Ant Media browser publish config is incomplete.');
       return;
     }
 
@@ -392,6 +419,9 @@ export default function LiveCreatePage() {
       setPublishingMessage(
         'Browser publishing could not start because camera or microphone access is unavailable.',
       );
+      setDebugLastError(
+        'Browser publishing could not start because camera or microphone access is unavailable.',
+      );
       return;
     }
     console.log('START WITH CAMERA: local preview ready');
@@ -399,6 +429,7 @@ export default function LiveCreatePage() {
     if (!liveConfig.antMediaWebSocketUrl) {
       setPublishingStatus('error');
       setPublishingMessage('Missing Ant Media websocket URL configuration.');
+      setDebugLastError('Missing Ant Media websocket URL configuration.');
       return;
     }
 
@@ -466,11 +497,17 @@ export default function LiveCreatePage() {
           setPublishingMessage(
             messageText || error?.toString?.() || 'Browser publishing failed.',
           );
+          setDebugLastError(
+            messageText || error?.toString?.() || 'Browser publishing failed.',
+          );
         },
       });
     } catch (error: any) {
       setPublishingStatus('error');
       setPublishingMessage(
+        error?.message || 'Unable to connect browser publishing to Ant Media.',
+      );
+      setDebugLastError(
         error?.message || 'Unable to connect browser publishing to Ant Media.',
       );
     }
@@ -1095,6 +1132,116 @@ export default function LiveCreatePage() {
                         ) : null}
                       </Space>
                     </Card>
+                    {isLoggedIn ? (
+                      <Card
+                        bordered={false}
+                        style={{ borderRadius: 20 }}
+                        title={intl.formatMessage({
+                          id: 'live.debug.panelTitle',
+                        })}
+                      >
+                        <Space
+                          direction="vertical"
+                          size={12}
+                          style={{ width: '100%' }}
+                        >
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.prepareResponse',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(
+                                prepareDebugPayload || {},
+                                null,
+                                2,
+                              )}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.publishConfig',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(resolvedPublishConfig, null, 2)}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.currentStates',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(
+                                {
+                                  preparePhase,
+                                  publishingStatus,
+                                  devicePermissionStatus,
+                                  backendStatus,
+                                },
+                                null,
+                                2,
+                              )}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.lastError',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {debugLastError ||
+                                intl.formatMessage({ id: 'live.debug.none' })}
+                            </pre>
+                          </div>
+                        </Space>
+                      </Card>
+                    ) : null}
 
                     <Card
                       bordered={false}

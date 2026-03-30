@@ -219,5 +219,11 @@ export default {
   'live.common.creatorFallback': 'Creator',
   'live.common.categoryFallback': 'Live broadcast',
   'live.common.viewers': 'ကြည့်ရှုသူ {count} ယောက်',
+  'live.debug.panelTitle': 'Live debug panel',
+  'live.debug.prepareResponse': 'Django prepare response',
+  'live.debug.publishConfig': 'Resolved publish config',
+  'live.debug.currentStates': 'Current states',
+  'live.debug.lastError': 'Last error',
+  'live.debug.none': 'None',
   'videoCard.live': 'တိုက်ရိုက်',
 };

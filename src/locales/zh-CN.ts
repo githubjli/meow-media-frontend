@@ -209,5 +209,11 @@ export default {
   'live.common.creatorFallback': '创作者',
   'live.common.categoryFallback': '直播',
   'live.common.viewers': '{count} 位观看者',
+  'live.debug.panelTitle': '直播调试面板',
+  'live.debug.prepareResponse': 'Django prepare response',
+  'live.debug.publishConfig': '解析后的推流配置',
+  'live.debug.currentStates': '当前状态',
+  'live.debug.lastError': '最近错误',
+  'live.debug.none': '无',
   'videoCard.live': '直播中',
 };

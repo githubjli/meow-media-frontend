@@ -215,5 +215,11 @@ export default {
   'live.common.creatorFallback': 'Creator',
   'live.common.categoryFallback': 'Live broadcast',
   'live.common.viewers': '{count} viewers',
+  'live.debug.panelTitle': 'Live debug panel',
+  'live.debug.prepareResponse': 'Django prepare response',
+  'live.debug.publishConfig': 'Resolved publish config',
+  'live.debug.currentStates': 'Current states',
+  'live.debug.lastError': 'Last error',
+  'live.debug.none': 'None',
   'videoCard.live': 'LIVE',
 };

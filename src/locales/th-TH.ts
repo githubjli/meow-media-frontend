@@ -213,5 +213,11 @@ export default {
   'live.common.creatorFallback': 'ครีเอเตอร์',
   'live.common.categoryFallback': 'ไลฟ์',
   'live.common.viewers': '{count} ผู้ชม',
+  'live.debug.panelTitle': 'แผงดีบักไลฟ์',
+  'live.debug.prepareResponse': 'Django prepare response',
+  'live.debug.publishConfig': 'คอนฟิกการเผยแพร่ที่คำนวณแล้ว',
+  'live.debug.currentStates': 'สถานะปัจจุบัน',
+  'live.debug.lastError': 'ข้อผิดพลาดล่าสุด',
+  'live.debug.none': 'ไม่มี',
   'videoCard.live': 'สด',
 };
