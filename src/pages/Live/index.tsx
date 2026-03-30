@@ -74,7 +74,7 @@ const toLiveVideoCardData = (item: LiveBroadcast, intl: any) => {
     item.creator?.name ||
     item.creator?.username ||
     item.creator?.email ||
-    'Creator';
+    intl.formatMessage({ id: 'live.common.creatorFallback' });
   const viewerCount = item.viewer_count ?? item.viewerCount ?? 0;
   const posterUrl = getPosterUrl(item);
   const shouldUseFallbackCover =
@@ -91,9 +91,16 @@ const toLiveVideoCardData = (item: LiveBroadcast, intl: any) => {
     date: item.started_at || item.created_at,
     thumbnail_url: shouldUseFallbackCover ? LIVE_FALLBACK_COVER : posterUrl,
     thumbnail: shouldUseFallbackCover ? LIVE_FALLBACK_COVER : posterUrl,
-    category_name: item.category || 'Live broadcast',
-    category_display: item.category || 'Live broadcast',
-    views: `${viewerCount.toLocaleString()} viewers`,
+    category_name:
+      item.category ||
+      intl.formatMessage({ id: 'live.common.categoryFallback' }),
+    category_display:
+      item.category ||
+      intl.formatMessage({ id: 'live.common.categoryFallback' }),
+    views: intl.formatMessage(
+      { id: 'live.common.viewers' },
+      { count: viewerCount.toLocaleString() },
+    ),
     description: `${status.description} · ${status.label.toUpperCase()}`,
     description_preview: `${
       status.description

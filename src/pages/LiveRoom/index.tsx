@@ -394,7 +394,7 @@ export default function LiveRoomPage() {
     }
 
     if (!isLoggedIn) {
-      message.info('Please log in to manage this live stream.');
+      message.info(intl.formatMessage({ id: 'live.control.loginRequired' }));
       navigateToLogin();
       return;
     }
@@ -417,7 +417,9 @@ export default function LiveRoomPage() {
         next?.playback_url ? 'Waiting for stream...' : playerStatus,
       );
       message.success(
-        type === 'start' ? 'Live stream started.' : 'Live stream ended.',
+        type === 'start'
+          ? intl.formatMessage({ id: 'live.control.started' })
+          : intl.formatMessage({ id: 'live.control.ended' }),
       );
     } catch (error: any) {
       if (error?.status === 409) {
@@ -429,16 +431,22 @@ export default function LiveRoomPage() {
         await loadBroadcast(false);
         return;
       }
-      message.error(error?.message || `Unable to ${type} live stream.`);
+      message.error(
+        error?.message ||
+          intl.formatMessage(
+            { id: 'live.control.errorAction' },
+            { action: type },
+          ),
+      );
     } finally {
       setActionLoading(null);
     }
   };
 
   const startButtonLabel = !isLoggedIn
-    ? 'Log in to Start'
+    ? intl.formatMessage({ id: 'live.control.startCtaLogin' })
     : isCreator
-    ? 'Start Live'
+    ? intl.formatMessage({ id: 'live.control.startCta' })
     : intl.formatMessage({ id: 'live.creatorRequired.short' });
 
   return (
@@ -535,13 +543,13 @@ export default function LiveRoomPage() {
                       disabled={!canEndLive || !isCreator}
                       onClick={() => handleAction('end')}
                     >
-                      End Live
+                      {intl.formatMessage({ id: 'live.control.endCta' })}
                     </Button>
                     <Button
                       icon={<CopyOutlined />}
                       onClick={() => copyValue(playbackUrl, 'Playback URL')}
                     >
-                      Copy Playback URL
+                      {intl.formatMessage({ id: 'live.control.copyPlayback' })}
                     </Button>
                   </Space>
                 </Col>

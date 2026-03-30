@@ -196,5 +196,16 @@ export default {
   'live.creatorRequired.backToLive': 'กลับไปหน้ารายการไลฟ์',
   'live.control.conflictTransition':
     'ไลฟ์นี้อยู่ในสถานะนั้นแล้ว กรุณารีเฟรชสถานะ',
+  'live.control.loginRequired': 'โปรดเข้าสู่ระบบเพื่อจัดการไลฟ์นี้',
+  'live.control.started': 'เริ่มไลฟ์แล้ว',
+  'live.control.ended': 'จบไลฟ์แล้ว',
+  'live.control.errorAction': 'ไม่สามารถ {action} ไลฟ์ได้',
+  'live.control.startCtaLogin': 'เข้าสู่ระบบเพื่อเริ่ม',
+  'live.control.startCta': 'เริ่มไลฟ์',
+  'live.control.endCta': 'จบไลฟ์',
+  'live.control.copyPlayback': 'คัดลอก URL เล่นกลับ',
+  'live.common.creatorFallback': 'ครีเอเตอร์',
+  'live.common.categoryFallback': 'ไลฟ์',
+  'live.common.viewers': '{count} ผู้ชม',
   'videoCard.live': 'สด',
 };

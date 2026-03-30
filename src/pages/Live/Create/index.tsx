@@ -1202,7 +1202,9 @@ export default function LiveCreatePage() {
                               )
                             }
                           >
-                            Copy Playback URL
+                            {intl.formatMessage({
+                              id: 'live.control.copyPlayback',
+                            })}
                           </Button>
                           <div>
                             <Text

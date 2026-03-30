@@ -202,5 +202,16 @@ export default {
   'live.creatorRequired.backToLive': 'Live စာရင်းသို့ပြန်မည်',
   'live.control.conflictTransition':
     'ဤ live stream သည် ထိုအခြေအနေတွင်ရှိပြီးသားဖြစ်သည်။ status ကို refresh လုပ်ပါ။',
+  'live.control.loginRequired': 'ဤ live stream ကို စီမံရန် login ဝင်ပါ။',
+  'live.control.started': 'Live stream စတင်ပြီးပါပြီ။',
+  'live.control.ended': 'Live stream ပိတ်ပြီးပါပြီ။',
+  'live.control.errorAction': 'Live stream ကို {action} မလုပ်နိုင်ပါ။',
+  'live.control.startCtaLogin': 'စတင်ရန် Login ဝင်ပါ',
+  'live.control.startCta': 'Live စတင်မည်',
+  'live.control.endCta': 'Live ပိတ်မည်',
+  'live.control.copyPlayback': 'Playback URL ကူးယူမည်',
+  'live.common.creatorFallback': 'Creator',
+  'live.common.categoryFallback': 'Live broadcast',
+  'live.common.viewers': 'ကြည့်ရှုသူ {count} ယောက်',
   'videoCard.live': 'တိုက်ရိုက်',
 };

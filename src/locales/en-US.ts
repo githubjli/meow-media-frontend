@@ -198,5 +198,16 @@ export default {
   'live.creatorRequired.backToLive': 'Back to live list',
   'live.control.conflictTransition':
     'This live stream is already in that state. Please refresh status.',
+  'live.control.loginRequired': 'Please log in to manage this live stream.',
+  'live.control.started': 'Live stream started.',
+  'live.control.ended': 'Live stream ended.',
+  'live.control.errorAction': 'Unable to {action} live stream.',
+  'live.control.startCtaLogin': 'Log in to Start',
+  'live.control.startCta': 'Start Live',
+  'live.control.endCta': 'End Live',
+  'live.control.copyPlayback': 'Copy Playback URL',
+  'live.common.creatorFallback': 'Creator',
+  'live.common.categoryFallback': 'Live broadcast',
+  'live.common.viewers': '{count} viewers',
   'videoCard.live': 'LIVE',
 };
