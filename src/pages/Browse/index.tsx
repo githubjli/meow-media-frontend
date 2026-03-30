@@ -123,7 +123,7 @@ export default function BrowsePage() {
     <PageContainer title={false}>
       <div style={{ padding: '8px 8px 20px' }}>
         <Card
-          bordered={false}
+          variant="borderless"
           style={{
             borderRadius: 16,
             marginBottom: 20,

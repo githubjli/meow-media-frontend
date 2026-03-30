@@ -159,17 +159,17 @@ export default function VideoDetailPage() {
     <PageContainer title={false}>
       <div style={{ maxWidth: 980, margin: '0 auto', padding: '8px 0 24px' }}>
         {loading ? (
-          <Card bordered={false} style={{ borderRadius: 20 }}>
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
             <Skeleton active paragraph={{ rows: 8 }} />
           </Card>
         ) : errorMessage ? (
           <Alert type="error" showIcon message={errorMessage} />
         ) : !video ? (
-          <Card bordered={false} style={{ borderRadius: 20 }}>
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
             <Empty description="Video not found." />
           </Card>
         ) : (
-          <Card bordered={false} style={{ borderRadius: 20 }}>
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
             <div
               style={{
                 display: 'flex',
