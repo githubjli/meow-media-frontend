@@ -97,6 +97,13 @@ const loadWebRTCAdaptorScript = async (scriptUrl: string) => {
     );
 
     if (existingScript) {
+      if (
+        existingScript.dataset.antMediaLoaded === 'true' ||
+        existingScript.readyState === 'complete'
+      ) {
+        resolve();
+        return;
+      }
       existingScript.addEventListener('load', () => resolve(), { once: true });
       existingScript.addEventListener(
         'error',
@@ -115,7 +122,10 @@ const loadWebRTCAdaptorScript = async (scriptUrl: string) => {
     script.src = scriptUrl;
     script.async = true;
     script.dataset.antMediaAdaptor = 'true';
-    script.onload = () => resolve();
+    script.onload = () => {
+      script.dataset.antMediaLoaded = 'true';
+      resolve();
+    };
     script.onerror = () =>
       reject(new Error('Unable to load the Ant Media WebRTC adaptor.'));
     document.head.appendChild(script);
@@ -530,6 +540,7 @@ export default function LiveCreatePage() {
         adaptorScriptUrl,
       });
       const WebRTCAdaptorCtor = await loadWebRTCAdaptorScript(adaptorScriptUrl);
+      console.log('START WITH CAMERA: WebRTC adaptor script loaded');
       if (!WebRTCAdaptorCtor) {
         throw new Error('Unable to initialize the Ant Media WebRTC adaptor.');
       }
@@ -568,6 +579,9 @@ export default function LiveCreatePage() {
             setPublishingMessage(
               'WebRTC adaptor initialized. Starting browser publish…',
             );
+            console.log('START WITH CAMERA: right before publish()', {
+              publishStreamId,
+            });
             console.log('START WITH CAMERA: publish called', publishStreamId);
             setActivePublishStreamId(publishStreamId);
             webRTCAdaptorRef.current?.publish(publishStreamId);
