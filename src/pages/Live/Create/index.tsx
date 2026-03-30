@@ -9,7 +9,7 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -47,6 +47,14 @@ type DevicePermissionStatus = 'idle' | 'requesting' | 'ready' | 'error';
 // Browser publish status is transport-level only. Backend live status remains source of truth.
 type PublishingStatus = 'idle' | 'connecting' | 'publishing' | 'error';
 type PreparePhase = 'idle' | 'preparing' | 'prepared' | 'error';
+type PreflightStatus = 'idle' | 'ok' | 'error' | 'skipped';
+type PreflightResults = {
+  https: PreflightStatus;
+  mediaDevices: PreflightStatus;
+  permission: PreflightStatus;
+  websocket: PreflightStatus;
+  adaptor: PreflightStatus;
+};
 
 type AntMediaWebRTCAdaptor = {
   publish: (streamId: string) => void;
@@ -79,54 +87,65 @@ const loadWebRTCAdaptorScript = async (scriptUrl: string) => {
     return null;
   }
 
-  if (window.WebRTCAdaptor) {
-    return window.WebRTCAdaptor;
+  if (!scriptUrl) {
+    throw new Error('Missing Ant Media adaptor script URL configuration.');
   }
 
-  await new Promise<void>((resolve, reject) => {
-    const existingScript = document.querySelector<HTMLScriptElement>(
-      'script[data-ant-media-adaptor="true"]',
-    );
-
-    if (existingScript) {
-      existingScript.addEventListener('load', () => resolve(), { once: true });
-      existingScript.addEventListener(
-        'error',
-        () => reject(new Error('Unable to load the Ant Media WebRTC adaptor.')),
-        { once: true },
-      );
-      return;
-    }
-
-    if (!scriptUrl) {
-      reject(new Error('Missing Ant Media adaptor script URL configuration.'));
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = scriptUrl;
-    script.async = true;
-    script.dataset.antMediaAdaptor = 'true';
-    script.onload = () => resolve();
-    script.onerror = () =>
-      reject(new Error('Unable to load the Ant Media WebRTC adaptor.'));
-    document.head.appendChild(script);
+  const adaptorModule = await import(/* webpackIgnore: true */ scriptUrl);
+  console.log('START WITH CAMERA: adaptor module loaded', {
+    scriptUrl,
+    exports: adaptorModule ? Object.keys(adaptorModule) : [],
   });
 
-  return window.WebRTCAdaptor || null;
+  return (
+    adaptorModule?.WebRTCAdaptor ||
+    adaptorModule?.default?.WebRTCAdaptor ||
+    adaptorModule?.default ||
+    window.WebRTCAdaptor ||
+    null
+  );
+};
+
+const upgradeToSecureUrlIfNeeded = (rawUrl: string, label: string) => {
+  const url = String(rawUrl || '').trim();
+  if (!url || typeof window === 'undefined' || window.location.protocol !== 'https:') {
+    return url;
+  }
+
+  if (url.startsWith('http://')) {
+    const secureUrl = `https://${url.slice('http://'.length)}`;
+    console.warn(`[LIVE_CREATE] Mixed Content upgrade for ${label}:`, {
+      from: url,
+      to: secureUrl,
+    });
+    return secureUrl;
+  }
+
+  if (url.startsWith('ws://')) {
+    const secureUrl = `wss://${url.slice('ws://'.length)}`;
+    console.warn(`[LIVE_CREATE] Mixed Content upgrade for ${label}:`, {
+      from: url,
+      to: secureUrl,
+    });
+    return secureUrl;
+  }
+
+  return url;
 };
 
 const resolveAntMediaPublishConfig = (live?: LiveBroadcast | null) => {
   const antMedia = live?.publish_session?.ant_media;
-  const websocketUrl =
+  const websocketUrl = upgradeToSecureUrlIfNeeded(
     String(antMedia?.websocket_url || '').trim() ||
-    String(liveConfig.antMediaWebSocketUrl || '').trim();
-  const adaptorScriptUrl =
+      String(liveConfig.antMediaWebSocketUrl || '').trim(),
+    'websocket_url',
+  );
+  const adaptorScriptUrl = upgradeToSecureUrlIfNeeded(
     String(antMedia?.adaptor_script_url || '').trim() ||
-    String(liveConfig.antMediaWebRtcAdaptorScriptUrl || '').trim();
-  const publishStreamId =
-    String(antMedia?.stream_id || '').trim() ||
-    String(live?.stream_key || '').trim();
+      String(liveConfig.antMediaWebRtcAdaptorScriptUrl || '').trim(),
+    'adaptor_script_url',
+  );
+  const publishStreamId = String(antMedia?.stream_id || '').trim();
 
   return {
     websocketUrl,
@@ -148,8 +167,17 @@ const getPermissionTagColor = (status: DevicePermissionStatus) => {
   }
 };
 
+const getPreflightTagColor = (status: PreflightStatus) => {
+  if (status === 'ok') return 'success';
+  if (status === 'error') return 'error';
+  if (status === 'skipped') return 'default';
+  return 'processing';
+};
+
 export default function LiveCreatePage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
+  const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const [form] = Form.useForm();
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -178,9 +206,43 @@ export default function LiveCreatePage() {
   const [prepareSession, setPrepareSession] = useState<
     LiveBroadcast['publish_session'] | undefined
   >(undefined);
+  const [prepareDebugPayload, setPrepareDebugPayload] = useState<any>(null);
+  const [resolvedConfigInput, setResolvedConfigInput] = useState({
+    websocketUrl: '',
+    adaptorScriptUrl: '',
+    publishStreamId: '',
+  });
+  const [resolvedPublishConfig, setResolvedPublishConfig] = useState({
+    websocketUrl: '',
+    adaptorScriptUrl: '',
+    publishStreamId: '',
+  });
+  const [debugLastError, setDebugLastError] = useState('');
+  const [webRtcCallbackEvents, setWebRtcCallbackEvents] = useState<
+    Array<{ event: string; at: string }>
+  >([]);
+  const [latestWebRtcCallbackInfo, setLatestWebRtcCallbackInfo] = useState('');
+  const [webRtcCallbackError, setWebRtcCallbackError] = useState<{
+    error?: any;
+    messageText?: any;
+  } | null>(null);
+  const [activePublishStreamId, setActivePublishStreamId] = useState('');
   const [backendStatus, setBackendStatus] =
     useState<LiveBroadcastStatus | null>(null);
   const [payQrPayload, setPayQrPayload] = useState('');
+  const [preflightResults, setPreflightResults] = useState<PreflightResults>({
+    https: 'idle',
+    mediaDevices: 'idle',
+    permission: 'idle',
+    websocket: 'idle',
+    adaptor: 'idle',
+  });
+  const isCreator = Boolean(
+    initialState?.currentUser &&
+      (initialState.currentUser.is_creator ||
+        initialState.currentUser.role === 'creator' ||
+        initialState.currentUser.user_type === 'creator'),
+  );
 
   useEffect(() => {
     if (!initialState?.authLoading && !initialState?.currentUser?.email) {
@@ -196,7 +258,7 @@ export default function LiveCreatePage() {
 
   useEffect(() => {
     return () => {
-      const streamId = createdLive?.stream_key || '';
+      const streamId = activePublishStreamId || '';
       if (streamId && webRTCAdaptorRef.current) {
         webRTCAdaptorRef.current.stop(streamId);
       }
@@ -204,7 +266,7 @@ export default function LiveCreatePage() {
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
     };
-  }, [createdLive?.stream_key]);
+  }, [activePublishStreamId]);
 
   const categoryOptions = useMemo(
     () =>
@@ -241,12 +303,29 @@ export default function LiveCreatePage() {
       setPreparePhase('idle');
       setPrepareMessage('Preparation handshake has not started.');
       setPrepareSession(undefined);
+      setPrepareDebugPayload(null);
+      setResolvedConfigInput({
+        websocketUrl: '',
+        adaptorScriptUrl: '',
+        publishStreamId: '',
+      });
+      setResolvedPublishConfig({
+        websocketUrl: '',
+        adaptorScriptUrl: '',
+        publishStreamId: '',
+      });
+      setDebugLastError('');
+      setWebRtcCallbackEvents([]);
+      setLatestWebRtcCallbackInfo('');
+      setWebRtcCallbackError(null);
+      setActivePublishStreamId('');
       setBackendStatus(null);
       message.success(
         'Live stream created. Choose how you want to prepare your broadcast.',
       );
       setPayQrPayload(nextLive.payment_address || paymentAddress || '');
     } catch (error: any) {
+      setDebugLastError(error?.message || 'Unable to prepare the live room.');
       setErrorMessage(error?.message || 'Unable to prepare the live room.');
     } finally {
       setSubmitting(false);
@@ -328,6 +407,11 @@ export default function LiveCreatePage() {
       return;
     }
 
+    const prePrepareChecks = await runPreflightChecks();
+    if (!prePrepareChecks.ok) {
+      return;
+    }
+
     let preparedLiveForPublish: LiveBroadcast | null = createdLive;
     setPreparePhase('preparing');
     setPrepareMessage('Preparing broadcast session with Django…');
@@ -343,9 +427,15 @@ export default function LiveCreatePage() {
         preparedLive.message || 'Prepared for browser publishing.',
       );
       setPrepareSession(preparedLive.publish_session);
+      setPrepareDebugPayload(preparedLive);
+      setDebugLastError('');
     } catch (error: any) {
       setPreparePhase('error');
       setPrepareMessage(
+        error?.message ||
+          'Prepare handshake failed. Browser publishing has not started.',
+      );
+      setDebugLastError(
         error?.message ||
           'Prepare handshake failed. Browser publishing has not started.',
       );
@@ -359,6 +449,16 @@ export default function LiveCreatePage() {
     const resolvedPublishConfig = resolveAntMediaPublishConfig(
       preparedLiveForPublish,
     );
+    const preparedAntMediaConfig =
+      preparedLiveForPublish?.publish_session?.ant_media;
+    setResolvedConfigInput({
+      websocketUrl: String(preparedAntMediaConfig?.websocket_url || '').trim(),
+      adaptorScriptUrl: String(
+        preparedAntMediaConfig?.adaptor_script_url || '',
+      ).trim(),
+      publishStreamId: String(preparedAntMediaConfig?.stream_id || '').trim(),
+    });
+    setResolvedPublishConfig(resolvedPublishConfig);
     console.log(
       'START WITH CAMERA: resolved config input',
       preparedLiveForPublish?.publish_session,
@@ -371,11 +471,23 @@ export default function LiveCreatePage() {
       setPublishingMessage(
         'Browser publishing config is missing from prepare response.',
       );
+      setDebugLastError(
+        'Browser publishing config is missing from prepare response.',
+      );
       return;
     }
     if (!websocketUrl || !adaptorScriptUrl || !publishStreamId) {
       setPublishingStatus('error');
       setPublishingMessage('Ant Media browser publish config is incomplete.');
+      setDebugLastError('Ant Media browser publish config is incomplete.');
+      return;
+    }
+
+    const fullPreflightChecks = await runPreflightChecks({
+      websocketUrl,
+      adaptorScriptUrl,
+    });
+    if (!fullPreflightChecks.ok) {
       return;
     }
 
@@ -385,26 +497,32 @@ export default function LiveCreatePage() {
       setPublishingMessage(
         'Browser publishing could not start because camera or microphone access is unavailable.',
       );
+      setDebugLastError(
+        'Browser publishing could not start because camera or microphone access is unavailable.',
+      );
       return;
     }
     console.log('START WITH CAMERA: local preview ready');
-
-    if (!liveConfig.antMediaWebSocketUrl) {
-      setPublishingStatus('error');
-      setPublishingMessage('Missing Ant Media websocket URL configuration.');
-      return;
-    }
 
     setPublishingStatus('connecting');
     setPublishingMessage('Connecting to Ant Media publishing websocket…');
 
     try {
+      console.log('START WITH CAMERA: loading WebRTC adaptor script', {
+        adaptorScriptUrl,
+      });
       const WebRTCAdaptorCtor = await loadWebRTCAdaptorScript(adaptorScriptUrl);
+      console.log('START WITH CAMERA: adaptor module loaded');
+      console.log('WebRTCAdaptor ctor found:', !!WebRTCAdaptorCtor, WebRTCAdaptorCtor);
       if (!WebRTCAdaptorCtor) {
         throw new Error('Unable to initialize the Ant Media WebRTC adaptor.');
       }
 
       webRTCAdaptorRef.current?.closeWebSocket?.();
+      console.log('Creating WebRTCAdaptor now', {
+        websocketUrl,
+        publishStreamId,
+      });
       webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
         websocket_url: websocketUrl,
         mediaConstraints: { video: true, audio: true },
@@ -420,13 +538,25 @@ export default function LiveCreatePage() {
         isPlayMode: false,
         debug: false,
         callback: (info: string) => {
+          console.log('WebRTC callback wired', info);
+          console.log('WEBRTC_CALLBACK_INFO:', info);
+          setLatestWebRtcCallbackInfo(info);
+          setWebRtcCallbackEvents((current) => [
+            ...current.slice(-49),
+            { event: info, at: new Date().toISOString() },
+          ]);
+
           if (info === 'initialized') {
             console.log('START WITH CAMERA: adaptor initialized');
             setPublishingStatus('connecting');
             setPublishingMessage(
               'WebRTC adaptor initialized. Starting browser publish…',
             );
+            console.log('START WITH CAMERA: right before publish()', {
+              publishStreamId,
+            });
             console.log('START WITH CAMERA: publish called', publishStreamId);
+            setActivePublishStreamId(publishStreamId);
             webRTCAdaptorRef.current?.publish(publishStreamId);
             return;
           }
@@ -454,32 +584,132 @@ export default function LiveCreatePage() {
           }
         },
         callbackError: (error: any, messageText: any) => {
+          console.log('WebRTC callbackError wired', { error, messageText });
+          console.log('WEBRTC_CALLBACK_ERROR:', { error, messageText });
+          setWebRtcCallbackError({ error, messageText });
           setPublishingStatus('error');
           setPublishingMessage(
             messageText || error?.toString?.() || 'Browser publishing failed.',
           );
+          setDebugLastError(
+            messageText || error?.toString?.() || 'Browser publishing failed.',
+          );
         },
       });
+      console.log('WebRTCAdaptor constructor called');
     } catch (error: any) {
+      console.error('START WITH CAMERA: adaptor creation failed', error);
       setPublishingStatus('error');
       setPublishingMessage(
+        error?.message || 'Unable to connect browser publishing to Ant Media.',
+      );
+      setDebugLastError(
         error?.message || 'Unable to connect browser publishing to Ant Media.',
       );
     }
   };
 
   const handleStopPublishing = () => {
-    if (!createdLive?.stream_key || !webRTCAdaptorRef.current) {
+    if (!activePublishStreamId || !webRTCAdaptorRef.current) {
       setPublishingStatus('idle');
       setPublishingMessage('Browser publishing is already stopped.');
       return;
     }
 
-    webRTCAdaptorRef.current.stop(createdLive.stream_key);
+    webRTCAdaptorRef.current.stop(activePublishStreamId);
+    setActivePublishStreamId('');
     setPublishingStatus('idle');
     setPublishingMessage(
       'Browser publishing stopped. OBS workflow remains available.',
     );
+  };
+
+  const runPreflightChecks = async (options?: {
+    websocketUrl?: string;
+    adaptorScriptUrl?: string;
+  }) => {
+    const checks: PreflightResults = {
+      https: 'idle',
+      mediaDevices: 'idle',
+      permission: 'idle',
+      websocket: options?.websocketUrl ? 'idle' : 'skipped',
+      adaptor: options?.adaptorScriptUrl ? 'idle' : 'skipped',
+    };
+
+    const isSecure = typeof window !== 'undefined' && window.isSecureContext;
+    checks.https = isSecure ? 'ok' : 'error';
+
+    const hasMediaDevices = Boolean(navigator.mediaDevices?.getUserMedia);
+    checks.mediaDevices = hasMediaDevices ? 'ok' : 'error';
+
+    if (isSecure && hasMediaDevices) {
+      try {
+        const testStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        testStream.getTracks().forEach((track) => track.stop());
+        checks.permission = 'ok';
+      } catch (error) {
+        checks.permission = 'error';
+      }
+    } else {
+      checks.permission = 'error';
+    }
+
+    if (options?.adaptorScriptUrl) {
+      try {
+        const response = await fetch(options.adaptorScriptUrl, {
+          method: 'HEAD',
+        });
+        checks.adaptor = response.ok ? 'ok' : 'error';
+      } catch (error) {
+        checks.adaptor = 'error';
+      }
+    }
+
+    if (options?.websocketUrl) {
+      checks.websocket = await new Promise<PreflightStatus>((resolve) => {
+        try {
+          const socket = new WebSocket(options.websocketUrl!);
+          const timeout = window.setTimeout(() => {
+            socket.close();
+            resolve('error');
+          }, 4000);
+
+          socket.onopen = () => {
+            window.clearTimeout(timeout);
+            socket.close();
+            resolve('ok');
+          };
+          socket.onerror = () => {
+            window.clearTimeout(timeout);
+            socket.close();
+            resolve('error');
+          };
+        } catch (error) {
+          resolve('error');
+        }
+      });
+    }
+
+    setPreflightResults(checks);
+
+    const failedEntry = Object.entries(checks).find(
+      ([, status]) => status === 'error',
+    );
+    if (failedEntry) {
+      const messageText = intl.formatMessage(
+        { id: 'live.preflight.failed' },
+        { check: failedEntry[0] },
+      );
+      setDebugLastError(messageText);
+      setPublishingStatus('error');
+      setPublishingMessage(messageText);
+      return { ok: false as const, results: checks };
+    }
+
+    return { ok: true as const, results: checks };
   };
 
   const toggleTrack = (kind: 'audio' | 'video') => {
@@ -521,7 +751,7 @@ export default function LiveCreatePage() {
     {
       key: 'stream-key',
       label: 'Stream Key',
-      value: createdLive?.stream_key || '',
+      value: prepareSession?.ant_media?.stream_id || '',
     },
     {
       key: 'rtmp',
@@ -620,12 +850,35 @@ export default function LiveCreatePage() {
     },
   ];
 
+  if (
+    !initialState?.authLoading &&
+    initialState?.currentUser?.email &&
+    !isCreator
+  ) {
+    return (
+      <PageContainer title={false}>
+        <div style={{ maxWidth: 920, margin: '0 auto', padding: '8px 0 24px' }}>
+          <Alert
+            type="warning"
+            showIcon
+            message={intl.formatMessage({ id: 'live.creatorRequired' })}
+            action={
+              <Button type="link" onClick={() => history.push('/live')}>
+                {intl.formatMessage({ id: 'live.creatorRequired.backToLive' })}
+              </Button>
+            }
+          />
+        </div>
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer title={false}>
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: '8px 0 24px' }}>
         <Row gutter={[20, 20]}>
           <Col xs={24} xl={9}>
-            <Card bordered={false} style={{ borderRadius: 20, height: '100%' }}>
+            <Card variant="borderless" style={{ borderRadius: 20, height: '100%' }}>
               <Space direction="vertical" size={20} style={{ width: '100%' }}>
                 <div>
                   <Text
@@ -758,7 +1011,7 @@ export default function LiveCreatePage() {
 
           <Col xs={24} xl={15}>
             <Space direction="vertical" size={20} style={{ width: '100%' }}>
-              <Card bordered={false} style={{ borderRadius: 20 }}>
+              <Card variant="borderless" style={{ borderRadius: 20 }}>
                 <Row gutter={[16, 16]} align="middle">
                   <Col xs={24} lg={16}>
                     <Space
@@ -812,7 +1065,7 @@ export default function LiveCreatePage() {
               <Row gutter={[20, 20]}>
                 <Col xs={24} lg={14}>
                   <Card
-                    bordered={false}
+                    variant="borderless"
                     style={{ borderRadius: 20, height: '100%' }}
                   >
                     <Space
@@ -957,7 +1210,7 @@ export default function LiveCreatePage() {
                     style={{ width: '100%' }}
                   >
                     <Card
-                      bordered={false}
+                      variant="borderless"
                       style={{ borderRadius: 20 }}
                       title="Status area"
                     >
@@ -1043,6 +1296,21 @@ export default function LiveCreatePage() {
                         ) : null}
                         <Text type="secondary">{deviceStatusMessage}</Text>
                         <Text type="secondary">{publishingMessage}</Text>
+                        <Text type="secondary">
+                          {intl.formatMessage({
+                            id: 'live.debug.latestWebrtcInfo',
+                          })}
+                          : {latestWebRtcCallbackInfo || '-'}
+                        </Text>
+                        <Text type="secondary">
+                          {intl.formatMessage({
+                            id: 'live.debug.latestWebrtcError',
+                          })}
+                          :{' '}
+                          {webRtcCallbackError
+                            ? JSON.stringify(webRtcCallbackError)
+                            : '-'}
+                        </Text>
                         {typeof window !== 'undefined' &&
                         !window.isSecureContext &&
                         !['localhost', '127.0.0.1'].includes(
@@ -1061,11 +1329,258 @@ export default function LiveCreatePage() {
                             message="Browser permissions are required for local camera preview. RTMP mode remains available if you prefer your encoder."
                           />
                         ) : null}
+                        <Space wrap size={[8, 8]}>
+                          <Tag
+                            color={getPreflightTagColor(preflightResults.https)}
+                          >
+                            {intl.formatMessage({ id: 'live.preflight.https' })}
+                            :{' '}
+                            {preflightResults.https === 'ok'
+                              ? 'OK'
+                              : preflightResults.https === 'error'
+                              ? 'ERROR'
+                              : 'PENDING'}
+                          </Tag>
+                          <Tag
+                            color={getPreflightTagColor(
+                              preflightResults.mediaDevices,
+                            )}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.preflight.mediaDevices',
+                            })}
+                            :{' '}
+                            {preflightResults.mediaDevices === 'ok'
+                              ? 'OK'
+                              : preflightResults.mediaDevices === 'error'
+                              ? 'ERROR'
+                              : 'PENDING'}
+                          </Tag>
+                          <Tag
+                            color={getPreflightTagColor(
+                              preflightResults.permission,
+                            )}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.preflight.permission',
+                            })}
+                            :{' '}
+                            {preflightResults.permission === 'ok'
+                              ? 'OK'
+                              : preflightResults.permission === 'error'
+                              ? 'ERROR'
+                              : 'PENDING'}
+                          </Tag>
+                          <Tag
+                            color={getPreflightTagColor(
+                              preflightResults.websocket,
+                            )}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.preflight.websocket',
+                            })}
+                            :{' '}
+                            {preflightResults.websocket === 'ok'
+                              ? 'OK'
+                              : preflightResults.websocket === 'error'
+                              ? 'ERROR'
+                              : 'PENDING'}
+                          </Tag>
+                          <Tag
+                            color={getPreflightTagColor(
+                              preflightResults.adaptor,
+                            )}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.preflight.adaptor',
+                            })}
+                            :{' '}
+                            {preflightResults.adaptor === 'ok'
+                              ? 'OK'
+                              : preflightResults.adaptor === 'error'
+                              ? 'ERROR'
+                              : 'PENDING'}
+                          </Tag>
+                        </Space>
                       </Space>
                     </Card>
+                    {isLoggedIn ? (
+                      <Card
+                        variant="borderless"
+                        style={{ borderRadius: 20 }}
+                        title={intl.formatMessage({
+                          id: 'live.debug.panelTitle',
+                        })}
+                      >
+                        <Space
+                          direction="vertical"
+                          size={12}
+                          style={{ width: '100%' }}
+                        >
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.prepareResponse',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(
+                                prepareDebugPayload || {},
+                                null,
+                                2,
+                              )}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.publishConfigInput',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(resolvedConfigInput, null, 2)}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.publishConfig',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(resolvedPublishConfig, null, 2)}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.currentStates',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(
+                                {
+                                  preparePhase,
+                                  publishingStatus,
+                                  devicePermissionStatus,
+                                  backendStatus,
+                                },
+                                null,
+                                2,
+                              )}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.webrtcEvents',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(webRtcCallbackEvents, null, 2)}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.webrtcCallbackError',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(
+                                webRtcCallbackError || {},
+                                null,
+                                2,
+                              )}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.lastError',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {debugLastError ||
+                                intl.formatMessage({ id: 'live.debug.none' })}
+                            </pre>
+                          </div>
+                        </Space>
+                      </Card>
+                    ) : null}
 
                     <Card
-                      bordered={false}
+                      variant="borderless"
                       style={{ borderRadius: 20 }}
                       title="Device checklist"
                     >
@@ -1082,7 +1597,7 @@ export default function LiveCreatePage() {
                     </Card>
 
                     <Card
-                      bordered={false}
+                      variant="borderless"
                       style={{ borderRadius: 20 }}
                       title="Stream details card"
                     >
@@ -1170,7 +1685,9 @@ export default function LiveCreatePage() {
                               )
                             }
                           >
-                            Copy Playback URL
+                            {intl.formatMessage({
+                              id: 'live.control.copyPlayback',
+                            })}
                           </Button>
                           <div>
                             <Text

@@ -327,7 +327,7 @@ export default function AllVideosPage() {
   return (
     <PageContainer title={false}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '8px 0 24px' }}>
-        <Card bordered={false} style={{ borderRadius: 20 }}>
+        <Card variant="borderless" style={{ borderRadius: 20 }}>
           <Space direction="vertical" size={20} style={{ width: '100%' }}>
             <div
               style={{

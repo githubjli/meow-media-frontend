@@ -216,7 +216,7 @@ export default function HomePage() {
   return (
     <PageContainer title={false} ghost contentWidth="Fluid">
       <div className={styles.pageShell}>
-        <Card bordered={false} className={styles.heroCard}>
+        <Card variant="borderless" className={styles.heroCard}>
           <div className={styles.heroHeader}>
             <div>
               <Text className={styles.heroEyebrow}>
