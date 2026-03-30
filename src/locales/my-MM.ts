@@ -191,5 +191,16 @@ export default {
   'live.status.readyToGoLive': 'Ready to go live',
   'live.status.broadcastEnded': 'Broadcast ended',
   'live.status.streamStarting': 'Stream starting',
+  'live.explore.subtitle':
+    'Live များကိုကြည့်ရှုပြီး အခန်းထဲဝင်ကာ stream playback နှင့် status ကိုကြည့်ပါ။',
+  'live.explore.empty': 'လက်ရှိတွင် live stream မရှိသေးပါ။',
+  'live.explore.createFirst': 'ပထမဆုံး live stream ဖန်တီးမည်',
+  'live.explore.error.load':
+    'ယခုအချိန်တွင် live broadcast စာရင်းကို မတင်နိုင်ပါ။',
+  'live.creatorRequired': 'Live စီမံရန် creator အခွင့်အရေးလိုအပ်ပါသည်။',
+  'live.creatorRequired.short': 'Creator အခွင့်အရေးလိုအပ်',
+  'live.creatorRequired.backToLive': 'Live စာရင်းသို့ပြန်မည်',
+  'live.control.conflictTransition':
+    'ဤ live stream သည် ထိုအခြေအနေတွင်ရှိပြီးသားဖြစ်သည်။ status ကို refresh လုပ်ပါ။',
   'videoCard.live': 'တိုက်ရိုက်',
 };

@@ -117,6 +117,12 @@ export default function ExploreLivePage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
+  const isCreator = Boolean(
+    initialState?.currentUser &&
+      (initialState.currentUser.is_creator ||
+        initialState.currentUser.role === 'creator' ||
+        initialState.currentUser.user_type === 'creator'),
+  );
   const showNewsOnly = location.pathname === '/news/live';
   const visibleStreams = streams.filter((item) =>
     showNewsOnly ? isNewsLiveStream(item) : true,
@@ -143,7 +149,8 @@ export default function ExploreLivePage() {
         if (active) {
           setStreams([]);
           setErrorMessage(
-            error?.message || 'Unable to load live broadcasts right now.',
+            error?.message ||
+              intl.formatMessage({ id: 'live.explore.error.load' }),
           );
         }
       })
@@ -156,7 +163,7 @@ export default function ExploreLivePage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [intl]);
 
   return (
     <PageContainer title={false}>
@@ -172,14 +179,14 @@ export default function ExploreLivePage() {
                 {intl.formatMessage({ id: 'nav.exploreLive' })}
               </Title>
               <Text type="secondary">
-                Browse live events and open a room to watch stream playback and
-                status.
+                {intl.formatMessage({ id: 'live.explore.subtitle' })}
               </Text>
             </div>
             <Button
               type="primary"
               icon={<VideoCameraOutlined />}
               onClick={handleGoLiveClick}
+              disabled={isLoggedIn && !isCreator}
             >
               {intl.formatMessage({ id: 'nav.goLive' })}
             </Button>
@@ -201,9 +208,11 @@ export default function ExploreLivePage() {
           </Card>
         ) : visibleStreams.length === 0 ? (
           <Card bordered={false} style={{ borderRadius: 20 }}>
-            <Empty description="No live streams are available yet.">
+            <Empty
+              description={intl.formatMessage({ id: 'live.explore.empty' })}
+            >
               <Button type="primary" onClick={handleGoLiveClick}>
-                Create the first stream
+                {intl.formatMessage({ id: 'live.explore.createFirst' })}
               </Button>
             </Empty>
           </Card>

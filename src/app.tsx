@@ -35,10 +35,11 @@ import {
   ConfigProvider,
   Dropdown,
   Input,
+  message,
   Space,
   Tag,
-  Typography,
   theme,
+  Typography,
 } from 'antd';
 import { useEffect } from 'react';
 
@@ -157,6 +158,14 @@ const isAdminUser = (user?: CurrentUser | null) =>
         user.role === 'admin'),
   );
 
+const isCreatorUser = (user?: CurrentUser | null) =>
+  Boolean(
+    user &&
+      (user.is_creator ||
+        user.role === 'creator' ||
+        user.user_type === 'creator'),
+  );
+
 type InitialState = {
   name: string;
   darkTheme: boolean;
@@ -201,6 +210,7 @@ export const layout: RunTimeLayoutConfig = ({
   const currentUser = initialState?.currentUser;
   const isLoggedIn = Boolean(currentUser?.email);
   const isAdmin = isAdminUser(currentUser);
+  const isCreator = isCreatorUser(currentUser);
   const utilityButtonStyle = {
     width: 40,
     height: 40,
@@ -226,6 +236,11 @@ export const layout: RunTimeLayoutConfig = ({
   }, []);
 
   const handleGoLiveClick = () => {
+    if (isLoggedIn && !isCreator) {
+      message.info(intl.formatMessage({ id: 'live.creatorRequired' }));
+      return;
+    }
+
     history.push(
       isLoggedIn
         ? '/live/create'
@@ -461,6 +476,7 @@ export const layout: RunTimeLayoutConfig = ({
               : '0 8px 18px rgba(184, 135, 46, 0.2)',
           }}
           onClick={handleGoLiveClick}
+          disabled={isLoggedIn && !isCreator}
         >
           {intl.formatMessage({ id: 'nav.goLive' })}
         </Button>
@@ -519,6 +535,7 @@ export const layout: RunTimeLayoutConfig = ({
                   icon: <VideoCameraOutlined />,
                   label: intl.formatMessage({ id: 'nav.goLive' }),
                   onClick: handleGoLiveClick,
+                  disabled: !isCreator,
                 },
                 ...(isAdmin
                   ? [

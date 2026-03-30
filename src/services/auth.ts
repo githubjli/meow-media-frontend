@@ -26,24 +26,21 @@ export type AuthResponse = Partial<AuthTokens> & {
   password?: string[];
 };
 
+export type ApiRequestError = Error & {
+  status?: number;
+  data?: any;
+};
+
 const API_BASE_URL =
   process.env.UMI_APP_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || '';
 
 const buildUrl = (path: string) => `${API_BASE_URL}${path}`;
 
-const getErrorMessage = async (response: Response) => {
+const parseErrorPayload = async (response: Response) => {
   try {
-    const data = await response.json();
-    return (
-      data?.detail ||
-      data?.message ||
-      data?.non_field_errors?.[0] ||
-      data?.email?.[0] ||
-      data?.password?.[0] ||
-      'Request failed.'
-    );
+    return await response.json();
   } catch (error) {
-    return 'Request failed.';
+    return null;
   }
 };
 
@@ -61,7 +58,18 @@ async function requestJson<T>(
   });
 
   if (!response.ok) {
-    throw new Error(await getErrorMessage(response));
+    const payload = await parseErrorPayload(response);
+    const error = new Error(
+      payload?.detail ||
+        payload?.message ||
+        payload?.non_field_errors?.[0] ||
+        payload?.email?.[0] ||
+        payload?.password?.[0] ||
+        'Request failed.',
+    ) as ApiRequestError;
+    error.status = response.status;
+    error.data = payload;
+    throw error;
   }
 
   if (response.status === 204) {
