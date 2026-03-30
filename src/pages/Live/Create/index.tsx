@@ -495,12 +495,19 @@ export default function LiveCreatePage() {
     setPublishingMessage('Connecting to Ant Media publishing websocket…');
 
     try {
+      console.log('START WITH CAMERA: loading WebRTC adaptor script', {
+        adaptorScriptUrl,
+      });
       const WebRTCAdaptorCtor = await loadWebRTCAdaptorScript(adaptorScriptUrl);
       if (!WebRTCAdaptorCtor) {
         throw new Error('Unable to initialize the Ant Media WebRTC adaptor.');
       }
 
       webRTCAdaptorRef.current?.closeWebSocket?.();
+      console.log('Creating WebRTCAdaptor now', {
+        websocketUrl,
+        publishStreamId,
+      });
       webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
         websocket_url: websocketUrl,
         mediaConstraints: { video: true, audio: true },
@@ -516,6 +523,7 @@ export default function LiveCreatePage() {
         isPlayMode: false,
         debug: false,
         callback: (info: string) => {
+          console.log('WebRTC callback wired', info);
           console.log('WEBRTC_CALLBACK_INFO:', info);
           setLatestWebRtcCallbackInfo(info);
           setWebRtcCallbackEvents((current) => [
@@ -558,6 +566,7 @@ export default function LiveCreatePage() {
           }
         },
         callbackError: (error: any, messageText: any) => {
+          console.log('WebRTC callbackError wired', { error, messageText });
           console.log('WEBRTC_CALLBACK_ERROR:', { error, messageText });
           setWebRtcCallbackError({ error, messageText });
           setPublishingStatus('error');
@@ -569,7 +578,9 @@ export default function LiveCreatePage() {
           );
         },
       });
+      console.log('WebRTCAdaptor constructor called');
     } catch (error: any) {
+      console.error('START WITH CAMERA: adaptor creation failed', error);
       setPublishingStatus('error');
       setPublishingMessage(
         error?.message || 'Unable to connect browser publishing to Ant Media.',
