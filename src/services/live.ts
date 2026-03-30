@@ -223,16 +223,10 @@ const normalizeBroadcast = (item: any): LiveBroadcast => {
 export const getSafeWatchUrl = (
   live?: {
     id?: string | number;
-    watch_url?: string;
   } | null,
 ) => {
   if (!live?.id) {
     return '';
-  }
-
-  const canonicalWatchUrl = String(live.watch_url || '').trim();
-  if (canonicalWatchUrl) {
-    return canonicalWatchUrl;
   }
 
   return `/live/${encodeURIComponent(String(live.id))}`;

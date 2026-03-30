@@ -35,10 +35,11 @@ import {
   ConfigProvider,
   Dropdown,
   Input,
+  message,
   Space,
   Tag,
-  Typography,
   theme,
+  Typography,
 } from 'antd';
 import { useEffect } from 'react';
 
@@ -157,6 +158,14 @@ const isAdminUser = (user?: CurrentUser | null) =>
         user.role === 'admin'),
   );
 
+const isCreatorUser = (user?: CurrentUser | null) =>
+  Boolean(
+    user &&
+      (user.is_creator ||
+        user.role === 'creator' ||
+        user.user_type === 'creator'),
+  );
+
 type InitialState = {
   name: string;
   darkTheme: boolean;
@@ -201,6 +210,7 @@ export const layout: RunTimeLayoutConfig = ({
   const currentUser = initialState?.currentUser;
   const isLoggedIn = Boolean(currentUser?.email);
   const isAdmin = isAdminUser(currentUser);
+  const isCreator = isCreatorUser(currentUser);
   const utilityButtonStyle = {
     width: 40,
     height: 40,
@@ -226,6 +236,11 @@ export const layout: RunTimeLayoutConfig = ({
   }, []);
 
   const handleGoLiveClick = () => {
+    if (isLoggedIn && !isCreator) {
+      message.info(intl.formatMessage({ id: 'live.creatorRequired' }));
+      return;
+    }
+
     history.push(
       isLoggedIn
         ? '/live/create'
@@ -374,7 +389,10 @@ export const layout: RunTimeLayoutConfig = ({
         name: intl.formatMessage({ id: 'menu.live' }),
         icon: stableItemMap.get('/live'),
         className: 'sidebar-menu-item sidebar-menu-item-live',
-        children: LIVE_SECTION_ITEMS.map((item) => ({
+        children: LIVE_SECTION_ITEMS.filter((item) => {
+          if (!isLoggedIn || isCreator) return true;
+          return item.path === '/live';
+        }).map((item) => ({
           name: intl.formatMessage({ id: item.key }),
           path: item.path,
           icon: getLiveChildIcon(item.path, item.slug),
@@ -447,23 +465,25 @@ export const layout: RunTimeLayoutConfig = ({
         size={6}
         style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
       >
-        <Button
-          type="primary"
-          icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
-          style={{
-            borderRadius: 10,
-            fontWeight: 700,
-            color: '#2C2C2C',
-            backgroundColor: '#EFBC5C',
-            border: 'none',
-            boxShadow: isDark
-              ? '0 8px 18px rgba(239, 188, 92, 0.2)'
-              : '0 8px 18px rgba(184, 135, 46, 0.2)',
-          }}
-          onClick={handleGoLiveClick}
-        >
-          {intl.formatMessage({ id: 'nav.goLive' })}
-        </Button>
+        {!isLoggedIn || isCreator ? (
+          <Button
+            type="primary"
+            icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
+            style={{
+              borderRadius: 10,
+              fontWeight: 700,
+              color: '#2C2C2C',
+              backgroundColor: '#EFBC5C',
+              border: 'none',
+              boxShadow: isDark
+                ? '0 8px 18px rgba(239, 188, 92, 0.2)'
+                : '0 8px 18px rgba(184, 135, 46, 0.2)',
+            }}
+            onClick={handleGoLiveClick}
+          >
+            {intl.formatMessage({ id: 'nav.goLive' })}
+          </Button>
+        ) : null}
         <Button
           type="text"
           icon={
@@ -514,12 +534,16 @@ export const layout: RunTimeLayoutConfig = ({
                   label: intl.formatMessage({ id: 'nav.uploadVideo' }),
                   onClick: () => history.push('/videos/upload'),
                 },
-                {
-                  key: 'go-live',
-                  icon: <VideoCameraOutlined />,
-                  label: intl.formatMessage({ id: 'nav.goLive' }),
-                  onClick: handleGoLiveClick,
-                },
+                ...(isCreator
+                  ? [
+                      {
+                        key: 'go-live',
+                        icon: <VideoCameraOutlined />,
+                        label: intl.formatMessage({ id: 'nav.goLive' }),
+                        onClick: handleGoLiveClick,
+                      } as const,
+                    ]
+                  : []),
                 ...(isAdmin
                   ? [
                       {
