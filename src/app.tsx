@@ -389,7 +389,10 @@ export const layout: RunTimeLayoutConfig = ({
         name: intl.formatMessage({ id: 'menu.live' }),
         icon: stableItemMap.get('/live'),
         className: 'sidebar-menu-item sidebar-menu-item-live',
-        children: LIVE_SECTION_ITEMS.map((item) => ({
+        children: LIVE_SECTION_ITEMS.filter((item) => {
+          if (!isLoggedIn || isCreator) return true;
+          return item.path === '/live';
+        }).map((item) => ({
           name: intl.formatMessage({ id: item.key }),
           path: item.path,
           icon: getLiveChildIcon(item.path, item.slug),
@@ -462,24 +465,25 @@ export const layout: RunTimeLayoutConfig = ({
         size={6}
         style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
       >
-        <Button
-          type="primary"
-          icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
-          style={{
-            borderRadius: 10,
-            fontWeight: 700,
-            color: '#2C2C2C',
-            backgroundColor: '#EFBC5C',
-            border: 'none',
-            boxShadow: isDark
-              ? '0 8px 18px rgba(239, 188, 92, 0.2)'
-              : '0 8px 18px rgba(184, 135, 46, 0.2)',
-          }}
-          onClick={handleGoLiveClick}
-          disabled={isLoggedIn && !isCreator}
-        >
-          {intl.formatMessage({ id: 'nav.goLive' })}
-        </Button>
+        {!isLoggedIn || isCreator ? (
+          <Button
+            type="primary"
+            icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
+            style={{
+              borderRadius: 10,
+              fontWeight: 700,
+              color: '#2C2C2C',
+              backgroundColor: '#EFBC5C',
+              border: 'none',
+              boxShadow: isDark
+                ? '0 8px 18px rgba(239, 188, 92, 0.2)'
+                : '0 8px 18px rgba(184, 135, 46, 0.2)',
+            }}
+            onClick={handleGoLiveClick}
+          >
+            {intl.formatMessage({ id: 'nav.goLive' })}
+          </Button>
+        ) : null}
         <Button
           type="text"
           icon={
@@ -530,13 +534,16 @@ export const layout: RunTimeLayoutConfig = ({
                   label: intl.formatMessage({ id: 'nav.uploadVideo' }),
                   onClick: () => history.push('/videos/upload'),
                 },
-                {
-                  key: 'go-live',
-                  icon: <VideoCameraOutlined />,
-                  label: intl.formatMessage({ id: 'nav.goLive' }),
-                  onClick: handleGoLiveClick,
-                  disabled: !isCreator,
-                },
+                ...(isCreator
+                  ? [
+                      {
+                        key: 'go-live',
+                        icon: <VideoCameraOutlined />,
+                        label: intl.formatMessage({ id: 'nav.goLive' }),
+                        onClick: handleGoLiveClick,
+                      } as const,
+                    ]
+                  : []),
                 ...(isAdmin
                   ? [
                       {
