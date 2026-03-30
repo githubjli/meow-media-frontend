@@ -214,6 +214,8 @@ export default {
   'live.debug.publishConfigInput': 'prepare ant_media 配置输入',
   'live.debug.publishConfig': '解析后的推流配置',
   'live.debug.currentStates': '当前状态',
+  'live.debug.webrtcEvents': 'WebRTC 回调事件',
+  'live.debug.webrtcCallbackError': 'WebRTC callbackError',
   'live.debug.lastError': '最近错误',
   'live.debug.none': '无',
   'live.preflight.https': 'HTTPS',

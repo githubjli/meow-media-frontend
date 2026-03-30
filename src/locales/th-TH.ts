@@ -218,6 +218,8 @@ export default {
   'live.debug.publishConfigInput': 'ค่า input จาก prepare ant_media',
   'live.debug.publishConfig': 'คอนฟิกการเผยแพร่ที่คำนวณแล้ว',
   'live.debug.currentStates': 'สถานะปัจจุบัน',
+  'live.debug.webrtcEvents': 'เหตุการณ์ callback ของ WebRTC',
+  'live.debug.webrtcCallbackError': 'WebRTC callbackError',
   'live.debug.lastError': 'ข้อผิดพลาดล่าสุด',
   'live.debug.none': 'ไม่มี',
   'live.preflight.https': 'HTTPS',

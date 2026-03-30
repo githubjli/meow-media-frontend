@@ -205,6 +205,13 @@ export default function LiveCreatePage() {
     publishStreamId: '',
   });
   const [debugLastError, setDebugLastError] = useState('');
+  const [webRtcCallbackEvents, setWebRtcCallbackEvents] = useState<
+    Array<{ event: string; at: string }>
+  >([]);
+  const [webRtcCallbackError, setWebRtcCallbackError] = useState<{
+    error?: any;
+    messageText?: any;
+  } | null>(null);
   const [activePublishStreamId, setActivePublishStreamId] = useState('');
   const [backendStatus, setBackendStatus] =
     useState<LiveBroadcastStatus | null>(null);
@@ -294,6 +301,8 @@ export default function LiveCreatePage() {
         publishStreamId: '',
       });
       setDebugLastError('');
+      setWebRtcCallbackEvents([]);
+      setWebRtcCallbackError(null);
       setActivePublishStreamId('');
       setBackendStatus(null);
       message.success(
@@ -480,13 +489,6 @@ export default function LiveCreatePage() {
     }
     console.log('START WITH CAMERA: local preview ready');
 
-    if (!liveConfig.antMediaWebSocketUrl) {
-      setPublishingStatus('error');
-      setPublishingMessage('Missing Ant Media websocket URL configuration.');
-      setDebugLastError('Missing Ant Media websocket URL configuration.');
-      return;
-    }
-
     setPublishingStatus('connecting');
     setPublishingMessage('Connecting to Ant Media publishing websocket…');
 
@@ -512,6 +514,11 @@ export default function LiveCreatePage() {
         isPlayMode: false,
         debug: false,
         callback: (info: string) => {
+          setWebRtcCallbackEvents((current) => [
+            ...current.slice(-49),
+            { event: info, at: new Date().toISOString() },
+          ]);
+
           if (info === 'initialized') {
             console.log('START WITH CAMERA: adaptor initialized');
             setPublishingStatus('connecting');
@@ -547,6 +554,7 @@ export default function LiveCreatePage() {
           }
         },
         callbackError: (error: any, messageText: any) => {
+          setWebRtcCallbackError({ error, messageText });
           setPublishingStatus('error');
           setPublishingMessage(
             messageText || error?.toString?.() || 'Browser publishing failed.',
@@ -1448,6 +1456,50 @@ export default function LiveCreatePage() {
                                   devicePermissionStatus,
                                   backendStatus,
                                 },
+                                null,
+                                2,
+                              )}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.webrtcEvents',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(webRtcCallbackEvents, null, 2)}
+                            </pre>
+                          </div>
+                          <div>
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.debug.webrtcCallbackError',
+                              })}
+                            </Text>
+                            <pre
+                              style={{
+                                marginTop: 8,
+                                marginBottom: 0,
+                                padding: 10,
+                                borderRadius: 10,
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 12,
+                                overflowX: 'auto',
+                              }}
+                            >
+                              {JSON.stringify(
+                                webRtcCallbackError || {},
                                 null,
                                 2,
                               )}

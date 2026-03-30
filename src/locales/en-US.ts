@@ -220,6 +220,8 @@ export default {
   'live.debug.publishConfigInput': 'Prepare ant_media config input',
   'live.debug.publishConfig': 'Resolved publish config',
   'live.debug.currentStates': 'Current states',
+  'live.debug.webrtcEvents': 'WebRTC callback events',
+  'live.debug.webrtcCallbackError': 'WebRTC callbackError',
   'live.debug.lastError': 'Last error',
   'live.debug.none': 'None',
   'live.preflight.https': 'HTTPS',
