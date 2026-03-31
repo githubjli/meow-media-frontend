@@ -560,6 +560,7 @@ export default function LiveCreatePage() {
       const peerConnectionConfig = {
         iceServers: [
           { urls: 'stun:stun1.l.google.com:19302' },
+          // TURN UDP primary + TURN TCP fallback for restrictive networks.
           {
             urls: 'turn:media.meownews.online:3478?transport=udp',
             username: 'ipb-meownews',
