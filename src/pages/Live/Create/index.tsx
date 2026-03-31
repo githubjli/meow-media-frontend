@@ -555,12 +555,27 @@ export default function LiveCreatePage() {
         websocketUrl,
         publishStreamId,
       });
+      const peerConnectionConfig = {
+        iceServers: [
+          { urls: 'stun:stun1.l.google.com:19302' },
+          {
+            urls: liveConfig.antMediaTurnUrl,
+            username: liveConfig.antMediaTurnUsername,
+            credential: liveConfig.antMediaTurnCredential,
+          },
+        ],
+      };
+      console.log('LIVE_CREATE: peerconnection_config (publish)', {
+        iceServers: peerConnectionConfig.iceServers.map((server) => ({
+          urls: server.urls,
+          username: server.username || '',
+          credential: server.credential ? '***' : '',
+        })),
+      });
       webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
         websocket_url: websocketUrl,
         mediaConstraints: { video: true, audio: true },
-        peerconnection_config: {
-          iceServers: [{ urls: 'stun:stun1.l.google.com:19302' }],
-        },
+        peerconnection_config: peerConnectionConfig,
         sdp_constraints: {
           OfferToReceiveAudio: false,
           OfferToReceiveVideo: false,
