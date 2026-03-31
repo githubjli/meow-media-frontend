@@ -561,22 +561,31 @@ export default function LiveCreatePage() {
         iceServers: [
           { urls: 'stun:stun1.l.google.com:19302' },
           {
-            urls:
-              liveConfig.antMediaTurnUrl ||
-              'turn:media.meownews.online:3478?transport=udp',
-            username: liveConfig.antMediaTurnUsername,
-            credential: liveConfig.antMediaTurnCredential,
+            urls: 'turn:media.meownews.online:3478?transport=udp',
+            username: 'ipb-meownews',
+            credential: 'IPBMeow@2026#',
           },
           {
             urls: 'turn:media.meownews.online:3478?transport=tcp',
-            username: liveConfig.antMediaTurnUsername,
-            credential: liveConfig.antMediaTurnCredential,
+            username: 'ipb-meownews',
+            credential: 'IPBMeow@2026#',
           },
         ],
       };
       const sdpConstraints = {
         OfferToReceiveAudio: false,
         OfferToReceiveVideo: false,
+      };
+      const adaptorConfig = {
+        websocket_url: websocketUrl,
+        mediaConstraints,
+        peerconnection_config: peerConnectionConfig,
+        sdp_constraints: sdpConstraints,
+        localVideoId: 'live-create-preview-video',
+        localStream: stream,
+        isPlayMode: false,
+        debug: false,
+        reconnectIfRequiredFlag: !disablePublisherAutoReconnect,
       };
       console.log('LIVE_CREATE: peerconnection_config (publish)', {
         iceServers: peerConnectionConfig.iceServers.map((server) => ({
@@ -600,15 +609,7 @@ export default function LiveCreatePage() {
         sdp_constraints: sdpConstraints,
       });
       webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
-        websocket_url: websocketUrl,
-        mediaConstraints,
-        peerconnection_config: peerConnectionConfig,
-        sdp_constraints: sdpConstraints,
-        localVideoId: 'live-create-preview-video',
-        localStream: stream,
-        isPlayMode: false,
-        debug: false,
-        reconnectIfRequiredFlag: !disablePublisherAutoReconnect,
+        ...adaptorConfig,
         callback: (info: string) => {
           console.log('WebRTC callback wired', info);
           console.log('WEBRTC_CALLBACK_INFO:', info);
@@ -699,6 +700,8 @@ export default function LiveCreatePage() {
       console.log('WebRTCAdaptor constructor called', {
         publishStreamId,
         reconnectIfRequiredFlag: !disablePublisherAutoReconnect,
+        usedSamePeerConnectionConfigObject:
+          adaptorConfig.peerconnection_config === peerConnectionConfig,
         adaptorHasPeerConnectionConfig: Boolean(
           (webRTCAdaptorRef.current as any)?.peerconnection_config,
         ),
