@@ -558,11 +558,12 @@ export default function LiveCreatePage() {
         publishStreamId,
       });
       const debugDisableReconnect = true;
+      const DEBUG_TCP_ONLY_TURN = false;
       hasTriggeredPublishAttemptRef.current = false;
       hasLoggedFirstPublishFailureRef.current = false;
       const mediaConstraints = { video: true, audio: true };
-      const publishIceServers = [
-        { urls: 'stun:stun1.l.google.com:19302' },
+      const normalIceServers = [
+        { urls: 'stun:stun.l.google.com:19302' },
         {
           urls: 'turn:media.meownews.online:3478?transport=udp',
           username: 'ipb-meownews',
@@ -574,6 +575,16 @@ export default function LiveCreatePage() {
           credential: 'IPBMeow@2026#',
         },
       ];
+      const tcpOnlyIceServers = [
+        {
+          urls: 'turn:media.meownews.online:3478?transport=tcp',
+          username: 'ipb-meownews',
+          credential: 'IPBMeow@2026#',
+        },
+      ];
+      const publishIceServers = DEBUG_TCP_ONLY_TURN
+        ? tcpOnlyIceServers
+        : normalIceServers;
       const peerConnectionConfig = {
         iceServers: publishIceServers,
       };
@@ -593,6 +604,10 @@ export default function LiveCreatePage() {
         reconnectIfRequiredFlag: !debugDisableReconnect,
       };
       console.log('LIVE_CREATE: peerconnection_config (publish)', {
+        debugMode: {
+          debugDisableReconnect,
+          DEBUG_TCP_ONLY_TURN,
+        },
         iceServerCount: publishIceServers.length,
         iceServersFromSource: publishIceServers.map((server) => ({
           urls: server.urls,
