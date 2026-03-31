@@ -60,6 +60,11 @@ type AntMediaWebRTCAdaptor = {
   publish: (streamId: string) => void;
   stop: (streamId: string) => void;
   closeWebSocket?: () => void;
+  websocketAdaptor?: {
+    wsConn?: WebSocket;
+  };
+  remotePeerConnection?: Record<string, RTCPeerConnection>;
+  peerconnection_config?: RTCConfiguration;
 };
 
 declare global {
@@ -172,6 +177,130 @@ const getPreflightTagColor = (status: PreflightStatus) => {
   if (status === 'error') return 'error';
   if (status === 'skipped') return 'default';
   return 'processing';
+};
+
+const maskIceServers = (config?: RTCConfiguration | null) => {
+  if (!config) return null;
+  return {
+    ...config,
+    iceServers: (config.iceServers || []).map((server) => ({
+      ...server,
+      credential: server.credential ? '***' : server.credential,
+    })),
+  };
+};
+
+const attachPublishRuntimeDebugHooks = (options: {
+  adaptor: AntMediaWebRTCAdaptor | null;
+  websocketUrl: string;
+  streamId: string;
+}) => {
+  const { adaptor, websocketUrl, streamId } = options;
+  if (!adaptor) return;
+  const adaptorAny = adaptor as any;
+  const wsDebugMarker = `__liveCreateWsDebugHooksAttached_${streamId}`;
+  const pcDebugMarker = `__liveCreatePcDebugHooksAttached_${streamId}`;
+
+  const wsConn = adaptor.websocketAdaptor?.wsConn;
+  if (wsConn && !adaptorAny[wsDebugMarker]) {
+    adaptorAny[wsDebugMarker] = true;
+    const originalSend = wsConn.send.bind(wsConn);
+    wsConn.send = (data: any) => {
+      try {
+        const parsed = JSON.parse(String(data));
+        if (
+          parsed?.command ||
+          parsed?.type ||
+          parsed?.streamId === streamId ||
+          parsed?.stream_id === streamId
+        ) {
+          console.log('LIVE_CREATE signaling[outbound]', {
+            websocketUrl,
+            streamId,
+            command: parsed?.command || parsed?.type || '',
+            payload: parsed,
+          });
+        }
+      } catch {
+        // no-op
+      }
+      originalSend(data);
+    };
+
+    wsConn.addEventListener('message', (event) => {
+      try {
+        const parsed = JSON.parse(String(event.data || ''));
+        if (
+          parsed?.command ||
+          parsed?.type ||
+          parsed?.streamId === streamId ||
+          parsed?.stream_id === streamId
+        ) {
+          console.log('LIVE_CREATE signaling[inbound]', {
+            websocketUrl,
+            streamId,
+            command: parsed?.command || parsed?.type || '',
+            payload: parsed,
+            hasRemoteAnswer:
+              parsed?.command === 'takeConfiguration' &&
+              parsed?.type === 'answer',
+          });
+        }
+      } catch {
+        // no-op
+      }
+    });
+  }
+
+  const peerConnection = adaptor.remotePeerConnection?.[streamId];
+  if (!peerConnection || adaptorAny[pcDebugMarker]) return;
+  adaptorAny[pcDebugMarker] = true;
+
+  console.log('LIVE_CREATE peerConnection[initial_config]', {
+    streamId,
+    config: maskIceServers(peerConnection.getConfiguration?.() || null),
+  });
+
+  peerConnection.addEventListener('signalingstatechange', () => {
+    console.log('LIVE_CREATE peerConnection[signalingstatechange]', {
+      streamId,
+      signalingState: peerConnection.signalingState,
+    });
+  });
+  peerConnection.addEventListener('iceconnectionstatechange', () => {
+    console.log('LIVE_CREATE peerConnection[iceconnectionstatechange]', {
+      streamId,
+      iceConnectionState: peerConnection.iceConnectionState,
+    });
+  });
+  peerConnection.addEventListener('connectionstatechange', () => {
+    console.log('LIVE_CREATE peerConnection[connectionstatechange]', {
+      streamId,
+      connectionState: peerConnection.connectionState,
+    });
+  });
+  peerConnection.addEventListener('icecandidate', (event) => {
+    if (!event.candidate) return;
+    console.log('LIVE_CREATE peerConnection[local_ice_candidate]', {
+      streamId,
+      candidate: event.candidate.candidate,
+      protocol: event.candidate.protocol,
+      type: event.candidate.type,
+      address: event.candidate.address,
+      port: event.candidate.port,
+    });
+  });
+
+  const originalClose = peerConnection.close.bind(peerConnection);
+  peerConnection.close = () => {
+    console.warn('LIVE_CREATE peerConnection[close_called]', {
+      streamId,
+      signalingState: peerConnection.signalingState,
+      iceConnectionState: peerConnection.iceConnectionState,
+      connectionState: peerConnection.connectionState,
+    });
+    originalClose();
+  };
 };
 
 export default function LiveCreatePage() {
@@ -591,6 +720,11 @@ export default function LiveCreatePage() {
         iceServers: publishIceServers,
         iceTransportPolicy: 'relay' as const,
       };
+      console.log('LIVE_CREATE adaptor[final_ice_config_input]', {
+        streamId: chosenPublishStreamId,
+        websocketUrl,
+        peerConnectionConfig: maskIceServers(peerConnectionConfig),
+      });
       const sdpConstraints = {
         OfferToReceiveAudio: false,
         OfferToReceiveVideo: false,
@@ -641,9 +775,27 @@ export default function LiveCreatePage() {
       });
       webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
         ...adaptorConfig,
-        callback: (info: string) => {
+        callback: (info: string, obj?: any) => {
           console.log('WebRTC callback wired', info);
-          console.log('WEBRTC_CALLBACK_INFO:', info);
+          console.log('WEBRTC_CALLBACK_INFO:', info, obj);
+          if (
+            info === 'takeConfiguration' ||
+            info === 'takeCandidate' ||
+            info === 'publish_started' ||
+            info === 'publish_finished' ||
+            info === 'closed' ||
+            info === 'data_channel_closed'
+          ) {
+            console.log('LIVE_CREATE signaling[callback]', {
+              streamId: chosenPublishStreamId,
+              info,
+              payload: obj,
+              hasRemoteAnswer:
+                info === 'takeConfiguration' &&
+                (obj?.type === 'answer' ||
+                  String(obj?.sdp || '').toLowerCase().includes('a=setup:active')),
+            });
+          }
           setLatestWebRtcCallbackInfo(info);
           setWebRtcCallbackEvents((current) => [
             ...current.slice(-49),
@@ -672,6 +824,20 @@ export default function LiveCreatePage() {
             hasTriggeredPublishAttemptRef.current = true;
             setActivePublishStreamId(chosenPublishStreamId);
             webRTCAdaptorRef.current?.publish(chosenPublishStreamId);
+            window.setTimeout(() => {
+              attachPublishRuntimeDebugHooks({
+                adaptor: webRTCAdaptorRef.current,
+                websocketUrl,
+                streamId: chosenPublishStreamId,
+              });
+            }, 0);
+            window.setTimeout(() => {
+              attachPublishRuntimeDebugHooks({
+                adaptor: webRTCAdaptorRef.current,
+                websocketUrl,
+                streamId: chosenPublishStreamId,
+              });
+            }, 1000);
             console.log('START WITH CAMERA: right after publish()', {
               publishStreamId: chosenPublishStreamId,
               adaptorPresent: Boolean(webRTCAdaptorRef.current),
