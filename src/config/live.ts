@@ -12,6 +12,13 @@ export const liveConfig = {
   antMediaWebSocketUrl: trim(process.env.UMI_APP_ANT_MEDIA_WEBSOCKET_URL) || '',
   antMediaWebRtcAdaptorScriptUrl:
     trim(process.env.UMI_APP_ANT_MEDIA_WEBRTC_ADAPTOR_SCRIPT_URL) || '',
+  antMediaTurnUrl:
+    trim(process.env.UMI_APP_ANT_MEDIA_TURN_URL) ||
+    'turn:media.meownews.online:3478?transport=udp',
+  antMediaTurnUsername:
+    trim(process.env.UMI_APP_ANT_MEDIA_TURN_USERNAME) || 'ipb-meownews',
+  antMediaTurnCredential:
+    trim(process.env.UMI_APP_ANT_MEDIA_TURN_CREDENTIAL) || 'IPBMeow@2026#',
   hlsScriptUrl:
     trim(process.env.UMI_APP_HLS_SCRIPT_URL) ||
     'https://cdn.jsdelivr.net/npm/hls.js@1.5.18/dist/hls.min.js',
