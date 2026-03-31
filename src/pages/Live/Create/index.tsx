@@ -557,21 +557,21 @@ export default function LiveCreatePage() {
       });
       const disablePublisherAutoReconnect = true;
       const mediaConstraints = { video: true, audio: true };
+      const publishIceServers = [
+        { urls: 'stun:stun1.l.google.com:19302' },
+        {
+          urls: 'turn:media.meownews.online:3478?transport=udp',
+          username: 'ipb-meownews',
+          credential: 'IPBMeow@2026#',
+        },
+        {
+          urls: 'turn:media.meownews.online:3478?transport=tcp',
+          username: 'ipb-meownews',
+          credential: 'IPBMeow@2026#',
+        },
+      ];
       const peerConnectionConfig = {
-        iceServers: [
-          { urls: 'stun:stun1.l.google.com:19302' },
-          // TURN UDP primary + TURN TCP fallback for restrictive networks.
-          {
-            urls: 'turn:media.meownews.online:3478?transport=udp',
-            username: 'ipb-meownews',
-            credential: 'IPBMeow@2026#',
-          },
-          {
-            urls: 'turn:media.meownews.online:3478?transport=tcp',
-            username: 'ipb-meownews',
-            credential: 'IPBMeow@2026#',
-          },
-        ],
+        iceServers: publishIceServers,
       };
       const sdpConstraints = {
         OfferToReceiveAudio: false,
@@ -589,6 +589,12 @@ export default function LiveCreatePage() {
         reconnectIfRequiredFlag: !disablePublisherAutoReconnect,
       };
       console.log('LIVE_CREATE: peerconnection_config (publish)', {
+        iceServerCount: publishIceServers.length,
+        iceServersFromSource: publishIceServers.map((server) => ({
+          urls: server.urls,
+          username: server.username || '',
+          credential: server.credential ? '***' : '',
+        })),
         iceServers: peerConnectionConfig.iceServers.map((server) => ({
           urls: server.urls,
           username: server.username || '',
