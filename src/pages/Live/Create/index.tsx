@@ -568,7 +568,9 @@ export default function LiveCreatePage() {
           credential: 'IPBMeow@2026#',
         },
         { urls: 'stun:stun.l.google.com:19302' },
-      ];
+      ].filter(
+        (server) => !String(server.urls || '').includes('transport=udp'),
+      );
       const peerConnectionConfig = {
         iceServers: publishIceServers,
       };
@@ -597,6 +599,9 @@ export default function LiveCreatePage() {
           ),
         },
         iceServerCount: publishIceServers.length,
+        containsUdpTurn: publishIceServers.some((server) =>
+          String(server.urls || '').includes('transport=udp'),
+        ),
         'peerconnection_config.iceServers': peerConnectionConfig.iceServers.map(
           (server) =>
             server.credential ? { ...server, credential: '***' } : server,
