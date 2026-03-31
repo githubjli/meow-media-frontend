@@ -228,22 +228,48 @@ const attachPublishRuntimeDebugHooks = (options: {
     };
 
     wsConn.addEventListener('message', (event) => {
+      console.log('LIVE_CREATE signaling[inbound_raw_after_publish]', {
+        websocketUrl,
+        streamId,
+        raw: String(event.data || ''),
+      });
       try {
         const parsed = JSON.parse(String(event.data || ''));
-        if (
-          parsed?.command ||
-          parsed?.type ||
-          parsed?.streamId === streamId ||
-          parsed?.stream_id === streamId
-        ) {
-          console.log('LIVE_CREATE signaling[inbound]', {
+        const command = parsed?.command || parsed?.type || '';
+        console.log('LIVE_CREATE signaling[inbound]', {
+          websocketUrl,
+          streamId,
+          command,
+          payload: parsed,
+          messageStreamId: parsed?.streamId || parsed?.stream_id || '',
+          isCurrentPublishStream:
+            (parsed?.streamId || parsed?.stream_id || '') === streamId,
+          hasRemoteAnswer:
+            parsed?.command === 'takeConfiguration' &&
+            parsed?.type === 'answer',
+        });
+        if (parsed?.command === 'takeConfiguration' && parsed?.type === 'answer') {
+          console.log('LIVE_CREATE signaling[answer_received]', {
             websocketUrl,
             streamId,
-            command: parsed?.command || parsed?.type || '',
+            messageStreamId: parsed?.streamId || parsed?.stream_id || '',
+            isCurrentPublishStream:
+              (parsed?.streamId || parsed?.stream_id || '') === streamId,
+          });
+        }
+        if (
+          parsed?.command === 'start' ||
+          parsed?.command === 'notification' ||
+          parsed?.command === 'error'
+        ) {
+          console.log('LIVE_CREATE signaling[important_command]', {
+            websocketUrl,
+            streamId,
+            command: parsed?.command,
             payload: parsed,
-            hasRemoteAnswer:
-              parsed?.command === 'takeConfiguration' &&
-              parsed?.type === 'answer',
+            messageStreamId: parsed?.streamId || parsed?.stream_id || '',
+            isCurrentPublishStream:
+              (parsed?.streamId || parsed?.stream_id || '') === streamId,
           });
         }
       } catch {
@@ -292,6 +318,33 @@ const attachPublishRuntimeDebugHooks = (options: {
   });
 
   const originalClose = peerConnection.close.bind(peerConnection);
+  const originalSetRemoteDescription =
+    peerConnection.setRemoteDescription.bind(peerConnection);
+  peerConnection.setRemoteDescription = async (
+    description: RTCSessionDescriptionInit,
+  ) => {
+    console.log('LIVE_CREATE peerConnection[setRemoteDescription_called]', {
+      streamId,
+      type: description?.type,
+      sdpLength: String(description?.sdp || '').length,
+    });
+    try {
+      const result = await originalSetRemoteDescription(description);
+      console.log('LIVE_CREATE peerConnection[remote_description_applied]', {
+        streamId,
+        signalingState: peerConnection.signalingState,
+        remoteDescriptionType: peerConnection.remoteDescription?.type || '',
+      });
+      return result;
+    } catch (error: any) {
+      console.error('LIVE_CREATE peerConnection[remote_description_failed]', {
+        streamId,
+        message: error?.message || String(error),
+      });
+      throw error;
+    }
+  };
+
   peerConnection.close = () => {
     console.warn('LIVE_CREATE peerConnection[close_called]', {
       streamId,
@@ -820,6 +873,11 @@ export default function LiveCreatePage() {
             });
             console.log('LIVE_CREATE streamId[publish_call_argument]', {
               streamId: chosenPublishStreamId,
+            });
+            console.log('LIVE_CREATE correlation[publish_stream_vs_server_logs]', {
+              publishStreamId: chosenPublishStreamId,
+              liveId: preparedLiveForPublish?.id,
+              note: 'Use this publishStreamId to match Ant Media server log streamId.',
             });
             hasTriggeredPublishAttemptRef.current = true;
             setActivePublishStreamId(chosenPublishStreamId);
