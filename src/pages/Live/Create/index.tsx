@@ -133,33 +133,6 @@ const upgradeToSecureUrlIfNeeded = (rawUrl: string, label: string) => {
   return url;
 };
 
-const upgradeToSecureUrlIfNeeded = (rawUrl: string, label: string) => {
-  const url = String(rawUrl || '').trim();
-  if (!url || typeof window === 'undefined' || window.location.protocol !== 'https:') {
-    return url;
-  }
-
-  if (url.startsWith('http://')) {
-    const secureUrl = `https://${url.slice('http://'.length)}`;
-    console.warn(`[LIVE_CREATE] Mixed Content upgrade for ${label}:`, {
-      from: url,
-      to: secureUrl,
-    });
-    return secureUrl;
-  }
-
-  if (url.startsWith('ws://')) {
-    const secureUrl = `wss://${url.slice('ws://'.length)}`;
-    console.warn(`[LIVE_CREATE] Mixed Content upgrade for ${label}:`, {
-      from: url,
-      to: secureUrl,
-    });
-    return secureUrl;
-  }
-
-  return url;
-};
-
 const resolveAntMediaPublishConfig = (live?: LiveBroadcast | null) => {
   const antMedia = live?.publish_session?.ant_media;
   const websocketUrl = upgradeToSecureUrlIfNeeded(
