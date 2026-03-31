@@ -133,33 +133,6 @@ const upgradeToSecureUrlIfNeeded = (rawUrl: string, label: string) => {
   return url;
 };
 
-const upgradeToSecureUrlIfNeeded = (rawUrl: string, label: string) => {
-  const url = String(rawUrl || '').trim();
-  if (!url || typeof window === 'undefined' || window.location.protocol !== 'https:') {
-    return url;
-  }
-
-  if (url.startsWith('http://')) {
-    const secureUrl = `https://${url.slice('http://'.length)}`;
-    console.warn(`[LIVE_CREATE] Mixed Content upgrade for ${label}:`, {
-      from: url,
-      to: secureUrl,
-    });
-    return secureUrl;
-  }
-
-  if (url.startsWith('ws://')) {
-    const secureUrl = `wss://${url.slice('ws://'.length)}`;
-    console.warn(`[LIVE_CREATE] Mixed Content upgrade for ${label}:`, {
-      from: url,
-      to: secureUrl,
-    });
-    return secureUrl;
-  }
-
-  return url;
-};
-
 const resolveAntMediaPublishConfig = (live?: LiveBroadcast | null) => {
   const antMedia = live?.publish_session?.ant_media;
   const websocketUrl = upgradeToSecureUrlIfNeeded(
@@ -254,6 +227,7 @@ export default function LiveCreatePage() {
     messageText?: any;
   } | null>(null);
   const [activePublishStreamId, setActivePublishStreamId] = useState('');
+  const activePublishStreamIdRef = useRef('');
   const [backendStatus, setBackendStatus] =
     useState<LiveBroadcastStatus | null>(null);
   const [payQrPayload, setPayQrPayload] = useState('');
@@ -284,16 +258,36 @@ export default function LiveCreatePage() {
   }, [devicePermissionStatus]);
 
   useEffect(() => {
+    activePublishStreamIdRef.current = activePublishStreamId || '';
+  }, [activePublishStreamId]);
+
+  useEffect(() => {
     return () => {
-      const streamId = activePublishStreamId || '';
+      const streamId = activePublishStreamIdRef.current || '';
       if (streamId && webRTCAdaptorRef.current) {
+        console.log('LIVE_CREATE cleanup(unmount): stopping active publish stream', {
+          streamId,
+        });
         webRTCAdaptorRef.current.stop(streamId);
       }
-      webRTCAdaptorRef.current?.closeWebSocket?.();
+      if (webRTCAdaptorRef.current?.closeWebSocket) {
+        console.log('LIVE_CREATE cleanup(unmount): closing adaptor websocket');
+        webRTCAdaptorRef.current.closeWebSocket();
+      }
+      if (webRTCAdaptorRef.current) {
+        console.log('LIVE_CREATE cleanup(unmount): resetting webRTCAdaptorRef');
+      }
+      webRTCAdaptorRef.current = null;
+      if (mediaStreamRef.current) {
+        console.log(
+          'LIVE_CREATE cleanup(unmount): stopping local tracks',
+          mediaStreamRef.current.getTracks().map((track) => track.kind),
+        );
+      }
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
     };
-  }, [activePublishStreamId]);
+  }, []);
 
   const categoryOptions = useMemo(
     () =>
@@ -391,6 +385,12 @@ export default function LiveCreatePage() {
     setDeviceStatusMessage('Requesting camera and microphone access…');
 
     try {
+      if (mediaStreamRef.current) {
+        console.log(
+          'LIVE_CREATE prepareLocalPreview: stopping previous local tracks before re-init',
+          mediaStreamRef.current.getTracks().map((track) => track.kind),
+        );
+      }
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -545,7 +545,12 @@ export default function LiveCreatePage() {
         throw new Error('Unable to initialize the Ant Media WebRTC adaptor.');
       }
 
-      webRTCAdaptorRef.current?.closeWebSocket?.();
+      if (webRTCAdaptorRef.current?.closeWebSocket) {
+        console.log(
+          'LIVE_CREATE startPublishingWithCamera: closing existing adaptor websocket before creating a new adaptor',
+        );
+        webRTCAdaptorRef.current.closeWebSocket();
+      }
       console.log('Creating WebRTCAdaptor now', {
         websocketUrl,
         publishStreamId,
@@ -585,6 +590,10 @@ export default function LiveCreatePage() {
             console.log('START WITH CAMERA: publish called', publishStreamId);
             setActivePublishStreamId(publishStreamId);
             webRTCAdaptorRef.current?.publish(publishStreamId);
+            console.log('START WITH CAMERA: right after publish()', {
+              publishStreamId,
+              adaptorPresent: Boolean(webRTCAdaptorRef.current),
+            });
             return;
           }
 
@@ -643,6 +652,9 @@ export default function LiveCreatePage() {
       return;
     }
 
+    console.log('LIVE_CREATE handleStopPublishing: stopping active publish stream', {
+      activePublishStreamId,
+    });
     webRTCAdaptorRef.current.stop(activePublishStreamId);
     setActivePublishStreamId('');
     setPublishingStatus('idle');
