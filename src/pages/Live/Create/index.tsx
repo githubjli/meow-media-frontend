@@ -567,12 +567,10 @@ export default function LiveCreatePage() {
           username: 'ipb-meownews',
           credential: 'IPBMeow@2026#',
         },
-        { urls: 'stun:stun.l.google.com:19302' },
-      ].filter(
-        (server) => !String(server.urls || '').includes('transport=udp'),
-      );
+      ];
       const peerConnectionConfig = {
         iceServers: publishIceServers,
+        iceTransportPolicy: 'relay' as const,
       };
       const sdpConstraints = {
         OfferToReceiveAudio: false,
@@ -607,6 +605,7 @@ export default function LiveCreatePage() {
             server.credential ? { ...server, credential: '***' } : server,
         ),
       });
+      console.log('FINAL ICE CONFIG:', peerConnectionConfig);
       console.log('LIVE_CREATE: adaptor constructor config (expanded)', {
         websocket_url: websocketUrl,
         publishStreamId,
