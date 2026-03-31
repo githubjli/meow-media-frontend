@@ -60,6 +60,11 @@ type AntMediaWebRTCAdaptor = {
   publish: (streamId: string) => void;
   stop: (streamId: string) => void;
   closeWebSocket?: () => void;
+  websocketAdaptor?: {
+    wsConn?: WebSocket;
+  };
+  remotePeerConnection?: Record<string, RTCPeerConnection>;
+  peerconnection_config?: RTCConfiguration;
 };
 
 declare global {
@@ -174,6 +179,183 @@ const getPreflightTagColor = (status: PreflightStatus) => {
   return 'processing';
 };
 
+const maskIceServers = (config?: RTCConfiguration | null) => {
+  if (!config) return null;
+  return {
+    ...config,
+    iceServers: (config.iceServers || []).map((server) => ({
+      ...server,
+      credential: server.credential ? '***' : server.credential,
+    })),
+  };
+};
+
+const attachPublishRuntimeDebugHooks = (options: {
+  adaptor: AntMediaWebRTCAdaptor | null;
+  websocketUrl: string;
+  streamId: string;
+}) => {
+  const { adaptor, websocketUrl, streamId } = options;
+  if (!adaptor) return;
+  const adaptorAny = adaptor as any;
+  const wsDebugMarker = `__liveCreateWsDebugHooksAttached_${streamId}`;
+  const pcDebugMarker = `__liveCreatePcDebugHooksAttached_${streamId}`;
+
+  const wsConn = adaptor.websocketAdaptor?.wsConn;
+  if (wsConn && !adaptorAny[wsDebugMarker]) {
+    adaptorAny[wsDebugMarker] = true;
+    const originalSend = wsConn.send.bind(wsConn);
+    wsConn.send = (data: any) => {
+      try {
+        const parsed = JSON.parse(String(data));
+        if (
+          parsed?.command ||
+          parsed?.type ||
+          parsed?.streamId === streamId ||
+          parsed?.stream_id === streamId
+        ) {
+          console.log('LIVE_CREATE signaling[outbound]', {
+            websocketUrl,
+            streamId,
+            command: parsed?.command || parsed?.type || '',
+            payload: parsed,
+          });
+        }
+      } catch {
+        // no-op
+      }
+      originalSend(data);
+    };
+
+    wsConn.addEventListener('message', (event) => {
+      console.log('LIVE_CREATE signaling[inbound_raw_after_publish]', {
+        websocketUrl,
+        streamId,
+        raw: String(event.data || ''),
+      });
+      try {
+        const parsed = JSON.parse(String(event.data || ''));
+        const command = parsed?.command || parsed?.type || '';
+        console.log('LIVE_CREATE signaling[inbound]', {
+          websocketUrl,
+          streamId,
+          command,
+          payload: parsed,
+          messageStreamId: parsed?.streamId || parsed?.stream_id || '',
+          isCurrentPublishStream:
+            (parsed?.streamId || parsed?.stream_id || '') === streamId,
+          hasRemoteAnswer:
+            parsed?.command === 'takeConfiguration' &&
+            parsed?.type === 'answer',
+        });
+        if (parsed?.command === 'takeConfiguration' && parsed?.type === 'answer') {
+          console.log('LIVE_CREATE signaling[answer_received]', {
+            websocketUrl,
+            streamId,
+            messageStreamId: parsed?.streamId || parsed?.stream_id || '',
+            isCurrentPublishStream:
+              (parsed?.streamId || parsed?.stream_id || '') === streamId,
+          });
+        }
+        if (
+          parsed?.command === 'start' ||
+          parsed?.command === 'notification' ||
+          parsed?.command === 'error'
+        ) {
+          console.log('LIVE_CREATE signaling[important_command]', {
+            websocketUrl,
+            streamId,
+            command: parsed?.command,
+            payload: parsed,
+            messageStreamId: parsed?.streamId || parsed?.stream_id || '',
+            isCurrentPublishStream:
+              (parsed?.streamId || parsed?.stream_id || '') === streamId,
+          });
+        }
+      } catch {
+        // no-op
+      }
+    });
+  }
+
+  const peerConnection = adaptor.remotePeerConnection?.[streamId];
+  if (!peerConnection || adaptorAny[pcDebugMarker]) return;
+  adaptorAny[pcDebugMarker] = true;
+
+  console.log('LIVE_CREATE peerConnection[initial_config]', {
+    streamId,
+    config: maskIceServers(peerConnection.getConfiguration?.() || null),
+  });
+
+  peerConnection.addEventListener('signalingstatechange', () => {
+    console.log('LIVE_CREATE peerConnection[signalingstatechange]', {
+      streamId,
+      signalingState: peerConnection.signalingState,
+    });
+  });
+  peerConnection.addEventListener('iceconnectionstatechange', () => {
+    console.log('LIVE_CREATE peerConnection[iceconnectionstatechange]', {
+      streamId,
+      iceConnectionState: peerConnection.iceConnectionState,
+    });
+  });
+  peerConnection.addEventListener('connectionstatechange', () => {
+    console.log('LIVE_CREATE peerConnection[connectionstatechange]', {
+      streamId,
+      connectionState: peerConnection.connectionState,
+    });
+  });
+  peerConnection.addEventListener('icecandidate', (event) => {
+    if (!event.candidate) return;
+    console.log('LIVE_CREATE peerConnection[local_ice_candidate]', {
+      streamId,
+      candidate: event.candidate.candidate,
+      protocol: event.candidate.protocol,
+      type: event.candidate.type,
+      address: event.candidate.address,
+      port: event.candidate.port,
+    });
+  });
+
+  const originalClose = peerConnection.close.bind(peerConnection);
+  const originalSetRemoteDescription =
+    peerConnection.setRemoteDescription.bind(peerConnection);
+  peerConnection.setRemoteDescription = async (
+    description: RTCSessionDescriptionInit,
+  ) => {
+    console.log('LIVE_CREATE peerConnection[setRemoteDescription_called]', {
+      streamId,
+      type: description?.type,
+      sdpLength: String(description?.sdp || '').length,
+    });
+    try {
+      const result = await originalSetRemoteDescription(description);
+      console.log('LIVE_CREATE peerConnection[remote_description_applied]', {
+        streamId,
+        signalingState: peerConnection.signalingState,
+        remoteDescriptionType: peerConnection.remoteDescription?.type || '',
+      });
+      return result;
+    } catch (error: any) {
+      console.error('LIVE_CREATE peerConnection[remote_description_failed]', {
+        streamId,
+        message: error?.message || String(error),
+      });
+      throw error;
+    }
+  };
+
+  peerConnection.close = () => {
+    console.warn('LIVE_CREATE peerConnection[close_called]', {
+      streamId,
+      signalingState: peerConnection.signalingState,
+      iceConnectionState: peerConnection.iceConnectionState,
+      connectionState: peerConnection.connectionState,
+    });
+    originalClose();
+  };
+};
+
 export default function LiveCreatePage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
@@ -218,6 +400,8 @@ export default function LiveCreatePage() {
     publishStreamId: '',
   });
   const [debugLastError, setDebugLastError] = useState('');
+  const [prepareReturnedStreamId, setPrepareReturnedStreamId] = useState('');
+  const [finalPublishStreamId, setFinalPublishStreamId] = useState('');
   const [webRtcCallbackEvents, setWebRtcCallbackEvents] = useState<
     Array<{ event: string; at: string }>
   >([]);
@@ -337,6 +521,8 @@ export default function LiveCreatePage() {
         adaptorScriptUrl: '',
         publishStreamId: '',
       });
+      setPrepareReturnedStreamId('');
+      setFinalPublishStreamId('');
       setDebugLastError('');
       setWebRtcCallbackEvents([]);
       setLatestWebRtcCallbackInfo('');
@@ -480,12 +666,27 @@ export default function LiveCreatePage() {
     );
     const preparedAntMediaConfig =
       preparedLiveForPublish?.publish_session?.ant_media;
+    const prepareStreamId = String(preparedAntMediaConfig?.stream_id || '').trim();
+    const chosenPublishStreamId = String(
+      resolvedPublishConfig.publishStreamId || prepareStreamId,
+    ).trim();
+    setPrepareReturnedStreamId(prepareStreamId);
+    setFinalPublishStreamId(chosenPublishStreamId);
+    console.log('LIVE_CREATE streamId[prepare_api_returned]', {
+      streamId: prepareStreamId,
+      liveId: preparedLiveForPublish?.id,
+      appName: preparedAntMediaConfig?.app_name,
+    });
+    console.log('LIVE_CREATE streamId[final_chosen_for_publish]', {
+      streamId: chosenPublishStreamId,
+      source: 'prepare_response.ant_media.stream_id',
+    });
     setResolvedConfigInput({
       websocketUrl: String(preparedAntMediaConfig?.websocket_url || '').trim(),
       adaptorScriptUrl: String(
         preparedAntMediaConfig?.adaptor_script_url || '',
       ).trim(),
-      publishStreamId: String(preparedAntMediaConfig?.stream_id || '').trim(),
+      publishStreamId: prepareStreamId,
     });
     setResolvedPublishConfig(resolvedPublishConfig);
     console.log(
@@ -493,9 +694,9 @@ export default function LiveCreatePage() {
       preparedLiveForPublish?.publish_session,
     );
     console.log('START WITH CAMERA: resolved config', resolvedPublishConfig);
-    const { websocketUrl, adaptorScriptUrl, publishStreamId } =
+    const { websocketUrl, adaptorScriptUrl } =
       resolvedPublishConfig;
-    if (!websocketUrl && !adaptorScriptUrl && !publishStreamId) {
+    if (!websocketUrl && !adaptorScriptUrl && !chosenPublishStreamId) {
       setPublishingStatus('error');
       setPublishingMessage(
         'Browser publishing config is missing from prepare response.',
@@ -505,7 +706,7 @@ export default function LiveCreatePage() {
       );
       return;
     }
-    if (!websocketUrl || !adaptorScriptUrl || !publishStreamId) {
+    if (!websocketUrl || !adaptorScriptUrl || !chosenPublishStreamId) {
       setPublishingStatus('error');
       setPublishingMessage('Ant Media browser publish config is incomplete.');
       setDebugLastError('Ant Media browser publish config is incomplete.');
@@ -555,7 +756,7 @@ export default function LiveCreatePage() {
       }
       console.log('Creating WebRTCAdaptor now', {
         websocketUrl,
-        publishStreamId,
+        publishStreamId: chosenPublishStreamId,
       });
       const debugDisableReconnect = true;
       hasTriggeredPublishAttemptRef.current = false;
@@ -572,6 +773,11 @@ export default function LiveCreatePage() {
         iceServers: publishIceServers,
         iceTransportPolicy: 'relay' as const,
       };
+      console.log('LIVE_CREATE adaptor[final_ice_config_input]', {
+        streamId: chosenPublishStreamId,
+        websocketUrl,
+        peerConnectionConfig: maskIceServers(peerConnectionConfig),
+      });
       const sdpConstraints = {
         OfferToReceiveAudio: false,
         OfferToReceiveVideo: false,
@@ -589,7 +795,7 @@ export default function LiveCreatePage() {
       };
       console.log('LIVE_CREATE: peerconnection_config (publish)', {
         websocket_url: websocketUrl,
-        publishStreamId,
+        publishStreamId: chosenPublishStreamId,
         peerconnection_config: {
           ...peerConnectionConfig,
           iceServers: peerConnectionConfig.iceServers.map((server) =>
@@ -608,7 +814,7 @@ export default function LiveCreatePage() {
       console.log('FINAL ICE CONFIG:', peerConnectionConfig);
       console.log('LIVE_CREATE: adaptor constructor config (expanded)', {
         websocket_url: websocketUrl,
-        publishStreamId,
+        publishStreamId: chosenPublishStreamId,
         peerconnection_config: peerConnectionConfig,
         'peerconnection_config.iceServers': peerConnectionConfig.iceServers.map(
           (server) => ({
@@ -622,9 +828,27 @@ export default function LiveCreatePage() {
       });
       webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
         ...adaptorConfig,
-        callback: (info: string) => {
+        callback: (info: string, obj?: any) => {
           console.log('WebRTC callback wired', info);
-          console.log('WEBRTC_CALLBACK_INFO:', info);
+          console.log('WEBRTC_CALLBACK_INFO:', info, obj);
+          if (
+            info === 'takeConfiguration' ||
+            info === 'takeCandidate' ||
+            info === 'publish_started' ||
+            info === 'publish_finished' ||
+            info === 'closed' ||
+            info === 'data_channel_closed'
+          ) {
+            console.log('LIVE_CREATE signaling[callback]', {
+              streamId: chosenPublishStreamId,
+              info,
+              payload: obj,
+              hasRemoteAnswer:
+                info === 'takeConfiguration' &&
+                (obj?.type === 'answer' ||
+                  String(obj?.sdp || '').toLowerCase().includes('a=setup:active')),
+            });
+          }
           setLatestWebRtcCallbackInfo(info);
           setWebRtcCallbackEvents((current) => [
             ...current.slice(-49),
@@ -635,7 +859,7 @@ export default function LiveCreatePage() {
             if (debugDisableReconnect && hasTriggeredPublishAttemptRef.current) {
               console.warn(
                 'LIVE_CREATE: reconnect publish suppressed (debugDisableReconnect=true)',
-                { publishStreamId, info },
+                { publishStreamId: chosenPublishStreamId, info },
               );
               return;
             }
@@ -645,14 +869,35 @@ export default function LiveCreatePage() {
               'WebRTC adaptor initialized. Starting browser publish…',
             );
             console.log('START WITH CAMERA: right before publish()', {
-              publishStreamId,
+              publishStreamId: chosenPublishStreamId,
             });
-            console.log('START WITH CAMERA: publish called', publishStreamId);
+            console.log('LIVE_CREATE streamId[publish_call_argument]', {
+              streamId: chosenPublishStreamId,
+            });
+            console.log('LIVE_CREATE correlation[publish_stream_vs_server_logs]', {
+              publishStreamId: chosenPublishStreamId,
+              liveId: preparedLiveForPublish?.id,
+              note: 'Use this publishStreamId to match Ant Media server log streamId.',
+            });
             hasTriggeredPublishAttemptRef.current = true;
-            setActivePublishStreamId(publishStreamId);
-            webRTCAdaptorRef.current?.publish(publishStreamId);
+            setActivePublishStreamId(chosenPublishStreamId);
+            webRTCAdaptorRef.current?.publish(chosenPublishStreamId);
+            window.setTimeout(() => {
+              attachPublishRuntimeDebugHooks({
+                adaptor: webRTCAdaptorRef.current,
+                websocketUrl,
+                streamId: chosenPublishStreamId,
+              });
+            }, 0);
+            window.setTimeout(() => {
+              attachPublishRuntimeDebugHooks({
+                adaptor: webRTCAdaptorRef.current,
+                websocketUrl,
+                streamId: chosenPublishStreamId,
+              });
+            }, 1000);
             console.log('START WITH CAMERA: right after publish()', {
-              publishStreamId,
+              publishStreamId: chosenPublishStreamId,
               adaptorPresent: Boolean(webRTCAdaptorRef.current),
             });
             return;
@@ -665,7 +910,11 @@ export default function LiveCreatePage() {
           ) {
             console.warn(
               'LIVE_CREATE: publish retry-related callback observed (no frontend auto-retry path)',
-              { publishStreamId, info, debugDisableReconnect },
+              {
+                publishStreamId: chosenPublishStreamId,
+                info,
+                debugDisableReconnect,
+              },
             );
           }
 
@@ -693,7 +942,7 @@ export default function LiveCreatePage() {
         },
         callbackError: (error: any, messageText: any) => {
           const structuredError = {
-            publishStreamId,
+            publishStreamId: chosenPublishStreamId,
             error,
             messageText,
             errorName: error?.name || '',
@@ -735,7 +984,7 @@ export default function LiveCreatePage() {
         },
       });
       console.log('WebRTCAdaptor constructor called', {
-        publishStreamId,
+        publishStreamId: chosenPublishStreamId,
         reconnectIfRequiredFlag: !debugDisableReconnect,
         usedSamePeerConnectionConfigObject:
           adaptorConfig.peerconnection_config === peerConnectionConfig,
@@ -1674,6 +1923,9 @@ export default function LiveCreatePage() {
                                   preparePhase,
                                   publishingStatus,
                                   devicePermissionStatus,
+                                  prepareReturnedStreamId,
+                                  finalPublishStreamId,
+                                  activePublishStreamId,
                                   backendStatus,
                                 },
                                 null,
