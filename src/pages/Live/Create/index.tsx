@@ -558,33 +558,17 @@ export default function LiveCreatePage() {
         publishStreamId,
       });
       const debugDisableReconnect = true;
-      const DEBUG_TCP_ONLY_TURN = false;
       hasTriggeredPublishAttemptRef.current = false;
       hasLoggedFirstPublishFailureRef.current = false;
       const mediaConstraints = { video: true, audio: true };
-      const normalIceServers = [
+      const publishIceServers = [
+        {
+          urls: 'turn:media.meownews.online:3478?transport=tcp',
+          username: 'ipb-meownews',
+          credential: 'IPBMeow@2026#',
+        },
         { urls: 'stun:stun.l.google.com:19302' },
-        {
-          urls: 'turn:media.meownews.online:3478?transport=udp',
-          username: 'ipb-meownews',
-          credential: 'IPBMeow@2026#',
-        },
-        {
-          urls: 'turn:media.meownews.online:3478?transport=tcp',
-          username: 'ipb-meownews',
-          credential: 'IPBMeow@2026#',
-        },
       ];
-      const tcpOnlyIceServers = [
-        {
-          urls: 'turn:media.meownews.online:3478?transport=tcp',
-          username: 'ipb-meownews',
-          credential: 'IPBMeow@2026#',
-        },
-      ];
-      const publishIceServers = DEBUG_TCP_ONLY_TURN
-        ? tcpOnlyIceServers
-        : normalIceServers;
       const peerConnectionConfig = {
         iceServers: publishIceServers,
       };
@@ -604,21 +588,19 @@ export default function LiveCreatePage() {
         reconnectIfRequiredFlag: !debugDisableReconnect,
       };
       console.log('LIVE_CREATE: peerconnection_config (publish)', {
-        debugMode: {
-          debugDisableReconnect,
-          DEBUG_TCP_ONLY_TURN,
+        websocket_url: websocketUrl,
+        publishStreamId,
+        peerconnection_config: {
+          ...peerConnectionConfig,
+          iceServers: peerConnectionConfig.iceServers.map((server) =>
+            server.credential ? { ...server, credential: '***' } : server,
+          ),
         },
         iceServerCount: publishIceServers.length,
-        iceServersFromSource: publishIceServers.map((server) => ({
-          urls: server.urls,
-          username: server.username || '',
-          credential: server.credential ? '***' : '',
-        })),
-        iceServers: peerConnectionConfig.iceServers.map((server) => ({
-          urls: server.urls,
-          username: server.username || '',
-          credential: server.credential ? '***' : '',
-        })),
+        'peerconnection_config.iceServers': peerConnectionConfig.iceServers.map(
+          (server) =>
+            server.credential ? { ...server, credential: '***' } : server,
+        ),
       });
       console.log('LIVE_CREATE: adaptor constructor config (expanded)', {
         websocket_url: websocketUrl,
