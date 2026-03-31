@@ -226,6 +226,8 @@ export default function LiveCreatePage() {
     error?: any;
     messageText?: any;
   } | null>(null);
+  const hasTriggeredPublishAttemptRef = useRef(false);
+  const hasLoggedFirstPublishFailureRef = useRef(false);
   const [activePublishStreamId, setActivePublishStreamId] = useState('');
   const activePublishStreamIdRef = useRef('');
   const [backendStatus, setBackendStatus] =
@@ -555,7 +557,9 @@ export default function LiveCreatePage() {
         websocketUrl,
         publishStreamId,
       });
-      const disablePublisherAutoReconnect = true;
+      const debugDisableReconnect = true;
+      hasTriggeredPublishAttemptRef.current = false;
+      hasLoggedFirstPublishFailureRef.current = false;
       const mediaConstraints = { video: true, audio: true };
       const publishIceServers = [
         { urls: 'stun:stun1.l.google.com:19302' },
@@ -586,7 +590,7 @@ export default function LiveCreatePage() {
         localStream: stream,
         isPlayMode: false,
         debug: false,
-        reconnectIfRequiredFlag: !disablePublisherAutoReconnect,
+        reconnectIfRequiredFlag: !debugDisableReconnect,
       };
       console.log('LIVE_CREATE: peerconnection_config (publish)', {
         iceServerCount: publishIceServers.length,
@@ -627,6 +631,13 @@ export default function LiveCreatePage() {
           ]);
 
           if (info === 'initialized') {
+            if (debugDisableReconnect && hasTriggeredPublishAttemptRef.current) {
+              console.warn(
+                'LIVE_CREATE: reconnect publish suppressed (debugDisableReconnect=true)',
+                { publishStreamId, info },
+              );
+              return;
+            }
             console.log('START WITH CAMERA: adaptor initialized');
             setPublishingStatus('connecting');
             setPublishingMessage(
@@ -636,6 +647,7 @@ export default function LiveCreatePage() {
               publishStreamId,
             });
             console.log('START WITH CAMERA: publish called', publishStreamId);
+            hasTriggeredPublishAttemptRef.current = true;
             setActivePublishStreamId(publishStreamId);
             webRTCAdaptorRef.current?.publish(publishStreamId);
             console.log('START WITH CAMERA: right after publish()', {
@@ -643,6 +655,17 @@ export default function LiveCreatePage() {
               adaptorPresent: Boolean(webRTCAdaptorRef.current),
             });
             return;
+          }
+
+          if (
+            info === 'reconnection_attempt_for_publisher' ||
+            info === 'data_channel_closed' ||
+            info === 'publish_finished'
+          ) {
+            console.warn(
+              'LIVE_CREATE: publish retry-related callback observed (no frontend auto-retry path)',
+              { publishStreamId, info, debugDisableReconnect },
+            );
           }
 
           if (info === 'publish_started') {
@@ -668,7 +691,7 @@ export default function LiveCreatePage() {
           }
         },
         callbackError: (error: any, messageText: any) => {
-          console.log('WebRTC callbackError wired', {
+          const structuredError = {
             publishStreamId,
             error,
             messageText,
@@ -684,15 +707,21 @@ export default function LiveCreatePage() {
                     ),
                   )
                 : error,
+          };
+          if (!hasLoggedFirstPublishFailureRef.current) {
+            hasLoggedFirstPublishFailureRef.current = true;
+            console.error(
+              'PUBLISH ERROR (first failure, retry disabled):',
+              structuredError,
+            );
+          }
+          console.log('WebRTC callbackError wired', {
+            ...structuredError,
+            debugDisableReconnect,
           });
           console.log('WEBRTC_CALLBACK_ERROR:', {
-            publishStreamId,
-            errorName: error?.name || '',
-            errorCode: error?.code || error?.errorCode || '',
-            errorMessage:
-              messageText || error?.message || error?.toString?.() || '',
-            rawError: error,
-            rawMessageText: messageText,
+            ...structuredError,
+            debugDisableReconnect,
           });
           setWebRtcCallbackError({ error, messageText });
           setPublishingStatus('error');
@@ -706,7 +735,7 @@ export default function LiveCreatePage() {
       });
       console.log('WebRTCAdaptor constructor called', {
         publishStreamId,
-        reconnectIfRequiredFlag: !disablePublisherAutoReconnect,
+        reconnectIfRequiredFlag: !debugDisableReconnect,
         usedSamePeerConnectionConfigObject:
           adaptorConfig.peerconnection_config === peerConnectionConfig,
         adaptorHasPeerConnectionConfig: Boolean(
