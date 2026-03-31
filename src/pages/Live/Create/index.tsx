@@ -555,15 +555,28 @@ export default function LiveCreatePage() {
         websocketUrl,
         publishStreamId,
       });
+      const disablePublisherAutoReconnect = true;
+      const mediaConstraints = { video: true, audio: true };
       const peerConnectionConfig = {
         iceServers: [
           { urls: 'stun:stun1.l.google.com:19302' },
           {
-            urls: liveConfig.antMediaTurnUrl,
+            urls:
+              liveConfig.antMediaTurnUrl ||
+              'turn:media.meownews.online:3478?transport=udp',
+            username: liveConfig.antMediaTurnUsername,
+            credential: liveConfig.antMediaTurnCredential,
+          },
+          {
+            urls: 'turn:media.meownews.online:3478?transport=tcp',
             username: liveConfig.antMediaTurnUsername,
             credential: liveConfig.antMediaTurnCredential,
           },
         ],
+      };
+      const sdpConstraints = {
+        OfferToReceiveAudio: false,
+        OfferToReceiveVideo: false,
       };
       console.log('LIVE_CREATE: peerconnection_config (publish)', {
         iceServers: peerConnectionConfig.iceServers.map((server) => ({
@@ -572,18 +585,30 @@ export default function LiveCreatePage() {
           credential: server.credential ? '***' : '',
         })),
       });
+      console.log('LIVE_CREATE: adaptor constructor config (expanded)', {
+        websocket_url: websocketUrl,
+        publishStreamId,
+        peerconnection_config: peerConnectionConfig,
+        'peerconnection_config.iceServers': peerConnectionConfig.iceServers.map(
+          (server) => ({
+            urls: server.urls,
+            username: server.username || '',
+            credential: server.credential ? '***' : '',
+          }),
+        ),
+        mediaConstraints,
+        sdp_constraints: sdpConstraints,
+      });
       webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
         websocket_url: websocketUrl,
-        mediaConstraints: { video: true, audio: true },
+        mediaConstraints,
         peerconnection_config: peerConnectionConfig,
-        sdp_constraints: {
-          OfferToReceiveAudio: false,
-          OfferToReceiveVideo: false,
-        },
+        sdp_constraints: sdpConstraints,
         localVideoId: 'live-create-preview-video',
         localStream: stream,
         isPlayMode: false,
         debug: false,
+        reconnectIfRequiredFlag: !disablePublisherAutoReconnect,
         callback: (info: string) => {
           console.log('WebRTC callback wired', info);
           console.log('WEBRTC_CALLBACK_INFO:', info);
@@ -635,8 +660,32 @@ export default function LiveCreatePage() {
           }
         },
         callbackError: (error: any, messageText: any) => {
-          console.log('WebRTC callbackError wired', { error, messageText });
-          console.log('WEBRTC_CALLBACK_ERROR:', { error, messageText });
+          console.log('WebRTC callbackError wired', {
+            publishStreamId,
+            error,
+            messageText,
+            errorName: error?.name || '',
+            errorCode: error?.code || error?.errorCode || '',
+            errorMessage:
+              messageText || error?.message || error?.toString?.() || '',
+            errorDetails:
+              error && typeof error === 'object'
+                ? JSON.parse(
+                    JSON.stringify(error, (_key, value) =>
+                      typeof value === 'undefined' ? null : value,
+                    ),
+                  )
+                : error,
+          });
+          console.log('WEBRTC_CALLBACK_ERROR:', {
+            publishStreamId,
+            errorName: error?.name || '',
+            errorCode: error?.code || error?.errorCode || '',
+            errorMessage:
+              messageText || error?.message || error?.toString?.() || '',
+            rawError: error,
+            rawMessageText: messageText,
+          });
           setWebRtcCallbackError({ error, messageText });
           setPublishingStatus('error');
           setPublishingMessage(
@@ -647,7 +696,35 @@ export default function LiveCreatePage() {
           );
         },
       });
-      console.log('WebRTCAdaptor constructor called');
+      console.log('WebRTCAdaptor constructor called', {
+        publishStreamId,
+        reconnectIfRequiredFlag: !disablePublisherAutoReconnect,
+        adaptorHasPeerConnectionConfig: Boolean(
+          (webRTCAdaptorRef.current as any)?.peerconnection_config,
+        ),
+        adaptorPeerConnectionConfig: (webRTCAdaptorRef.current as any)
+          ?.peerconnection_config
+          ? {
+              ...((webRTCAdaptorRef.current as any).peerconnection_config || {}),
+              iceServers: (
+                (webRTCAdaptorRef.current as any).peerconnection_config
+                  ?.iceServers || []
+              ).map((server: any) => ({
+                urls: server?.urls,
+                username: server?.username || '',
+                credential: server?.credential ? '***' : '',
+              })),
+            }
+          : null,
+        localPeerConnectionConfig: {
+          ...peerConnectionConfig,
+          iceServers: peerConnectionConfig.iceServers.map((server) => ({
+            urls: server.urls,
+            username: server.username || '',
+            credential: server.credential ? '***' : '',
+          })),
+        },
+      });
     } catch (error: any) {
       console.error('START WITH CAMERA: adaptor creation failed', error);
       setPublishingStatus('error');
