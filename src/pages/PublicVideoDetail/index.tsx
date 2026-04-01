@@ -100,23 +100,27 @@ const RecommendationItem = ({
       onClick={() => history.push(`/browse/${video.id}`)}
       style={{
         display: 'flex',
-        gap: 12,
+        gap: 10,
         cursor: 'pointer',
         borderRadius: 16,
-        padding: 10,
+        padding: 8,
+        border: '1px solid rgba(184, 135, 46, 0.04)',
+        backgroundColor: '#fffaf2',
         transition:
-          'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+          'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease',
       }}
       onMouseEnter={(event) => {
         event.currentTarget.style.transform = 'translateY(-1px)';
         event.currentTarget.style.boxShadow =
-          '0 10px 24px rgba(15, 23, 42, 0.08)';
-        event.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.92)';
+          '0 6px 14px rgba(116, 95, 64, 0.08)';
+        event.currentTarget.style.backgroundColor = '#fff9ef';
+        event.currentTarget.style.borderColor = 'rgba(184, 135, 46, 0.12)';
       }}
       onMouseLeave={(event) => {
         event.currentTarget.style.transform = 'translateY(0)';
         event.currentTarget.style.boxShadow = 'none';
-        event.currentTarget.style.backgroundColor = 'transparent';
+        event.currentTarget.style.backgroundColor = '#fffaf2';
+        event.currentTarget.style.borderColor = 'rgba(184, 135, 46, 0.04)';
       }}
     >
       <div
@@ -1191,7 +1195,7 @@ export default function PublicVideoDetailPage() {
                 ) : (
                   <Space
                     direction="vertical"
-                    size={8}
+                    size={6}
                     style={{ width: '100%' }}
                   >
                     {recommendations.map((item) => (
