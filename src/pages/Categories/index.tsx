@@ -1,21 +1,14 @@
+import PageIntroCard from '@/components/PageIntroCard';
 import VideoCard from '@/components/VideoCard';
 import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
+import {
+  getCanonicalCategorySlug,
+  getLocalizedCategoryLabel,
+} from '@/utils/categoryI18n';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel, useParams } from '@umijs/max';
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Empty,
-  Row,
-  Space,
-  Spin,
-  Typography,
-} from 'antd';
+import { Alert, Button, Col, Empty, Row, Spin } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-
-const { Title, Text } = Typography;
 
 const toCardData = (video: PublicVideo) => ({
   ...video,
@@ -64,22 +57,20 @@ export default function CategoryBrowsePage() {
     () => categories.find((item) => item.slug === category),
     [categories, category],
   );
-  const pageTitle =
-    currentCategory?.name ||
-    category ||
-    intl.formatMessage({ id: 'categories.fallbackTitle' });
+  const pageTitle = category
+    ? getLocalizedCategoryLabel(intl, {
+        slug: getCanonicalCategorySlug(category),
+        name: currentCategory?.name || category,
+      })
+    : intl.formatMessage({ id: 'categories.fallbackTitle' });
 
   return (
     <PageContainer title={false}>
       <div style={{ padding: '8px 8px 20px' }}>
-        <Card variant="borderless" style={{ borderRadius: 16, marginBottom: 20 }}>
-          <Space direction="vertical" size={8}>
-            <Title level={2} style={{ margin: 0 }}>
-              {pageTitle}
-            </Title>
-            <Text type="secondary">
-              {intl.formatMessage({ id: 'categories.subtitle' })}
-            </Text>
+        <PageIntroCard
+          title={pageTitle}
+          description={intl.formatMessage({ id: 'categories.subtitle' })}
+          actions={
             <Button
               type="link"
               style={{ paddingInline: 0 }}
@@ -87,8 +78,8 @@ export default function CategoryBrowsePage() {
             >
               {intl.formatMessage({ id: 'categories.backToAll' })}
             </Button>
-          </Space>
-        </Card>
+          }
+        />
 
         {errorMessage ? (
           <Alert
@@ -111,7 +102,7 @@ export default function CategoryBrowsePage() {
             )}
           />
         ) : (
-          <Row gutter={[14, 18]}>
+          <Row gutter={[9, 11]}>
             {videos.map((video) => (
               <Col xs={24} sm={12} md={8} lg={6} key={video.id}>
                 <VideoCard data={toCardData(video)} />
