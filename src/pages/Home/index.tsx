@@ -1,6 +1,10 @@
 import VideoCard from '@/components/VideoCard';
 import { type PublicCategory } from '@/services/publicCategories';
 import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
+import {
+  getCanonicalCategorySlug,
+  getLocalizedCategoryLabel,
+} from '@/utils/categoryI18n';
 import { AppstoreOutlined, RightOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel } from '@umijs/max';
@@ -12,25 +16,11 @@ const { Title, Text } = Typography;
 const SECTION_SIZE = 4;
 const PRIMARY_CATEGORY_ORDER = ['technology', 'gaming', 'news', 'education'];
 
-const CATEGORY_ALIASES: Record<string, string> = {
-  tech: 'technology',
-  technology: 'technology',
-  game: 'gaming',
-  gaming: 'gaming',
-  edu: 'education',
-  education: 'education',
-  news: 'news',
-};
-
-const getCanonicalSlug = (slug?: string) =>
-  CATEGORY_ALIASES[String(slug || '').toLowerCase()] ||
-  String(slug || '').toLowerCase();
-
 const dedupeCategories = (items: PublicCategory[]) => {
   const categoryMap = new Map<string, PublicCategory>();
 
   items.forEach((category) => {
-    const canonicalSlug = getCanonicalSlug(category.slug);
+    const canonicalSlug = getCanonicalCategorySlug(category.slug);
     const existing = categoryMap.get(canonicalSlug);
 
     if (!existing || category.slug === canonicalSlug) {
@@ -60,13 +50,7 @@ const toCardData = (video: PublicVideo) => ({
   category_name: video.category_name || video.category_display,
 });
 
-const TagsBar = ({
-  tags,
-  intl,
-}: {
-  tags: PublicCategory[];
-  intl: any;
-}) => (
+const TagsBar = ({ tags, intl }: { tags: PublicCategory[]; intl: any }) => (
   <div className={styles.tagsWrap}>
     <div className={styles.tagsBar}>
       <button
@@ -83,7 +67,7 @@ const TagsBar = ({
           onClick={() => history.push(`/categories/${tag.slug}`)}
           className={styles.tagChip}
         >
-          {tag.name}
+          {getLocalizedCategoryLabel(intl, tag)}
         </button>
       ))}
     </div>
@@ -251,23 +235,31 @@ export default function HomePage() {
             <ChannelRow
               title={intl.formatMessage({ id: 'common.latest' })}
               path="/browse"
-              description={intl.formatMessage({ id: 'home.latest.description' })}
+              description={intl.formatMessage({
+                id: 'home.latest.description',
+              })}
               items={latestVideos}
               intl={intl}
             />
-            {homepageCategories.map((section) => (
-              <ChannelRow
-                key={section.slug}
-                title={section.name}
-                path={`/categories/${section.slug}`}
-                description={intl.formatMessage(
-                  { id: 'home.category.description' },
-                  { category: section.name },
-                )}
-                items={sectionVideos[section.slug] || []}
-                intl={intl}
-              />
-            ))}
+            {homepageCategories.map((section) => {
+              const localizedCategoryLabel = getLocalizedCategoryLabel(
+                intl,
+                section,
+              );
+              return (
+                <ChannelRow
+                  key={section.slug}
+                  title={localizedCategoryLabel}
+                  path={`/categories/${section.slug}`}
+                  description={intl.formatMessage(
+                    { id: 'home.category.description' },
+                    { category: localizedCategoryLabel },
+                  )}
+                  items={sectionVideos[section.slug] || []}
+                  intl={intl}
+                />
+              );
+            })}
           </>
         )}
       </div>
