@@ -394,5 +394,14 @@ export default {
   'live.room.chatInputPlaceholder': '输入消息（即将上线）',
   'live.room.chatSend': '发送',
   'live.room.unavailable': '直播间不可用。',
+  'live.room.sidebar.liveChat': '直播聊天',
+  'live.room.sidebar.liveChatPlaceholder': '直播聊天即将上线，当前不可用。',
+  'live.room.sidebar.productListings': '商品列表',
+  'live.room.sidebar.productListingsPlaceholder': '商品列表模块即将上线。',
+  'live.room.sidebar.sellerStore': '商家店铺',
+  'live.room.sidebar.sellerStorePlaceholder': '商家店铺模块即将上线。',
+  'live.room.sidebar.paidProgrammingQr': '付费节目二维码',
+  'live.room.sidebar.paidProgrammingQrPlaceholder':
+    '付费节目二维码模块即将上线。',
   'videoCard.live': '直播中',
 };

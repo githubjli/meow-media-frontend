@@ -415,5 +415,17 @@ export default {
   'live.room.chatInputPlaceholder': 'Type a message (coming soon)',
   'live.room.chatSend': 'Send',
   'live.room.unavailable': 'Live room unavailable.',
+  'live.room.sidebar.liveChat': 'Live Chat',
+  'live.room.sidebar.liveChatPlaceholder':
+    'Live chat is coming soon. Messaging is not available yet.',
+  'live.room.sidebar.productListings': 'Product Listings',
+  'live.room.sidebar.productListingsPlaceholder':
+    'Product listings will appear here soon.',
+  'live.room.sidebar.sellerStore': 'Seller Store',
+  'live.room.sidebar.sellerStorePlaceholder':
+    'Seller store module is coming soon.',
+  'live.room.sidebar.paidProgrammingQr': 'Paid Programming QR',
+  'live.room.sidebar.paidProgrammingQrPlaceholder':
+    'Paid programming QR module is coming soon.',
   'videoCard.live': 'LIVE',
 };

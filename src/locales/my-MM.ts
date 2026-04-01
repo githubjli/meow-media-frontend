@@ -419,5 +419,17 @@ export default {
   'live.room.chatInputPlaceholder': 'Message ရိုက်ထည့်ပါ (မကြာမီ)',
   'live.room.chatSend': 'ပို့မည်',
   'live.room.unavailable': 'Live room မရရှိနိုင်ပါ။',
+  'live.room.sidebar.liveChat': 'Live Chat',
+  'live.room.sidebar.liveChatPlaceholder':
+    'Live chat feature ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
+  'live.room.sidebar.productListings': 'Product Listings',
+  'live.room.sidebar.productListingsPlaceholder':
+    'Product listings module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
+  'live.room.sidebar.sellerStore': 'Seller Store',
+  'live.room.sidebar.sellerStorePlaceholder':
+    'Seller store module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
+  'live.room.sidebar.paidProgrammingQr': 'Paid Programming QR',
+  'live.room.sidebar.paidProgrammingQrPlaceholder':
+    'Paid programming QR module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
   'videoCard.live': 'တိုက်ရိုက်',
 };

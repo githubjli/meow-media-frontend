@@ -401,5 +401,16 @@ export default {
   'live.room.chatInputPlaceholder': 'พิมพ์ข้อความ (เร็ว ๆ นี้)',
   'live.room.chatSend': 'ส่ง',
   'live.room.unavailable': 'ห้องไลฟ์ไม่พร้อมใช้งาน',
+  'live.room.sidebar.liveChat': 'แชตสด',
+  'live.room.sidebar.liveChatPlaceholder': 'แชตสดจะเปิดให้ใช้เร็ว ๆ นี้',
+  'live.room.sidebar.productListings': 'รายการสินค้า',
+  'live.room.sidebar.productListingsPlaceholder':
+    'โมดูลรายการสินค้าจะพร้อมใช้งานเร็ว ๆ นี้',
+  'live.room.sidebar.sellerStore': 'ร้านผู้ขาย',
+  'live.room.sidebar.sellerStorePlaceholder':
+    'โมดูลร้านผู้ขายจะพร้อมใช้งานเร็ว ๆ นี้',
+  'live.room.sidebar.paidProgrammingQr': 'คิวอาร์รายการแบบชำระเงิน',
+  'live.room.sidebar.paidProgrammingQrPlaceholder':
+    'โมดูลคิวอาร์รายการแบบชำระเงินจะพร้อมใช้งานเร็ว ๆ นี้',
   'videoCard.live': 'สด',
 };
