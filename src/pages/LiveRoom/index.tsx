@@ -230,19 +230,6 @@ export default function LiveRoomPage() {
     process.env.NODE_ENV === 'development' &&
     new URLSearchParams(location.search).get('liveDebug') === '1';
 
-  const detailItems = useMemo(
-    () => [
-      {
-        label: intl.formatMessage({ id: 'live.room.streamDetails.rtmpServer' }),
-        value: broadcast?.rtmp_url || '',
-      },
-      {
-        label: intl.formatMessage({ id: 'live.room.streamDetails.streamKey' }),
-        value: streamKey,
-      },
-    ],
-    [broadcast?.rtmp_url, intl, streamKey],
-  );
   const canShowChatInput =
     isLoggedIn && statusPresentation.uiStatus !== 'ended';
 
@@ -674,48 +661,152 @@ export default function LiveRoomPage() {
                   <Card
                     variant="borderless"
                     style={{ borderRadius: 20 }}
-                    title={intl.formatMessage({
-                      id: 'live.room.streamDetails.title',
-                    })}
+                    title={intl.formatMessage({ id: 'live.room.viewerChat' })}
                   >
                     <Space
                       direction="vertical"
-                      size={16}
+                      size={12}
                       style={{ width: '100%' }}
                     >
-                      {detailItems.map((item) => (
-                        <div key={item.label}>
-                          <Text
-                            strong
-                            style={{ display: 'block', marginBottom: 6 }}
+                      <Row gutter={[12, 12]}>
+                        <Col xs={24} sm={12}>
+                          <Card
+                            size="small"
+                            style={{ borderRadius: 12 }}
+                            bodyStyle={{ padding: 12 }}
                           >
-                            {item.label}
-                          </Text>
-                          <Space
-                            align="start"
-                            style={{
-                              width: '100%',
-                              justifyContent: 'space-between',
-                            }}
+                            <Statistic
+                              title={intl.formatMessage({
+                                id: 'live.room.currentViewers',
+                              })}
+                              value={viewerCount}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Card
+                            size="small"
+                            style={{ borderRadius: 12 }}
+                            bodyStyle={{ padding: 12 }}
                           >
-                            <Text code style={{ wordBreak: 'break-all' }}>
-                              {item.value ||
-                                intl.formatMessage({
-                                  id: 'live.room.notAvailable',
-                                })}
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.room.chatMessages',
+                              })}
                             </Text>
-                            <Button
-                              size="small"
-                              icon={<CopyOutlined />}
-                              onClick={() => copyValue(item.value, item.label)}
+                            <Text
+                              type="secondary"
+                              style={{ display: 'block', marginTop: 4 }}
                             >
                               {intl.formatMessage({
-                                id: 'live.room.copy',
+                                id: 'live.room.chatStatusPlaceholder',
                               })}
-                            </Button>
-                          </Space>
-                        </div>
-                      ))}
+                            </Text>
+                          </Card>
+                        </Col>
+                      </Row>
+                      <Text type="secondary">
+                        {intl.formatMessage({ id: 'live.room.viewerChatHint' })}
+                      </Text>
+                      <Card
+                        size="small"
+                        style={{ borderRadius: 12 }}
+                        bodyStyle={{ padding: 12 }}
+                      >
+                        <Text
+                          strong
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {intl.formatMessage({
+                            id: 'live.room.streamDetails.streamKey',
+                          })}
+                        </Text>
+                        <Space
+                          align="start"
+                          style={{
+                            width: '100%',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <Text code style={{ wordBreak: 'break-all' }}>
+                            {streamKey ||
+                              intl.formatMessage({
+                                id: 'live.room.notAvailable',
+                              })}
+                          </Text>
+                          <Button
+                            size="small"
+                            icon={<CopyOutlined />}
+                            onClick={() =>
+                              copyValue(
+                                streamKey,
+                                intl.formatMessage({
+                                  id: 'live.room.streamDetails.streamKey',
+                                }),
+                              )
+                            }
+                          >
+                            {intl.formatMessage({
+                              id: 'live.room.copy',
+                            })}
+                          </Button>
+                        </Space>
+                      </Card>
+                      <Card
+                        size="small"
+                        style={{ borderRadius: 12, minHeight: 180 }}
+                        bodyStyle={{ padding: 16 }}
+                      >
+                        <Space
+                          direction="vertical"
+                          size={10}
+                          style={{ width: '100%' }}
+                        >
+                          {!isLoggedIn ? (
+                            <Alert
+                              type="info"
+                              showIcon
+                              message={intl.formatMessage({
+                                id: 'live.room.chatSignedOut',
+                              })}
+                            />
+                          ) : statusPresentation.uiStatus === 'ended' ? (
+                            <Alert
+                              type="warning"
+                              showIcon
+                              message={intl.formatMessage({
+                                id: 'live.room.chatUnavailableEnded',
+                              })}
+                            />
+                          ) : (
+                            <Empty
+                              image={Empty.PRESENTED_IMAGE_SIMPLE}
+                              description={intl.formatMessage({
+                                id: 'live.room.chatEmpty',
+                              })}
+                            />
+                          )}
+                        </Space>
+                      </Card>
+                      <Divider style={{ margin: '4px 0' }} />
+                      <Space
+                        direction="vertical"
+                        size={8}
+                        style={{ width: '100%' }}
+                      >
+                        <Input.TextArea
+                          rows={3}
+                          disabled={!canShowChatInput}
+                          placeholder={intl.formatMessage({
+                            id: 'live.room.chatInputPlaceholder',
+                          })}
+                        />
+                        <Space style={{ width: '100%', justifyContent: 'end' }}>
+                          <Button type="primary" disabled={!canShowChatInput}>
+                            {intl.formatMessage({ id: 'live.room.chatSend' })}
+                          </Button>
+                        </Space>
+                      </Space>
                     </Space>
                   </Card>
                   <Card
