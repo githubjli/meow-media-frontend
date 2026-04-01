@@ -1,13 +1,14 @@
 import { getCurrentUser, loginWithEmail } from '@/services/auth';
 import { setStoredTokens } from '@/utils/auth';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { history, useLocation, useModel } from '@umijs/max';
+import { history, useIntl, useLocation, useModel } from '@umijs/max';
 import { Alert, Button, Card, Form, Input, Space, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 
 const { Title, Text } = Typography;
 
 export default function LoginPage() {
+  const intl = useIntl();
   const location = useLocation();
   const [form] = Form.useForm();
   const { initialState, setInitialState } = useModel('@@initialState');
@@ -18,6 +19,9 @@ export default function LoginPage() {
   const isCheckingAuth = Boolean(initialState?.authLoading);
   const redirectTarget =
     new URLSearchParams(location.search).get('redirect') || '/home';
+  const showAuthDebugNote =
+    process.env.NODE_ENV === 'development' &&
+    new URLSearchParams(location.search).get('authDebug') === '1';
 
   useEffect(() => {
     if (!isCheckingAuth && isLoggedIn) {
@@ -33,7 +37,7 @@ export default function LoginPage() {
       const authResponse = await loginWithEmail(values);
 
       if (!authResponse.access || !authResponse.refresh) {
-        throw new Error('Login succeeded but tokens were not returned.');
+        throw new Error(intl.formatMessage({ id: 'auth.login.error.tokens' }));
       }
 
       setStoredTokens({
@@ -51,7 +55,10 @@ export default function LoginPage() {
 
       history.push(redirectTarget);
     } catch (error: any) {
-      setErrorMessage(error?.message || 'Unable to log in right now.');
+      setErrorMessage(
+        error?.message ||
+          intl.formatMessage({ id: 'auth.login.error.unavailable' }),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -81,17 +88,21 @@ export default function LoginPage() {
                 letterSpacing: '0.08em',
               }}
             >
-              Welcome back
+              {intl.formatMessage({ id: 'auth.login.welcome' })}
             </Text>
             <Title level={2} style={{ margin: '8px 0 8px' }}>
-              Log in to Media Stream
+              {intl.formatMessage({ id: 'auth.login.title' })}
             </Title>
-            <Text type="secondary">Use your email to continue.</Text>
+            <Text type="secondary">
+              {intl.formatMessage({ id: 'auth.login.subtitle' })}
+            </Text>
           </div>
 
-          <Text type="secondary">
-            Your requests will use the app's local /api proxy.
-          </Text>
+          {showAuthDebugNote ? (
+            <Text type="secondary">
+              {intl.formatMessage({ id: 'auth.common.proxyNotice' })}
+            </Text>
+          ) : null}
 
           {errorMessage ? (
             <Alert type="error" message={errorMessage} showIcon />
@@ -104,11 +115,21 @@ export default function LoginPage() {
             requiredMark={false}
           >
             <Form.Item
-              label="Email"
+              label={intl.formatMessage({ id: 'auth.common.email' })}
               name="email"
               rules={[
-                { required: true, message: 'Please enter your email.' },
-                { type: 'email', message: 'Please enter a valid email.' },
+                {
+                  required: true,
+                  message: intl.formatMessage({
+                    id: 'auth.common.emailRequired',
+                  }),
+                },
+                {
+                  type: 'email',
+                  message: intl.formatMessage({
+                    id: 'auth.common.emailInvalid',
+                  }),
+                },
               ]}
             >
               <Input
@@ -119,15 +140,22 @@ export default function LoginPage() {
               />
             </Form.Item>
             <Form.Item
-              label="Password"
+              label={intl.formatMessage({ id: 'auth.common.password' })}
               name="password"
               rules={[
-                { required: true, message: 'Please enter your password.' },
+                {
+                  required: true,
+                  message: intl.formatMessage({
+                    id: 'auth.common.passwordRequired',
+                  }),
+                },
               ]}
             >
               <Input.Password
                 prefix={<LockOutlined />}
-                placeholder="Enter your password"
+                placeholder={intl.formatMessage({
+                  id: 'auth.login.passwordPlaceholder',
+                })}
                 size="large"
                 autoComplete="current-password"
               />
@@ -139,7 +167,7 @@ export default function LoginPage() {
               size="large"
               loading={submitting}
             >
-              Log In
+              {intl.formatMessage({ id: 'auth.login.submit' })}
             </Button>
           </Form>
 
@@ -152,7 +180,7 @@ export default function LoginPage() {
             }
             style={{ padding: 0, alignSelf: 'flex-start' }}
           >
-            Need an account? Create one
+            {intl.formatMessage({ id: 'auth.login.createOne' })}
           </Button>
         </Space>
       </Card>
