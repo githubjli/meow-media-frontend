@@ -114,7 +114,7 @@ export default function CategoryBrowsePage() {
             )}
           />
         ) : (
-          <Row gutter={[12, 14]}>
+          <Row gutter={[10, 12]}>
             {videos.map((video) => (
               <Col xs={24} sm={12} md={8} lg={6} key={video.id}>
                 <VideoCard data={toCardData(video)} />

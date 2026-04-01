@@ -215,7 +215,7 @@ export default function ExploreLivePage() {
             </Empty>
           </Card>
         ) : (
-          <Row gutter={[12, 14]}>
+          <Row gutter={[10, 12]}>
             {visibleStreams.map((item) => (
               <Col xs={24} sm={12} md={8} lg={6} xl={6} key={String(item.id)}>
                 <VideoCard data={toLiveVideoCardData(item, intl)} />
