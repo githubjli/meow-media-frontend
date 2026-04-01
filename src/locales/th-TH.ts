@@ -189,6 +189,7 @@ export default {
   'videoCard.time.years': '{count} ปีที่แล้ว',
   'live.status.live': 'LIVE',
   'live.status.starting': 'STARTING',
+  'live.status.unavailable': 'UNAVAILABLE',
   'live.status.notStarted': 'NOT STARTED',
   'live.status.ended': 'ENDED',
   'live.status.onAir': 'กำลังถ่ายทอดสด',
@@ -197,6 +198,7 @@ export default {
   'live.status.streamStarting': 'กำลังเริ่มไลฟ์',
   'live.explore.subtitle':
     'เรียกดูไลฟ์และเปิดห้องเพื่อดูการเล่นสตรีมและสถานะได้',
+  'live.explore.subtitle.mine': 'ตรวจสอบและจัดการไลฟ์ของคุณ',
   'live.explore.empty': 'ยังไม่มีไลฟ์ในตอนนี้',
   'live.explore.createFirst': 'สร้างไลฟ์แรก',
   'live.explore.error.load': 'ไม่สามารถโหลดรายการไลฟ์ได้ในขณะนี้',

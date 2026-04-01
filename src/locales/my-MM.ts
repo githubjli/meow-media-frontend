@@ -194,6 +194,7 @@ export default {
   'videoCard.time.years': '{count} နှစ်ခန့်က',
   'live.status.live': 'LIVE',
   'live.status.starting': 'STARTING',
+  'live.status.unavailable': 'UNAVAILABLE',
   'live.status.notStarted': 'NOT STARTED',
   'live.status.ended': 'ENDED',
   'live.status.onAir': 'On air now',
@@ -202,6 +203,7 @@ export default {
   'live.status.streamStarting': 'Stream starting',
   'live.explore.subtitle':
     'Live များကိုကြည့်ရှုပြီး အခန်းထဲဝင်ကာ stream playback နှင့် status ကိုကြည့်ပါ။',
+  'live.explore.subtitle.mine': 'သင့် live session များကို ပြန်လည်ကြည့်ရှုစီမံပါ။',
   'live.explore.empty': 'လက်ရှိတွင် live stream မရှိသေးပါ။',
   'live.explore.createFirst': 'ပထမဆုံး live stream ဖန်တီးမည်',
   'live.explore.error.load':
