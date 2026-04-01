@@ -16,8 +16,6 @@ import {
   Spin,
 } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-
-const { Text } = Typography;
 const PAGE_SIZE = 12;
 
 const toCardData = (video: PublicVideo) => ({
@@ -210,12 +208,18 @@ export default function BrowsePage() {
                 onChange={(nextPage) => updateQuery({ page: nextPage })}
               />
             </div>
-            <Text type="secondary" style={{ display: 'block', marginTop: 6 }}>
+            <span
+              style={{
+                display: 'block',
+                marginTop: 6,
+                color: 'rgba(0, 0, 0, 0.45)',
+              }}
+            >
               {intl.formatMessage(
                 { id: 'common.pageOf' },
                 { page, total: totalPages },
               )}
-            </Text>
+            </span>
           </>
         )}
       </div>
