@@ -438,17 +438,6 @@ export default function LiveRoomPage() {
   }, [isLoggedIn, manageEnabled]);
 
   useEffect(() => {
-    if (!isLoggedIn || !manageEnabled) {
-      setSellerProducts([]);
-      return;
-    }
-
-    getMyProducts()
-      .then((data) => setSellerProducts(data.results || []))
-      .catch(() => setSellerProducts([]));
-  }, [isLoggedIn, manageEnabled]);
-
-  useEffect(() => {
     const videoElement = videoElementRef.current;
     if (!videoElement || !playbackUrl) {
       setPlayerPhase('waiting');

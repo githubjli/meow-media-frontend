@@ -16,6 +16,8 @@ import {
   Spin,
 } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
+
+const { Text } = Typography;
 const PAGE_SIZE = 12;
 
 const toCardData = (video: PublicVideo) => ({
