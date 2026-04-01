@@ -514,29 +514,37 @@ export default function LiveRoomPage() {
                         )}
                       </Tag>
                     </Space>
-                    <Space align="center" size={12}>
-                      <Avatar
-                        icon={<UserOutlined />}
-                        src={broadcast.creator?.avatar_url}
-                      />
-                      <div>
-                        <Text strong style={{ display: 'block' }}>
-                          {creatorName}
-                        </Text>
-                        <Text type="secondary">
-                          {intl.formatMessage({ id: 'live.room.streamHost' })}
-                        </Text>
-                      </div>
-                    </Space>
-                    <Title level={2} style={{ margin: 0 }}>
-                      {title}
-                    </Title>
-                    <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                      {broadcast.description ||
-                        intl.formatMessage({
-                          id: 'live.room.descriptionFallback',
-                        })}
-                    </Paragraph>
+                    <Row gutter={[16, 12]} align="middle">
+                      <Col xs={24} lg={8}>
+                        <Space align="center" size={12}>
+                          <Avatar
+                            icon={<UserOutlined />}
+                            src={broadcast.creator?.avatar_url}
+                          />
+                          <div>
+                            <Text strong style={{ display: 'block' }}>
+                              {creatorName}
+                            </Text>
+                            <Text type="secondary">
+                              {intl.formatMessage({
+                                id: 'live.room.streamHost',
+                              })}
+                            </Text>
+                          </div>
+                        </Space>
+                      </Col>
+                      <Col xs={24} lg={16}>
+                        <Title level={2} style={{ margin: 0 }}>
+                          {title}
+                        </Title>
+                        <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                          {broadcast.description ||
+                            intl.formatMessage({
+                              id: 'live.room.descriptionFallback',
+                            })}
+                        </Paragraph>
+                      </Col>
+                    </Row>
                   </Space>
                 </Col>
                 <Col xs={24} lg={8}>
