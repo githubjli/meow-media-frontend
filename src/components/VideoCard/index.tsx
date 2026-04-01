@@ -298,13 +298,11 @@ export default ({ data }: { data: any }) => {
             {categoryLabel}
           </Text>
         ) : null}
-        <div
-          style={{ display: 'flex', flexDirection: 'column', minHeight: 96 }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           <Title
             level={5}
             style={{
-              margin: '0 0 1px',
+              margin: '0 0 2px',
               fontSize: 14,
               lineHeight: 1.38,
               fontWeight: 700,
@@ -319,7 +317,7 @@ export default ({ data }: { data: any }) => {
               type="secondary"
               ellipsis={{ rows: 2 }}
               style={{
-                margin: '0 0 6px',
+                margin: '0 0 4px',
                 fontSize: 11,
                 lineHeight: 1.5,
                 color: descriptionColor,
@@ -328,7 +326,6 @@ export default ({ data }: { data: any }) => {
               {description}
             </Paragraph>
           ) : null}
-          <div style={{ flex: 1 }} />
           <div
             style={{
               display: 'flex',
