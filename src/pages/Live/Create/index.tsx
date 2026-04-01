@@ -1141,6 +1141,8 @@ export default function LiveCreatePage() {
     publishingStatus === 'connecting' ||
     publishingStatus === 'publishing' ||
     Boolean(activePublishStreamId);
+  const showLiveDebugPanel =
+    process.env.NODE_ENV === 'development' && Boolean(isLoggedIn);
 
   if (
     !initialState?.authLoading &&
@@ -1588,21 +1590,25 @@ export default function LiveCreatePage() {
                         ) : null}
                         <Text type="secondary">{deviceStatusMessage}</Text>
                         <Text type="secondary">{publishingMessage}</Text>
-                        <Text type="secondary">
-                          {intl.formatMessage({
-                            id: 'live.debug.latestWebrtcInfo',
-                          })}
-                          : {latestWebRtcCallbackInfo || '-'}
-                        </Text>
-                        <Text type="secondary">
-                          {intl.formatMessage({
-                            id: 'live.debug.latestWebrtcError',
-                          })}
-                          :{' '}
-                          {webRtcCallbackError
-                            ? JSON.stringify(webRtcCallbackError)
-                            : '-'}
-                        </Text>
+                        {showLiveDebugPanel ? (
+                          <>
+                            <Text type="secondary">
+                              {intl.formatMessage({
+                                id: 'live.debug.latestWebrtcInfo',
+                              })}
+                              : {latestWebRtcCallbackInfo || '-'}
+                            </Text>
+                            <Text type="secondary">
+                              {intl.formatMessage({
+                                id: 'live.debug.latestWebrtcError',
+                              })}
+                              :{' '}
+                              {webRtcCallbackError
+                                ? JSON.stringify(webRtcCallbackError)
+                                : '-'}
+                            </Text>
+                          </>
+                        ) : null}
                         {typeof window !== 'undefined' &&
                         !window.isSecureContext &&
                         !['localhost', '127.0.0.1'].includes(
@@ -1696,7 +1702,7 @@ export default function LiveCreatePage() {
                         </Space>
                       </Space>
                     </Card>
-                    {isLoggedIn ? (
+                    {showLiveDebugPanel ? (
                       <Card
                         variant="borderless"
                         style={{ borderRadius: 20 }}

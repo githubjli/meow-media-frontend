@@ -31,7 +31,10 @@ const getStatusPresentation = (status: FrontendLiveStatus, intl: any) => {
     };
   }
 
-  if (status === 'ready') {
+  if (
+    status === 'ready' ||
+    status === 'waiting_for_signal'
+  ) {
     return {
       label: intl.formatMessage({ id: 'live.status.notStarted' }),
       description: intl.formatMessage({ id: 'live.status.readyToGoLive' }),
@@ -101,6 +104,8 @@ const toLiveVideoCardData = (item: LiveBroadcast, intl: any) => {
       { id: 'live.common.viewers' },
       { count: viewerCount.toLocaleString() },
     ),
+    status_label: status.label,
+    status_description: status.description,
     description: `${status.description} · ${status.label.toUpperCase()}`,
     description_preview: `${
       status.description
@@ -131,8 +136,16 @@ export default function ExploreLivePage() {
         initialState.currentUser.user_type === 'creator'),
   );
   const showNewsOnly = location.pathname === '/news/live';
+  const showMineOnly =
+    location.pathname === '/live/mine' ||
+    new URLSearchParams(location.search).get('scope') === 'my';
   const visibleStreams = streams.filter((item) =>
-    showNewsOnly ? isNewsLiveStream(item) : true,
+    showNewsOnly
+      ? isNewsLiveStream(item)
+      : showMineOnly
+      ? String(item.creator?.email || '').toLowerCase() ===
+        String(initialState?.currentUser?.email || '').toLowerCase()
+      : true,
   );
   const getLiveCreateUrl = () => '/live/create';
   const handleGoLiveClick = () => {
