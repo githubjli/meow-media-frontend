@@ -200,6 +200,7 @@ export default {
   'live.status.streamStarting': 'Stream starting',
   'live.explore.subtitle':
     'Browse live events and open a room to watch stream playback and status.',
+  'live.explore.subtitle.mine': 'Review and manage your own live sessions.',
   'live.explore.empty': 'No live streams are available yet.',
   'live.explore.createFirst': 'Create the first stream',
   'live.explore.error.load': 'Unable to load live broadcasts right now.',

@@ -195,6 +195,7 @@ export default {
   'live.status.broadcastEnded': '直播已结束',
   'live.status.streamStarting': '直播启动中',
   'live.explore.subtitle': '浏览直播活动并进入直播间观看回放与状态。',
+  'live.explore.subtitle.mine': '查看并管理你自己的直播场次。',
   'live.explore.empty': '暂无可用直播。',
   'live.explore.createFirst': '创建第一场直播',
   'live.explore.error.load': '暂时无法加载直播列表。',

@@ -198,6 +198,7 @@ export default {
   'live.status.streamStarting': 'กำลังเริ่มไลฟ์',
   'live.explore.subtitle':
     'เรียกดูไลฟ์และเปิดห้องเพื่อดูการเล่นสตรีมและสถานะได้',
+  'live.explore.subtitle.mine': 'ตรวจสอบและจัดการไลฟ์ของคุณ',
   'live.explore.empty': 'ยังไม่มีไลฟ์ในตอนนี้',
   'live.explore.createFirst': 'สร้างไลฟ์แรก',
   'live.explore.error.load': 'ไม่สามารถโหลดรายการไลฟ์ได้ในขณะนี้',

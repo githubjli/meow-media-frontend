@@ -112,6 +112,10 @@ export default function ExploreLivePage() {
         String(initialState?.currentUser?.email || '').toLowerCase()
       : true,
   );
+  const pageTitleKey = showMineOnly ? 'menu.live.sessions' : 'nav.exploreLive';
+  const pageSubtitleKey = showMineOnly
+    ? 'live.explore.subtitle.mine'
+    : 'live.explore.subtitle';
   const getLiveCreateUrl = () => '/live/create';
   const handleGoLiveClick = () => {
     history.push(
@@ -161,10 +165,10 @@ export default function ExploreLivePage() {
           >
             <div>
               <Title level={2} style={{ margin: 0 }}>
-                {intl.formatMessage({ id: 'nav.exploreLive' })}
+                {intl.formatMessage({ id: pageTitleKey })}
               </Title>
               <Text type="secondary">
-                {intl.formatMessage({ id: 'live.explore.subtitle' })}
+                {intl.formatMessage({ id: pageSubtitleKey })}
               </Text>
             </div>
             <Button
