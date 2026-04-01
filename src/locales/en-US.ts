@@ -403,9 +403,17 @@ export default {
   'live.room.copyWatchUrl': 'Copy watch URL',
   'live.room.viewerChat': 'Viewer & chat',
   'live.room.currentViewers': 'Current viewers',
+  'live.room.chatMessages': 'Messages',
+  'live.room.chatStatusPlaceholder': 'Chat service placeholder',
   'live.room.viewerChatHint':
     'Use this section for audience and chat integrations.',
   'live.room.chatPlaceholder': 'Chat placeholder',
+  'live.room.chatSignedOut': 'Log in to join chat when messaging is enabled.',
+  'live.room.chatUnavailableEnded':
+    'Chat is unavailable because this stream has ended.',
+  'live.room.chatEmpty': 'No messages yet.',
+  'live.room.chatInputPlaceholder': 'Type a message (coming soon)',
+  'live.room.chatSend': 'Send',
   'live.room.unavailable': 'Live room unavailable.',
   'videoCard.live': 'LIVE',
 };

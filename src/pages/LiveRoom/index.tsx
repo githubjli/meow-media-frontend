@@ -14,7 +14,9 @@ import {
   Button,
   Card,
   Col,
+  Divider,
   Empty,
+  Input,
   Row,
   Skeleton,
   Space,
@@ -241,6 +243,8 @@ export default function LiveRoomPage() {
     ],
     [broadcast?.rtmp_url, intl, streamKey],
   );
+  const canShowChatInput =
+    isLoggedIn && statusPresentation.uiStatus !== 'ended';
 
   const loadBroadcast = async (showLoader = false) => {
     if (!id) {
@@ -724,21 +728,101 @@ export default function LiveRoomPage() {
                       size={12}
                       style={{ width: '100%' }}
                     >
-                      <Statistic
-                        title={intl.formatMessage({
-                          id: 'live.room.currentViewers',
-                        })}
-                        value={viewerCount}
-                      />
+                      <Row gutter={[12, 12]}>
+                        <Col xs={24} sm={12}>
+                          <Card
+                            size="small"
+                            style={{ borderRadius: 12 }}
+                            bodyStyle={{ padding: 12 }}
+                          >
+                            <Statistic
+                              title={intl.formatMessage({
+                                id: 'live.room.currentViewers',
+                              })}
+                              value={viewerCount}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Card
+                            size="small"
+                            style={{ borderRadius: 12 }}
+                            bodyStyle={{ padding: 12 }}
+                          >
+                            <Text strong>
+                              {intl.formatMessage({
+                                id: 'live.room.chatMessages',
+                              })}
+                            </Text>
+                            <Text
+                              type="secondary"
+                              style={{ display: 'block', marginTop: 4 }}
+                            >
+                              {intl.formatMessage({
+                                id: 'live.room.chatStatusPlaceholder',
+                              })}
+                            </Text>
+                          </Card>
+                        </Col>
+                      </Row>
                       <Text type="secondary">
                         {intl.formatMessage({ id: 'live.room.viewerChatHint' })}
                       </Text>
-                      <Empty
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        description={intl.formatMessage({
-                          id: 'live.room.chatPlaceholder',
-                        })}
-                      />
+                      <Card
+                        size="small"
+                        style={{ borderRadius: 12, minHeight: 180 }}
+                        bodyStyle={{ padding: 16 }}
+                      >
+                        <Space
+                          direction="vertical"
+                          size={10}
+                          style={{ width: '100%' }}
+                        >
+                          {!isLoggedIn ? (
+                            <Alert
+                              type="info"
+                              showIcon
+                              message={intl.formatMessage({
+                                id: 'live.room.chatSignedOut',
+                              })}
+                            />
+                          ) : statusPresentation.uiStatus === 'ended' ? (
+                            <Alert
+                              type="warning"
+                              showIcon
+                              message={intl.formatMessage({
+                                id: 'live.room.chatUnavailableEnded',
+                              })}
+                            />
+                          ) : (
+                            <Empty
+                              image={Empty.PRESENTED_IMAGE_SIMPLE}
+                              description={intl.formatMessage({
+                                id: 'live.room.chatEmpty',
+                              })}
+                            />
+                          )}
+                        </Space>
+                      </Card>
+                      <Divider style={{ margin: '4px 0' }} />
+                      <Space
+                        direction="vertical"
+                        size={8}
+                        style={{ width: '100%' }}
+                      >
+                        <Input.TextArea
+                          rows={3}
+                          disabled={!canShowChatInput}
+                          placeholder={intl.formatMessage({
+                            id: 'live.room.chatInputPlaceholder',
+                          })}
+                        />
+                        <Space style={{ width: '100%', justifyContent: 'end' }}>
+                          <Button type="primary" disabled={!canShowChatInput}>
+                            {intl.formatMessage({ id: 'live.room.chatSend' })}
+                          </Button>
+                        </Space>
+                      </Space>
                     </Space>
                   </Card>
                 </Space>

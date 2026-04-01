@@ -407,9 +407,17 @@ export default {
   'live.room.copyWatchUrl': 'Copy watch URL',
   'live.room.viewerChat': 'Viewer & chat',
   'live.room.currentViewers': 'Current viewers',
+  'live.room.chatMessages': 'Messages',
+  'live.room.chatStatusPlaceholder': 'Chat service placeholder',
   'live.room.viewerChatHint':
     'Audience နှင့် chat integration အတွက် ဤအပိုင်းကို သုံးနိုင်သည်။',
   'live.room.chatPlaceholder': 'Chat placeholder',
+  'live.room.chatSignedOut': 'Chat feature ဖွင့်ထားပါက ပါဝင်ရန် login ဝင်ပါ။',
+  'live.room.chatUnavailableEnded':
+    'ဤ stream ပိတ်သွားသောကြောင့် chat ကို မရရှိနိုင်ပါ။',
+  'live.room.chatEmpty': 'Messages မရှိသေးပါ။',
+  'live.room.chatInputPlaceholder': 'Message ရိုက်ထည့်ပါ (မကြာမီ)',
+  'live.room.chatSend': 'Send',
   'live.room.unavailable': 'Live room မရရှိနိုင်ပါ။',
   'videoCard.live': 'တိုက်ရိုက်',
 };
