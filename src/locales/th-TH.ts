@@ -41,7 +41,7 @@ export default {
   'menu.Live': 'ไลฟ์',
   'menu.live.explore': 'สำรวจไลฟ์',
   'menu.live.create': 'สร้างไลฟ์',
-  'menu.live.sessions': 'เซสชันของฉัน',
+  'menu.live.sessions': 'ไลฟ์ของฉัน',
   'menu.commerce': 'Commerce',
   'menu.categories.technology': 'เทคโนโลยี',
   'menu.categories.education': 'การศึกษา',
