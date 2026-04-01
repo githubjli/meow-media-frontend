@@ -204,14 +204,6 @@ export default function LiveRoomPage() {
     broadcast?.creator?.username ||
     broadcast?.creator?.email ||
     intl.formatMessage({ id: 'live.common.creatorFallback' });
-  const streamKey = useMemo(() => {
-    const explicit = String(
-      broadcast?.stream_key || (broadcast as any)?.streamKey || '',
-    ).trim();
-    if (explicit) return explicit;
-    const match = String(playbackUrl || '').match(/\/([^/?]+)\.m3u8(?:$|\?)/i);
-    return (match?.[1] || '').trim();
-  }, [broadcast, playbackUrl]);
   const viewerCount =
     backendStatus?.viewer_count ??
     backendStatus?.viewerCount ??
@@ -676,50 +668,6 @@ export default function LiveRoomPage() {
                       <Text type="secondary">
                         {intl.formatMessage({ id: 'live.room.viewerChatHint' })}
                       </Text>
-                      <Card
-                        size="small"
-                        style={{ borderRadius: 12 }}
-                        bodyStyle={{ padding: 12 }}
-                      >
-                        <Text
-                          strong
-                          style={{ display: 'block', marginBottom: 8 }}
-                        >
-                          {intl.formatMessage({
-                            id: 'live.room.streamDetails.streamKey',
-                          })}
-                        </Text>
-                        <Space
-                          align="start"
-                          style={{
-                            width: '100%',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <Text code style={{ wordBreak: 'break-all' }}>
-                            {streamKey ||
-                              intl.formatMessage({
-                                id: 'live.room.notAvailable',
-                              })}
-                          </Text>
-                          <Button
-                            size="small"
-                            icon={<CopyOutlined />}
-                            onClick={() =>
-                              copyValue(
-                                streamKey,
-                                intl.formatMessage({
-                                  id: 'live.room.streamDetails.streamKey',
-                                }),
-                              )
-                            }
-                          >
-                            {intl.formatMessage({
-                              id: 'live.room.copy',
-                            })}
-                          </Button>
-                        </Space>
-                      </Card>
                       <Card
                         size="small"
                         style={{ borderRadius: 12, minHeight: 180 }}
