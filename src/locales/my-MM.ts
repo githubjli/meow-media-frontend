@@ -49,8 +49,7 @@ export default {
   'auth.register.submit': 'အကောင့်ဖန်တီးရန်',
   'auth.register.logIn': 'အကောင့်ရှိပြီးပြီလား? ဝင်ရောက်ပါ',
   'auth.register.error.tokens': 'အကောင့်ဖွင့်ပြီးသော်လည်း token မရရှိပါ',
-  'auth.register.error.unavailable':
-    'ယခုအချိန်တွင် အကောင့်ဖန်တီး၍ မရနိုင်ပါ',
+  'auth.register.error.unavailable': 'ယခုအချိန်တွင် အကောင့်ဖန်တီး၍ မရနိုင်ပါ',
   'nav.category.technology': 'နည်းပညာ',
   'nav.category.education': 'ပညာရေး',
   'nav.category.gaming': 'ဂိမ်း',
@@ -232,7 +231,8 @@ export default {
   'live.status.streamStarting': 'Stream starting',
   'live.explore.subtitle':
     'Live များကိုကြည့်ရှုပြီး အခန်းထဲဝင်ကာ stream playback နှင့် status ကိုကြည့်ပါ။',
-  'live.explore.subtitle.mine': 'သင့် live session များကို ပြန်လည်ကြည့်ရှုစီမံပါ။',
+  'live.explore.subtitle.mine':
+    'သင့် live session များကို ပြန်လည်ကြည့်ရှုစီမံပါ။',
   'live.explore.empty': 'လက်ရှိတွင် live stream မရှိသေးပါ။',
   'live.explore.createFirst': 'ပထမဆုံး live stream ဖန်တီးမည်',
   'live.explore.error.load':
@@ -268,5 +268,112 @@ export default {
   'live.preflight.websocket': 'WebSocket',
   'live.preflight.adaptor': 'Adaptor',
   'live.preflight.failed': 'Preflight check failed: {check}',
+  'live.create.deviceStatus.initial':
+    'browser preview သို့မဟုတ် stream key workflow အသုံးပြုရန် live session တစ်ခုကို အရင်ဖန်တီးပါ။',
+  'live.create.deviceStatus.created':
+    'Live session ဖန်တီးပြီးပါပြီ။ browser camera workflow သို့မဟုတ် RTMP setup ကို ဆက်လုပ်နိုင်ပါသည်။',
+  'live.create.publishStatus.standby':
+    'Browser publishing စောင့်ဆိုင်းနေပါသည်။',
+  'live.create.prepareStatus.notStarted': 'Preparation handshake မစတင်သေးပါ။',
+  'live.create.message.created':
+    'Live stream ဖန်တီးပြီးပါပြီ။ broadcast ပြင်ဆင်မည့်နည်းလမ်းကို ရွေးပါ။',
+  'live.create.setupEyebrow': 'LIVE SETUP',
+  'live.create.title': 'Live stream ဖန်တီးရန်',
+  'live.create.subtitle':
+    'Session အသေးစိတ်များကို ပြင်ပြီး browser camera preview သို့မဟုတ် RTMP stream key ကို ရွေးပါ။',
+  'live.create.form.title': 'ခေါင်းစဉ်',
+  'live.create.form.titleRequired': 'Live ခေါင်းစဉ်ထည့်ပါ။',
+  'live.create.form.titlePlaceholder': 'ဒီနေ့ ဘာကို stream လုပ်မလဲ?',
+  'live.create.form.description': 'ဖော်ပြချက်',
+  'live.create.form.descriptionPlaceholder':
+    'ကြည့်ရှုသူများသိနိုင်ရန် အကျဉ်းချုပ်တစ်ခု ထည့်ပါ။',
+  'live.create.form.category': 'အမျိုးအစား',
+  'live.create.form.categoryPlaceholder': 'အမျိုးအစားရွေးပါ',
+  'live.create.form.visibility': 'မြင်နိုင်မှု',
+  'live.create.form.visibilityRequired': 'မြင်နိုင်မှုရွေးပါ။',
+  'live.create.form.visibilityUnlisted': 'Unlisted',
+  'live.create.form.qrOptional': 'QR Code (ရွေးချယ်နိုင်)',
+  'live.create.form.qrHint':
+    'Pay QR ဖန်တီးရန် payment address ထည့်ပါ။ ဤ QR ကို support အတွက်သာ အသုံးပြုသည်။',
+  'live.create.form.paymentAddress': 'Payment Address',
+  'live.create.form.qrEmpty': 'Pay QR ဖန်တီးရန် payment address ထည့်ပါ။',
+  'live.create.form.submit': 'Live Session ဖန်တီးရန်',
+  'live.create.sessionReady': 'SESSION READY',
+  'live.create.waitingForSession': 'WAITING FOR SESSION',
+  'live.create.broadcastPreparation': 'Broadcast preparation',
+  'live.create.broadcastPreparationHint':
+    'Browser ထဲတွင် အရင်ပြင်ဆင်ပြီး Ant Media ဖြင့် publish လုပ်ပါ။',
+  'live.create.startWithCamera': 'Start with Camera',
+  'live.create.useStreamKey': 'Use Stream Key',
+  'live.create.previewPanel': 'Preview panel',
+  'live.create.previewPanel.cameraHint':
+    'Publish မလုပ်မီ camera/microphone permission ရယူပြီး readiness စစ်ပါ။',
+  'live.create.previewPanel.streamKeyHint':
+    'Stream key mode တွင် OBS/encoder အသေးစိတ်များကို ညာဘက် panel တွင် ပြသည်။',
+  'live.create.previewPanel.enableCameraHint':
+    'Camera preview ကိုဖွင့်ပြီး framing, audio, readiness စစ်ပါ။',
+  'live.create.previewPanel.createFirstHint':
+    'Browser camera preview ဖွင့်ရန် session ကို အရင်ဖန်တီးပါ။',
+  'live.create.muteMic': 'Mute Mic',
+  'live.create.unmuteMic': 'Unmute Mic',
+  'live.create.turnCameraOff': 'Turn Camera Off',
+  'live.create.turnCameraOn': 'Turn Camera On',
+  'live.create.refreshDevices': 'Refresh Devices',
+  'live.create.stopPublishing': 'Stop Publishing',
+  'live.create.streamKeyInfo':
+    'Stream Key mode သည် RTMP Server, Stream Key, Playback URL ကို သီးခြားပြသပေးသည်။',
+  'live.create.streamKeyEmpty': 'RTMP အသေးစိတ်ပြရန် live session ဖန်တီးပါ။',
+  'live.create.statusArea': 'Status area',
+  'live.create.deviceReadiness': 'Device readiness',
+  'live.create.browserPublish': 'Browser publish (local transport)',
+  'live.create.prepareHandshake': 'Prepare handshake',
+  'live.create.liveStatusBackend': 'Live status (backend)',
+  'live.create.prepareSession': 'Prepare session',
+  'live.create.backendStatus': 'Backend status',
+  'live.create.statusSource': 'Status source',
+  'live.create.backendOutOfSync':
+    'Backend နှင့် media server status မကိုက်ညီပါ။',
+  'live.create.httpsRequired': 'Camera streaming requires HTTPS',
+  'live.create.permissionRequiredHint':
+    'Local camera preview အတွက် browser permission လိုအပ်ပါသည်။',
+  'live.create.deviceChecklist': 'Device checklist',
+  'live.create.streamDetailsCard': 'Stream details card',
+  'live.create.sessionReadyHint':
+    'Session သည် browser preview သို့မဟုတ် RTMP publishing အတွက် အဆင်သင့်ဖြစ်ပါသည်။',
+  'live.create.generalCategory': 'General',
+  'live.create.notProvided': 'မရရှိသေးပါ',
+  'live.create.copy': 'Copy',
+  'live.create.obsSetupTip':
+    'OBS tip: RTMP Server ကို server field တွင်၊ Stream Key ကို stream key field တွင် ထည့်ပါ။',
+  'live.create.openWatchPage': 'Open Watch Page',
+  'live.create.watchQr': 'Watch QR',
+  'live.create.watchQrEmpty': 'Watch URL မရရှိသေးပါ။',
+  'live.create.sessionDetailsPlaceholder':
+    'Live broadcast ဖန်တီးပြီးနောက် session details ကို ဤနေရာတွင် ပြသမည်။',
+  'live.create.startPreviewFirst': 'Camera preview ကို အရင်စတင်ပါ။',
+  'live.create.noMicTrack': 'Microphone track မတွေ့ပါ။',
+  'live.create.noCameraTrack': 'Camera track မတွေ့ပါ။',
+  'live.create.trackStateChanged':
+    'Local preview အတွက် {kind} ကို {state} ပြောင်းထားသည်။',
+  'live.create.microphone': 'Microphone',
+  'live.create.camera': 'Camera',
+  'live.create.enabled': 'enabled',
+  'live.create.muted': 'muted',
+  'live.create.streamKey': 'Stream Key',
+  'live.create.rtmpServerUrl': 'RTMP Server URL',
+  'live.create.playbackUrl': 'Playback URL',
+  'live.create.preparePrepared': 'Browser publishing အတွက်ပြင်ဆင်ပြီး',
+  'live.create.preparing': 'Preparing',
+  'live.create.prepareFailed': 'Prepare failed',
+  'live.create.notPrepared': 'Not prepared',
+  'live.create.ready': 'Ready',
+  'live.create.disabledInPreview': 'Disabled in preview',
+  'live.create.awaitingPermission': 'Awaiting permission',
+  'live.create.mutedInPreview': 'Muted in preview',
+  'live.create.publishingPipeline': 'Publishing pipeline',
+  'live.create.connectedToAntMedia': 'Ant Media live app နှင့်ချိတ်ဆက်ပြီး',
+  'live.create.readyForBrowserPublish':
+    'Ant Media browser publishing အတွက်အဆင်သင့်',
+  'live.create.unknown': 'Unknown',
   'videoCard.live': 'တိုက်ရိုက်',
 };

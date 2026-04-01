@@ -75,7 +75,7 @@ declare global {
 
 const copyValue = async (value: string, label: string) => {
   if (!value) {
-    message.warning(`${label} is not available yet.`);
+    message.warning(`${label} is not available.`);
     return;
   }
 
@@ -113,7 +113,11 @@ const loadWebRTCAdaptorScript = async (scriptUrl: string) => {
 
 const upgradeToSecureUrlIfNeeded = (rawUrl: string, label: string) => {
   const url = String(rawUrl || '').trim();
-  if (!url || typeof window === 'undefined' || window.location.protocol !== 'https:') {
+  if (
+    !url ||
+    typeof window === 'undefined' ||
+    window.location.protocol !== 'https:'
+  ) {
     return url;
   }
 
@@ -206,18 +210,18 @@ export default function LiveCreatePage() {
   const [devicePermissionStatus, setDevicePermissionStatus] =
     useState<DevicePermissionStatus>('idle');
   const [deviceStatusMessage, setDeviceStatusMessage] = useState(
-    'Create a live session to unlock browser preview or stream key workflows.',
+    intl.formatMessage({ id: 'live.create.deviceStatus.initial' }),
   );
   const [isMicEnabled, setIsMicEnabled] = useState(true);
   const [isCameraEnabled, setIsCameraEnabled] = useState(true);
   const [publishingStatus, setPublishingStatus] =
     useState<PublishingStatus>('idle');
   const [publishingMessage, setPublishingMessage] = useState(
-    'Browser publishing is standing by.',
+    intl.formatMessage({ id: 'live.create.publishStatus.standby' }),
   );
   const [preparePhase, setPreparePhase] = useState<PreparePhase>('idle');
   const [prepareMessage, setPrepareMessage] = useState(
-    'Preparation handshake has not started.',
+    intl.formatMessage({ id: 'live.create.prepareStatus.notStarted' }),
   );
   const [prepareSession, setPrepareSession] = useState<
     LiveBroadcast['publish_session'] | undefined
@@ -292,9 +296,12 @@ export default function LiveCreatePage() {
     return () => {
       const streamId = activePublishStreamIdRef.current || '';
       if (streamId && webRTCAdaptorRef.current) {
-        console.log('LIVE_CREATE cleanup(unmount): stopping active publish stream', {
-          streamId,
-        });
+        console.log(
+          'LIVE_CREATE cleanup(unmount): stopping active publish stream',
+          {
+            streamId,
+          },
+        );
         webRTCAdaptorRef.current.stop(streamId);
       }
       if (webRTCAdaptorRef.current?.closeWebSocket) {
@@ -344,12 +351,16 @@ export default function LiveCreatePage() {
       setBroadcastMode('camera');
       setDevicePermissionStatus('idle');
       setDeviceStatusMessage(
-        'Live session created. Choose a browser camera workflow or continue with your professional RTMP setup.',
+        intl.formatMessage({ id: 'live.create.deviceStatus.created' }),
       );
       setPublishingStatus('idle');
-      setPublishingMessage('Browser publishing is standing by.');
+      setPublishingMessage(
+        intl.formatMessage({ id: 'live.create.publishStatus.standby' }),
+      );
       setPreparePhase('idle');
-      setPrepareMessage('Preparation handshake has not started.');
+      setPrepareMessage(
+        intl.formatMessage({ id: 'live.create.prepareStatus.notStarted' }),
+      );
       setPrepareSession(undefined);
       setPrepareDebugPayload(null);
       setResolvedConfigInput({
@@ -375,7 +386,7 @@ export default function LiveCreatePage() {
       setActivePublishStreamId('');
       setBackendStatus(null);
       message.success(
-        'Live stream created. Choose how you want to prepare your broadcast.',
+        intl.formatMessage({ id: 'live.create.message.created' }),
       );
       setPayQrPayload(nextLive.payment_address || paymentAddress || '');
     } catch (error: any) {
@@ -471,12 +482,15 @@ export default function LiveCreatePage() {
       isStartFlowInProgress ||
       prepareRequestInFlightRef.current
     ) {
-      console.warn('LIVE_CREATE start blocked: startup flow already in progress', {
-        liveId: createdLive.id,
-        startFlowLock: startFlowLockRef.current,
-        isStartFlowInProgress,
-        hasPrepareRequestInFlight: Boolean(prepareRequestInFlightRef.current),
-      });
+      console.warn(
+        'LIVE_CREATE start blocked: startup flow already in progress',
+        {
+          liveId: createdLive.id,
+          startFlowLock: startFlowLockRef.current,
+          isStartFlowInProgress,
+          hasPrepareRequestInFlight: Boolean(prepareRequestInFlightRef.current),
+        },
+      );
       return;
     }
     if (
@@ -485,404 +499,430 @@ export default function LiveCreatePage() {
       publishingStatus === 'publishing' ||
       hasTriggeredPublishAttemptRef.current
     ) {
-      console.warn('LIVE_CREATE start blocked: active/pending publish session exists', {
-        liveId: createdLive.id,
-        activePublishStreamId: activePublishStreamIdRef.current || '',
-        publishingStatus,
-        hasTriggeredPublishAttempt: hasTriggeredPublishAttemptRef.current,
-      });
+      console.warn(
+        'LIVE_CREATE start blocked: active/pending publish session exists',
+        {
+          liveId: createdLive.id,
+          activePublishStreamId: activePublishStreamIdRef.current || '',
+          publishingStatus,
+          hasTriggeredPublishAttempt: hasTriggeredPublishAttemptRef.current,
+        },
+      );
       return;
     }
     startFlowLockRef.current = true;
     setIsStartFlowInProgress(true);
     try {
-
       const prePrepareChecks = await runPreflightChecks();
       if (!prePrepareChecks.ok) {
         return;
       }
 
-    let preparedLiveForPublish: LiveBroadcast | null = createdLive;
-    setPreparePhase('preparing');
-    setPrepareMessage('Preparing broadcast session with Django…');
-    setPrepareSession(undefined);
+      let preparedLiveForPublish: LiveBroadcast | null = createdLive;
+      setPreparePhase('preparing');
+      setPrepareMessage('Preparing broadcast session with Django…');
+      setPrepareSession(undefined);
 
-    try {
-      let preparePromise = prepareRequestInFlightRef.current;
-      if (!preparePromise) {
-        preparePromise = prepareLiveBroadcast(createdLive.id);
-        prepareRequestInFlightRef.current = preparePromise.finally(() => {
-          prepareRequestInFlightRef.current = null;
-        });
+      try {
+        let preparePromise = prepareRequestInFlightRef.current;
+        if (!preparePromise) {
+          preparePromise = prepareLiveBroadcast(createdLive.id);
+          prepareRequestInFlightRef.current = preparePromise.finally(() => {
+            prepareRequestInFlightRef.current = null;
+          });
+        }
+        const preparedLive = await preparePromise;
+        console.log('START WITH CAMERA: prepare returned', preparedLive);
+        setCreatedLive(preparedLive);
+        preparedLiveForPublish = preparedLive;
+        setPreparePhase('prepared');
+        setPrepareMessage(
+          preparedLive.message || 'Prepared for browser publishing.',
+        );
+        setPrepareSession(preparedLive.publish_session);
+        setPrepareDebugPayload(preparedLive);
+        setDebugLastError('');
+      } catch (error: any) {
+        setPreparePhase('error');
+        setPrepareMessage(
+          error?.message ||
+            'Prepare handshake failed. Browser publishing has not started.',
+        );
+        setDebugLastError(
+          error?.message ||
+            'Prepare handshake failed. Browser publishing has not started.',
+        );
+        setPublishingStatus('error');
+        setPublishingMessage(
+          'Browser publishing is blocked because prepare did not complete.',
+        );
+        return;
       }
-      const preparedLive = await preparePromise;
-      console.log('START WITH CAMERA: prepare returned', preparedLive);
-      setCreatedLive(preparedLive);
-      preparedLiveForPublish = preparedLive;
-      setPreparePhase('prepared');
-      setPrepareMessage(
-        preparedLive.message || 'Prepared for browser publishing.',
-      );
-      setPrepareSession(preparedLive.publish_session);
-      setPrepareDebugPayload(preparedLive);
-      setDebugLastError('');
-    } catch (error: any) {
-      setPreparePhase('error');
-      setPrepareMessage(
-        error?.message ||
-          'Prepare handshake failed. Browser publishing has not started.',
-      );
-      setDebugLastError(
-        error?.message ||
-          'Prepare handshake failed. Browser publishing has not started.',
-      );
-      setPublishingStatus('error');
-      setPublishingMessage(
-        'Browser publishing is blocked because prepare did not complete.',
-      );
-      return;
-    }
 
-    const resolvedPublishConfig = resolveAntMediaPublishConfig(
-      preparedLiveForPublish,
-    );
-    const preparedAntMediaConfig =
-      preparedLiveForPublish?.publish_session?.ant_media;
-    const prepareStreamId = String(preparedAntMediaConfig?.stream_id || '').trim();
-    const chosenPublishStreamId = String(
-      resolvedPublishConfig.publishStreamId || prepareStreamId,
-    ).trim();
-    setPrepareReturnedStreamId(prepareStreamId);
-    setFinalPublishStreamId(chosenPublishStreamId);
-    console.log('LIVE_CREATE streamId[prepare_api_returned]', {
-      streamId: prepareStreamId,
-      liveId: preparedLiveForPublish?.id,
-      appName: preparedAntMediaConfig?.app_name,
-    });
-    console.log('LIVE_CREATE streamId[final_chosen_for_publish]', {
-      streamId: chosenPublishStreamId,
-      source: 'prepare_response.ant_media.stream_id',
-    });
-    setResolvedConfigInput({
-      websocketUrl: String(preparedAntMediaConfig?.websocket_url || '').trim(),
-      adaptorScriptUrl: String(
-        preparedAntMediaConfig?.adaptor_script_url || '',
-      ).trim(),
-      publishStreamId: prepareStreamId,
-    });
-    setResolvedPublishConfig(resolvedPublishConfig);
-    console.log(
-      'START WITH CAMERA: resolved config input',
-      preparedLiveForPublish?.publish_session,
-    );
-    console.log('START WITH CAMERA: resolved config', resolvedPublishConfig);
-    const { websocketUrl, adaptorScriptUrl } =
-      resolvedPublishConfig;
-    if (!websocketUrl && !adaptorScriptUrl && !chosenPublishStreamId) {
-      setPublishingStatus('error');
-      setPublishingMessage(
-        'Browser publishing config is missing from prepare response.',
+      const resolvedPublishConfig = resolveAntMediaPublishConfig(
+        preparedLiveForPublish,
       );
-      setDebugLastError(
-        'Browser publishing config is missing from prepare response.',
+      const preparedAntMediaConfig =
+        preparedLiveForPublish?.publish_session?.ant_media;
+      const prepareStreamId = String(
+        preparedAntMediaConfig?.stream_id || '',
+      ).trim();
+      const chosenPublishStreamId = String(
+        resolvedPublishConfig.publishStreamId || prepareStreamId,
+      ).trim();
+      setPrepareReturnedStreamId(prepareStreamId);
+      setFinalPublishStreamId(chosenPublishStreamId);
+      console.log('LIVE_CREATE streamId[prepare_api_returned]', {
+        streamId: prepareStreamId,
+        liveId: preparedLiveForPublish?.id,
+        appName: preparedAntMediaConfig?.app_name,
+      });
+      console.log('LIVE_CREATE streamId[final_chosen_for_publish]', {
+        streamId: chosenPublishStreamId,
+        source: 'prepare_response.ant_media.stream_id',
+      });
+      setResolvedConfigInput({
+        websocketUrl: String(
+          preparedAntMediaConfig?.websocket_url || '',
+        ).trim(),
+        adaptorScriptUrl: String(
+          preparedAntMediaConfig?.adaptor_script_url || '',
+        ).trim(),
+        publishStreamId: prepareStreamId,
+      });
+      setResolvedPublishConfig(resolvedPublishConfig);
+      console.log(
+        'START WITH CAMERA: resolved config input',
+        preparedLiveForPublish?.publish_session,
       );
-      return;
-    }
-    if (!websocketUrl || !adaptorScriptUrl || !chosenPublishStreamId) {
-      setPublishingStatus('error');
-      setPublishingMessage('Ant Media browser publish config is incomplete.');
-      setDebugLastError('Ant Media browser publish config is incomplete.');
-      return;
-    }
+      console.log('START WITH CAMERA: resolved config', resolvedPublishConfig);
+      const { websocketUrl, adaptorScriptUrl } = resolvedPublishConfig;
+      if (!websocketUrl && !adaptorScriptUrl && !chosenPublishStreamId) {
+        setPublishingStatus('error');
+        setPublishingMessage(
+          'Browser publishing config is missing from prepare response.',
+        );
+        setDebugLastError(
+          'Browser publishing config is missing from prepare response.',
+        );
+        return;
+      }
+      if (!websocketUrl || !adaptorScriptUrl || !chosenPublishStreamId) {
+        setPublishingStatus('error');
+        setPublishingMessage('Ant Media browser publish config is incomplete.');
+        setDebugLastError('Ant Media browser publish config is incomplete.');
+        return;
+      }
 
-    const fullPreflightChecks = await runPreflightChecks({
-      websocketUrl,
-      adaptorScriptUrl,
-    });
-    if (!fullPreflightChecks.ok) {
-      return;
-    }
-
-    const stream = await prepareLocalPreview();
-    if (!stream) {
-      setPublishingStatus('error');
-      setPublishingMessage(
-        'Browser publishing could not start because camera or microphone access is unavailable.',
-      );
-      setDebugLastError(
-        'Browser publishing could not start because camera or microphone access is unavailable.',
-      );
-      return;
-    }
-    console.log('START WITH CAMERA: local preview ready');
-
-    setPublishingStatus('connecting');
-    setPublishingMessage('Connecting to Ant Media publishing websocket…');
-
-    try {
-      console.log('START WITH CAMERA: loading WebRTC adaptor script', {
+      const fullPreflightChecks = await runPreflightChecks({
+        websocketUrl,
         adaptorScriptUrl,
       });
-      const WebRTCAdaptorCtor = await loadWebRTCAdaptorScript(adaptorScriptUrl);
-      console.log('START WITH CAMERA: adaptor module loaded');
-      console.log('WebRTCAdaptor ctor found:', !!WebRTCAdaptorCtor, WebRTCAdaptorCtor);
-      if (!WebRTCAdaptorCtor) {
-        throw new Error('Unable to initialize the Ant Media WebRTC adaptor.');
+      if (!fullPreflightChecks.ok) {
+        return;
       }
 
-      if (webRTCAdaptorRef.current?.closeWebSocket) {
-        console.log(
-          'LIVE_CREATE startPublishingWithCamera: closing existing adaptor websocket before creating a new adaptor',
+      const stream = await prepareLocalPreview();
+      if (!stream) {
+        setPublishingStatus('error');
+        setPublishingMessage(
+          'Browser publishing could not start because camera or microphone access is unavailable.',
         );
-        webRTCAdaptorRef.current.closeWebSocket();
+        setDebugLastError(
+          'Browser publishing could not start because camera or microphone access is unavailable.',
+        );
+        return;
       }
-      console.log('Creating WebRTCAdaptor now', {
-        websocketUrl,
-        publishStreamId: chosenPublishStreamId,
-      });
-      hasTriggeredPublishAttemptRef.current = false;
-      hasLoggedFirstPublishFailureRef.current = false;
-      const mediaConstraints = { video: true, audio: true };
-      const publishIceServers = [{ urls: 'stun:stun1.l.google.com:19302' }];
-      const peerConnectionConfig = {
-        iceServers: publishIceServers,
-      };
-      console.log('LIVE_CREATE adaptor[final_ice_config_input]', {
-        streamId: chosenPublishStreamId,
-        websocketUrl,
-        peerConnectionConfig: maskIceServers(peerConnectionConfig),
-      });
-      const sdpConstraints = {
-        OfferToReceiveAudio: false,
-        OfferToReceiveVideo: false,
-      };
-      const adaptorConfig = {
-        websocket_url: websocketUrl,
-        mediaConstraints,
-        peerconnection_config: peerConnectionConfig,
-        sdp_constraints: sdpConstraints,
-        localVideoId: 'live-create-preview-video',
-        localStream: stream,
-        isPlayMode: false,
-        debug: false,
-        reconnectIfRequiredFlag: true,
-      };
-      console.log('LIVE_CREATE: peerconnection_config (publish)', {
-        websocket_url: websocketUrl,
-        publishStreamId: chosenPublishStreamId,
-        peerconnection_config: {
-          ...peerConnectionConfig,
-          iceServers: peerConnectionConfig.iceServers.map((server) =>
-            server.credential ? { ...server, credential: '***' } : server,
-          ),
-        },
-        iceServerCount: publishIceServers.length,
-        containsUdpTurn: publishIceServers.some((server) =>
-          String(server.urls || '').includes('transport=udp'),
-        ),
-        'peerconnection_config.iceServers': peerConnectionConfig.iceServers.map(
-          (server) =>
-            server.credential ? { ...server, credential: '***' } : server,
-        ),
-      });
-      console.log('FINAL ICE CONFIG:', peerConnectionConfig);
-      console.log('LIVE_CREATE: adaptor constructor config (expanded)', {
-        websocket_url: websocketUrl,
-        publishStreamId: chosenPublishStreamId,
-        peerconnection_config: peerConnectionConfig,
-        'peerconnection_config.iceServers': peerConnectionConfig.iceServers.map(
-          (server) => ({
-            urls: server.urls,
-            username: server.username || '',
-            credential: server.credential ? '***' : '',
-          }),
-        ),
-        mediaConstraints,
-        sdp_constraints: sdpConstraints,
-      });
-      webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
-        ...adaptorConfig,
-        callback: (info: string, obj?: any) => {
-          console.log('WebRTC callback wired', info);
-          console.log('WEBRTC_CALLBACK_INFO:', info, obj);
-          if (
-            info === 'takeConfiguration' ||
-            info === 'takeCandidate' ||
-            info === 'publish_started' ||
-            info === 'publish_finished' ||
-            info === 'closed' ||
-            info === 'data_channel_closed'
-          ) {
-            console.log('LIVE_CREATE signaling[callback]', {
-              streamId: chosenPublishStreamId,
-              info,
-              payload: obj,
-              hasRemoteAnswer:
-                info === 'takeConfiguration' &&
-                (obj?.type === 'answer' ||
-                  String(obj?.sdp || '').toLowerCase().includes('a=setup:active')),
-            });
-          }
-          setLatestWebRtcCallbackInfo(info);
-          setWebRtcCallbackEvents((current) => [
-            ...current.slice(-49),
-            { event: info, at: new Date().toISOString() },
-          ]);
+      console.log('START WITH CAMERA: local preview ready');
 
-          if (info === 'initialized') {
-            if (hasTriggeredPublishAttemptRef.current) {
+      setPublishingStatus('connecting');
+      setPublishingMessage('Connecting to Ant Media publishing websocket…');
+
+      try {
+        console.log('START WITH CAMERA: loading WebRTC adaptor script', {
+          adaptorScriptUrl,
+        });
+        const WebRTCAdaptorCtor = await loadWebRTCAdaptorScript(
+          adaptorScriptUrl,
+        );
+        console.log('START WITH CAMERA: adaptor module loaded');
+        console.log(
+          'WebRTCAdaptor ctor found:',
+          !!WebRTCAdaptorCtor,
+          WebRTCAdaptorCtor,
+        );
+        if (!WebRTCAdaptorCtor) {
+          throw new Error('Unable to initialize the Ant Media WebRTC adaptor.');
+        }
+
+        if (webRTCAdaptorRef.current?.closeWebSocket) {
+          console.log(
+            'LIVE_CREATE startPublishingWithCamera: closing existing adaptor websocket before creating a new adaptor',
+          );
+          webRTCAdaptorRef.current.closeWebSocket();
+        }
+        console.log('Creating WebRTCAdaptor now', {
+          websocketUrl,
+          publishStreamId: chosenPublishStreamId,
+        });
+        hasTriggeredPublishAttemptRef.current = false;
+        hasLoggedFirstPublishFailureRef.current = false;
+        const mediaConstraints = { video: true, audio: true };
+        const publishIceServers = [{ urls: 'stun:stun1.l.google.com:19302' }];
+        const peerConnectionConfig = {
+          iceServers: publishIceServers,
+        };
+        console.log('LIVE_CREATE adaptor[final_ice_config_input]', {
+          streamId: chosenPublishStreamId,
+          websocketUrl,
+          peerConnectionConfig: maskIceServers(peerConnectionConfig),
+        });
+        const sdpConstraints = {
+          OfferToReceiveAudio: false,
+          OfferToReceiveVideo: false,
+        };
+        const adaptorConfig = {
+          websocket_url: websocketUrl,
+          mediaConstraints,
+          peerconnection_config: peerConnectionConfig,
+          sdp_constraints: sdpConstraints,
+          localVideoId: 'live-create-preview-video',
+          localStream: stream,
+          isPlayMode: false,
+          debug: false,
+          reconnectIfRequiredFlag: true,
+        };
+        console.log('LIVE_CREATE: peerconnection_config (publish)', {
+          websocket_url: websocketUrl,
+          publishStreamId: chosenPublishStreamId,
+          peerconnection_config: {
+            ...peerConnectionConfig,
+            iceServers: peerConnectionConfig.iceServers.map((server) =>
+              server.credential ? { ...server, credential: '***' } : server,
+            ),
+          },
+          iceServerCount: publishIceServers.length,
+          containsUdpTurn: publishIceServers.some((server) =>
+            String(server.urls || '').includes('transport=udp'),
+          ),
+          'peerconnection_config.iceServers':
+            peerConnectionConfig.iceServers.map((server) =>
+              server.credential ? { ...server, credential: '***' } : server,
+            ),
+        });
+        console.log('FINAL ICE CONFIG:', peerConnectionConfig);
+        console.log('LIVE_CREATE: adaptor constructor config (expanded)', {
+          websocket_url: websocketUrl,
+          publishStreamId: chosenPublishStreamId,
+          peerconnection_config: peerConnectionConfig,
+          'peerconnection_config.iceServers':
+            peerConnectionConfig.iceServers.map((server) => ({
+              urls: server.urls,
+              username: server.username || '',
+              credential: server.credential ? '***' : '',
+            })),
+          mediaConstraints,
+          sdp_constraints: sdpConstraints,
+        });
+        webRTCAdaptorRef.current = new WebRTCAdaptorCtor({
+          ...adaptorConfig,
+          callback: (info: string, obj?: any) => {
+            console.log('WebRTC callback wired', info);
+            console.log('WEBRTC_CALLBACK_INFO:', info, obj);
+            if (
+              info === 'takeConfiguration' ||
+              info === 'takeCandidate' ||
+              info === 'publish_started' ||
+              info === 'publish_finished' ||
+              info === 'closed' ||
+              info === 'data_channel_closed'
+            ) {
+              console.log('LIVE_CREATE signaling[callback]', {
+                streamId: chosenPublishStreamId,
+                info,
+                payload: obj,
+                hasRemoteAnswer:
+                  info === 'takeConfiguration' &&
+                  (obj?.type === 'answer' ||
+                    String(obj?.sdp || '')
+                      .toLowerCase()
+                      .includes('a=setup:active')),
+              });
+            }
+            setLatestWebRtcCallbackInfo(info);
+            setWebRtcCallbackEvents((current) => [
+              ...current.slice(-49),
+              { event: info, at: new Date().toISOString() },
+            ]);
+
+            if (info === 'initialized') {
+              if (hasTriggeredPublishAttemptRef.current) {
+                console.warn(
+                  'LIVE_CREATE: duplicate initialized callback received; publish already triggered',
+                  { publishStreamId: chosenPublishStreamId, info },
+                );
+                return;
+              }
+              console.log('START WITH CAMERA: adaptor initialized');
+              setPublishingStatus('connecting');
+              setPublishingMessage(
+                'WebRTC adaptor initialized. Starting browser publish…',
+              );
+              console.log('START WITH CAMERA: right before publish()', {
+                publishStreamId: chosenPublishStreamId,
+              });
+              console.log('LIVE_CREATE streamId[publish_call_argument]', {
+                streamId: chosenPublishStreamId,
+              });
+              console.log(
+                'LIVE_CREATE correlation[publish_stream_vs_server_logs]',
+                {
+                  publishStreamId: chosenPublishStreamId,
+                  liveId: preparedLiveForPublish?.id,
+                  note: 'Use this publishStreamId to match Ant Media server log streamId.',
+                },
+              );
+              hasTriggeredPublishAttemptRef.current = true;
+              setActivePublishStreamId(chosenPublishStreamId);
+              webRTCAdaptorRef.current?.publish(chosenPublishStreamId);
+              console.log('START WITH CAMERA: right after publish()', {
+                publishStreamId: chosenPublishStreamId,
+                adaptorPresent: Boolean(webRTCAdaptorRef.current),
+              });
+              return;
+            }
+
+            if (
+              info === 'reconnection_attempt_for_publisher' ||
+              info === 'data_channel_closed' ||
+              info === 'publish_finished'
+            ) {
               console.warn(
-                'LIVE_CREATE: duplicate initialized callback received; publish already triggered',
-                { publishStreamId: chosenPublishStreamId, info },
+                'LIVE_CREATE: publish retry-related callback observed (no frontend auto-retry path)',
+                {
+                  publishStreamId: chosenPublishStreamId,
+                  info,
+                },
+              );
+            }
+
+            if (info === 'publish_started') {
+              setPublishingStatus('publishing');
+              setPublishingMessage('Publishing from browser to Ant Media…');
+              return;
+            }
+
+            if (info === 'ice_connection_state_changed') {
+              // Do not mark backend session as live here; this is only transport feedback.
+              setPublishingStatus('publishing');
+              setPublishingMessage(
+                'Live from browser. Your camera stream is publishing to the Ant Media live app.',
               );
               return;
             }
-            console.log('START WITH CAMERA: adaptor initialized');
-            setPublishingStatus('connecting');
-            setPublishingMessage(
-              'WebRTC adaptor initialized. Starting browser publish…',
-            );
-            console.log('START WITH CAMERA: right before publish()', {
-              publishStreamId: chosenPublishStreamId,
-            });
-            console.log('LIVE_CREATE streamId[publish_call_argument]', {
-              streamId: chosenPublishStreamId,
-            });
-            console.log('LIVE_CREATE correlation[publish_stream_vs_server_logs]', {
-              publishStreamId: chosenPublishStreamId,
-              liveId: preparedLiveForPublish?.id,
-              note: 'Use this publishStreamId to match Ant Media server log streamId.',
-            });
-            hasTriggeredPublishAttemptRef.current = true;
-            setActivePublishStreamId(chosenPublishStreamId);
-            webRTCAdaptorRef.current?.publish(chosenPublishStreamId);
-            console.log('START WITH CAMERA: right after publish()', {
-              publishStreamId: chosenPublishStreamId,
-              adaptorPresent: Boolean(webRTCAdaptorRef.current),
-            });
-            return;
-          }
 
-          if (
-            info === 'reconnection_attempt_for_publisher' ||
-            info === 'data_channel_closed' ||
-            info === 'publish_finished'
-          ) {
-            console.warn(
-              'LIVE_CREATE: publish retry-related callback observed (no frontend auto-retry path)',
-              {
-                publishStreamId: chosenPublishStreamId,
-                info,
-              },
-            );
-          }
-
-          if (info === 'publish_started') {
-            setPublishingStatus('publishing');
-            setPublishingMessage('Publishing from browser to Ant Media…');
-            return;
-          }
-
-          if (info === 'ice_connection_state_changed') {
-            // Do not mark backend session as live here; this is only transport feedback.
-            setPublishingStatus('publishing');
-            setPublishingMessage(
-              'Live from browser. Your camera stream is publishing to the Ant Media live app.',
-            );
-            return;
-          }
-
-          if (info === 'publish_finished') {
-            hasTriggeredPublishAttemptRef.current = false;
-            setPublishingStatus('idle');
-            setPublishingMessage(
-              'Browser publishing stopped. OBS workflow remains available.',
-            );
-          }
-        },
-        callbackError: (error: any, messageText: any) => {
-          const structuredError = {
-            publishStreamId: chosenPublishStreamId,
-            error,
-            messageText,
-            errorName: error?.name || '',
-            errorCode: error?.code || error?.errorCode || '',
-            errorMessage:
-              messageText || error?.message || error?.toString?.() || '',
-            errorDetails:
-              error && typeof error === 'object'
-                ? JSON.parse(
-                    JSON.stringify(error, (_key, value) =>
-                      typeof value === 'undefined' ? null : value,
-                    ),
-                  )
-                : error,
-          };
-          if (!hasLoggedFirstPublishFailureRef.current) {
-            hasLoggedFirstPublishFailureRef.current = true;
-            console.error(
-              'PUBLISH ERROR (first failure, retry disabled):',
-              structuredError,
-            );
-          }
-          console.log('WebRTC callbackError wired', {
-            ...structuredError,
-          });
-          console.log('WEBRTC_CALLBACK_ERROR:', {
-            ...structuredError,
-          });
-          setWebRtcCallbackError({ error, messageText });
-          hasTriggeredPublishAttemptRef.current = false;
-          setPublishingStatus('error');
-          setPublishingMessage(
-            messageText || error?.toString?.() || 'Browser publishing failed.',
-          );
-          setDebugLastError(
-            messageText || error?.toString?.() || 'Browser publishing failed.',
-          );
-        },
-      });
-      console.log('WebRTCAdaptor constructor called', {
-        publishStreamId: chosenPublishStreamId,
-        reconnectIfRequiredFlag: true,
-        usedSamePeerConnectionConfigObject:
-          adaptorConfig.peerconnection_config === peerConnectionConfig,
-        adaptorHasPeerConnectionConfig: Boolean(
-          (webRTCAdaptorRef.current as any)?.peerconnection_config,
-        ),
-        adaptorPeerConnectionConfig: (webRTCAdaptorRef.current as any)
-          ?.peerconnection_config
-          ? {
-              ...((webRTCAdaptorRef.current as any).peerconnection_config || {}),
-              iceServers: (
-                (webRTCAdaptorRef.current as any).peerconnection_config
-                  ?.iceServers || []
-              ).map((server: any) => ({
-                urls: server?.urls,
-                username: server?.username || '',
-                credential: server?.credential ? '***' : '',
-              })),
+            if (info === 'publish_finished') {
+              hasTriggeredPublishAttemptRef.current = false;
+              setPublishingStatus('idle');
+              setPublishingMessage(
+                'Browser publishing stopped. OBS workflow remains available.',
+              );
             }
-          : null,
-        localPeerConnectionConfig: {
-          ...peerConnectionConfig,
-          iceServers: peerConnectionConfig.iceServers.map((server) => ({
-            urls: server.urls,
-            username: server.username || '',
-            credential: server.credential ? '***' : '',
-          })),
-        },
-      });
-    } catch (error: any) {
-      console.error('START WITH CAMERA: adaptor creation failed', error);
-      hasTriggeredPublishAttemptRef.current = false;
-      setPublishingStatus('error');
-      setPublishingMessage(
-        error?.message || 'Unable to connect browser publishing to Ant Media.',
-      );
-      setDebugLastError(
-        error?.message || 'Unable to connect browser publishing to Ant Media.',
-      );
+          },
+          callbackError: (error: any, messageText: any) => {
+            const structuredError = {
+              publishStreamId: chosenPublishStreamId,
+              error,
+              messageText,
+              errorName: error?.name || '',
+              errorCode: error?.code || error?.errorCode || '',
+              errorMessage:
+                messageText || error?.message || error?.toString?.() || '',
+              errorDetails:
+                error && typeof error === 'object'
+                  ? JSON.parse(
+                      JSON.stringify(error, (_key, value) =>
+                        typeof value === 'undefined' ? null : value,
+                      ),
+                    )
+                  : error,
+            };
+            if (!hasLoggedFirstPublishFailureRef.current) {
+              hasLoggedFirstPublishFailureRef.current = true;
+              console.error(
+                'PUBLISH ERROR (first failure, retry disabled):',
+                structuredError,
+              );
+            }
+            console.log('WebRTC callbackError wired', {
+              ...structuredError,
+            });
+            console.log('WEBRTC_CALLBACK_ERROR:', {
+              ...structuredError,
+            });
+            setWebRtcCallbackError({ error, messageText });
+            hasTriggeredPublishAttemptRef.current = false;
+            setPublishingStatus('error');
+            setPublishingMessage(
+              messageText ||
+                error?.toString?.() ||
+                'Browser publishing failed.',
+            );
+            setDebugLastError(
+              messageText ||
+                error?.toString?.() ||
+                'Browser publishing failed.',
+            );
+          },
+        });
+        console.log('WebRTCAdaptor constructor called', {
+          publishStreamId: chosenPublishStreamId,
+          reconnectIfRequiredFlag: true,
+          usedSamePeerConnectionConfigObject:
+            adaptorConfig.peerconnection_config === peerConnectionConfig,
+          adaptorHasPeerConnectionConfig: Boolean(
+            (webRTCAdaptorRef.current as any)?.peerconnection_config,
+          ),
+          adaptorPeerConnectionConfig: (webRTCAdaptorRef.current as any)
+            ?.peerconnection_config
+            ? {
+                ...((webRTCAdaptorRef.current as any).peerconnection_config ||
+                  {}),
+                iceServers: (
+                  (webRTCAdaptorRef.current as any).peerconnection_config
+                    ?.iceServers || []
+                ).map((server: any) => ({
+                  urls: server?.urls,
+                  username: server?.username || '',
+                  credential: server?.credential ? '***' : '',
+                })),
+              }
+            : null,
+          localPeerConnectionConfig: {
+            ...peerConnectionConfig,
+            iceServers: peerConnectionConfig.iceServers.map((server) => ({
+              urls: server.urls,
+              username: server.username || '',
+              credential: server.credential ? '***' : '',
+            })),
+          },
+        });
+      } catch (error: any) {
+        console.error('START WITH CAMERA: adaptor creation failed', error);
+        hasTriggeredPublishAttemptRef.current = false;
+        setPublishingStatus('error');
+        setPublishingMessage(
+          error?.message ||
+            'Unable to connect browser publishing to Ant Media.',
+        );
+        setDebugLastError(
+          error?.message ||
+            'Unable to connect browser publishing to Ant Media.',
+        );
+      }
+    } finally {
+      startFlowLockRef.current = false;
+      setIsStartFlowInProgress(false);
     }
     } finally {
       startFlowLockRef.current = false;
@@ -897,9 +937,12 @@ export default function LiveCreatePage() {
       return;
     }
 
-    console.log('LIVE_CREATE handleStopPublishing: stopping active publish stream', {
-      activePublishStreamId,
-    });
+    console.log(
+      'LIVE_CREATE handleStopPublishing: stopping active publish stream',
+      {
+        activePublishStreamId,
+      },
+    );
     webRTCAdaptorRef.current.stop(activePublishStreamId);
     hasTriggeredPublishAttemptRef.current = false;
     setActivePublishStreamId('');
@@ -1000,7 +1043,7 @@ export default function LiveCreatePage() {
   const toggleTrack = (kind: 'audio' | 'video') => {
     const stream = mediaStreamRef.current;
     if (!stream) {
-      message.info('Start camera preview first.');
+      message.info(intl.formatMessage({ id: 'live.create.startPreviewFirst' }));
       return;
     }
 
@@ -1011,8 +1054,8 @@ export default function LiveCreatePage() {
     if (!track) {
       message.warning(
         kind === 'audio'
-          ? 'No microphone track is available.'
-          : 'No camera track is available.',
+          ? intl.formatMessage({ id: 'live.create.noMicTrack' })
+          : intl.formatMessage({ id: 'live.create.noCameraTrack' }),
       );
       return;
     }
@@ -1026,26 +1069,37 @@ export default function LiveCreatePage() {
     }
 
     setDeviceStatusMessage(
-      `${kind === 'audio' ? 'Microphone' : 'Camera'} ${
-        track.enabled ? 'enabled' : 'muted'
-      } for local preview.`,
+      intl.formatMessage(
+        {
+          id: 'live.create.trackStateChanged',
+        },
+        {
+          kind:
+            kind === 'audio'
+              ? intl.formatMessage({ id: 'live.create.microphone' })
+              : intl.formatMessage({ id: 'live.create.camera' }),
+          state: track.enabled
+            ? intl.formatMessage({ id: 'live.create.enabled' })
+            : intl.formatMessage({ id: 'live.create.muted' }),
+        },
+      ),
     );
   };
 
   const infoItems = [
     {
       key: 'stream-key',
-      label: 'Stream Key',
+      label: intl.formatMessage({ id: 'live.create.streamKey' }),
       value: prepareSession?.ant_media?.stream_id || '',
     },
     {
       key: 'rtmp',
-      label: 'RTMP Server URL',
+      label: intl.formatMessage({ id: 'live.create.rtmpServerUrl' }),
       value: createdLive?.rtmp_url || '',
     },
     {
       key: 'playback',
-      label: 'Playback URL',
+      label: intl.formatMessage({ id: 'live.create.playbackUrl' }),
       value: createdLive?.playback_url || '',
     },
   ];
@@ -1092,46 +1146,46 @@ export default function LiveCreatePage() {
 
   const deviceChecklist = [
     {
-      label: 'Prepare handshake',
+      label: intl.formatMessage({ id: 'live.create.prepareHandshake' }),
       value:
         preparePhase === 'prepared'
-          ? 'Prepared for browser publishing'
+          ? intl.formatMessage({ id: 'live.create.preparePrepared' })
           : preparePhase === 'preparing'
-          ? 'Preparing'
+          ? intl.formatMessage({ id: 'live.create.preparing' })
           : preparePhase === 'error'
-          ? 'Prepare failed'
-          : 'Not prepared',
+          ? intl.formatMessage({ id: 'live.create.prepareFailed' })
+          : intl.formatMessage({ id: 'live.create.notPrepared' }),
     },
     {
-      label: 'Camera',
+      label: intl.formatMessage({ id: 'live.create.camera' }),
       value:
         devicePermissionStatus === 'ready'
           ? isCameraEnabled
-            ? 'Ready'
-            : 'Disabled in preview'
-          : 'Awaiting permission',
+            ? intl.formatMessage({ id: 'live.create.ready' })
+            : intl.formatMessage({ id: 'live.create.disabledInPreview' })
+          : intl.formatMessage({ id: 'live.create.awaitingPermission' }),
     },
     {
-      label: 'Microphone',
+      label: intl.formatMessage({ id: 'live.create.microphone' }),
       value:
         devicePermissionStatus === 'ready'
           ? isMicEnabled
-            ? 'Ready'
-            : 'Muted in preview'
-          : 'Awaiting permission',
+            ? intl.formatMessage({ id: 'live.create.ready' })
+            : intl.formatMessage({ id: 'live.create.mutedInPreview' })
+          : intl.formatMessage({ id: 'live.create.awaitingPermission' }),
     },
     {
-      label: 'Publishing pipeline',
+      label: intl.formatMessage({ id: 'live.create.publishingPipeline' }),
       value:
         publishingStatus === 'publishing'
-          ? 'Connected to Ant Media live app'
-          : 'Ready for Ant Media browser publishing',
+          ? intl.formatMessage({ id: 'live.create.connectedToAntMedia' })
+          : intl.formatMessage({ id: 'live.create.readyForBrowserPublish' }),
     },
     {
-      label: 'Live status (backend)',
+      label: intl.formatMessage({ id: 'live.create.liveStatusBackend' }),
       value: backendStatus?.normalized_status
         ? String(backendStatus.normalized_status).toUpperCase()
-        : 'Unknown',
+        : intl.formatMessage({ id: 'live.create.unknown' }),
     },
   ];
   const isStartWithCameraDisabled =
@@ -1142,7 +1196,9 @@ export default function LiveCreatePage() {
     publishingStatus === 'publishing' ||
     Boolean(activePublishStreamId);
   const showLiveDebugPanel =
-    process.env.NODE_ENV === 'development' && Boolean(isLoggedIn);
+    process.env.NODE_ENV === 'development' &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('liveDebug') === '1';
 
   if (
     !initialState?.authLoading &&
@@ -1172,7 +1228,10 @@ export default function LiveCreatePage() {
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: '8px 0 24px' }}>
         <Row gutter={[20, 20]}>
           <Col xs={24} xl={9}>
-            <Card variant="borderless" style={{ borderRadius: 20, height: '100%' }}>
+            <Card
+              variant="borderless"
+              style={{ borderRadius: 20, height: '100%' }}
+            >
               <Space direction="vertical" size={20} style={{ width: '100%' }}>
                 <div>
                   <Text
@@ -1182,14 +1241,13 @@ export default function LiveCreatePage() {
                       letterSpacing: '0.08em',
                     }}
                   >
-                    LIVE SETUP
+                    {intl.formatMessage({ id: 'live.create.setupEyebrow' })}
                   </Text>
                   <Title level={2} style={{ margin: '8px 0 8px' }}>
-                    Create your live stream
+                    {intl.formatMessage({ id: 'live.create.title' })}
                   </Title>
                   <Text type="secondary">
-                    Configure the session details, then choose a browser camera
-                    preview workflow or the professional RTMP stream key option.
+                    {intl.formatMessage({ id: 'live.create.subtitle' })}
                   </Text>
                 </div>
 
@@ -1205,47 +1263,92 @@ export default function LiveCreatePage() {
                   initialValues={{ visibility: 'public' }}
                 >
                   <Form.Item
-                    label="Title"
+                    label={intl.formatMessage({ id: 'live.create.form.title' })}
                     name="title"
                     rules={[
-                      { required: true, message: 'Please enter a live title.' },
+                      {
+                        required: true,
+                        message: intl.formatMessage({
+                          id: 'live.create.form.titleRequired',
+                        }),
+                      },
                     ]}
                   >
                     <Input
                       size="large"
-                      placeholder="What are you streaming today?"
-                    />
-                  </Form.Item>
-                  <Form.Item label="Description" name="description">
-                    <Input.TextArea
-                      rows={4}
-                      placeholder="Add a short agenda so viewers know what to expect."
-                    />
-                  </Form.Item>
-                  <Form.Item label="Category" name="category">
-                    <Select
-                      allowClear
-                      options={categoryOptions}
-                      placeholder="Select a category"
+                      placeholder={intl.formatMessage({
+                        id: 'live.create.form.titlePlaceholder',
+                      })}
                     />
                   </Form.Item>
                   <Form.Item
-                    label="Visibility"
+                    label={intl.formatMessage({
+                      id: 'live.create.form.description',
+                    })}
+                    name="description"
+                  >
+                    <Input.TextArea
+                      rows={4}
+                      placeholder={intl.formatMessage({
+                        id: 'live.create.form.descriptionPlaceholder',
+                      })}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    label={intl.formatMessage({
+                      id: 'live.create.form.category',
+                    })}
+                    name="category"
+                  >
+                    <Select
+                      allowClear
+                      options={categoryOptions}
+                      placeholder={intl.formatMessage({
+                        id: 'live.create.form.categoryPlaceholder',
+                      })}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    label={intl.formatMessage({
+                      id: 'live.create.form.visibility',
+                    })}
                     name="visibility"
                     rules={[
-                      { required: true, message: 'Please choose visibility.' },
+                      {
+                        required: true,
+                        message: intl.formatMessage({
+                          id: 'live.create.form.visibilityRequired',
+                        }),
+                      },
                     ]}
                   >
                     <Select
                       options={[
-                        { label: 'Public', value: 'public' },
-                        { label: 'Unlisted', value: 'unlisted' },
-                        { label: 'Private', value: 'private' },
+                        {
+                          label: intl.formatMessage({
+                            id: 'video.visibility.public',
+                          }),
+                          value: 'public',
+                        },
+                        {
+                          label: intl.formatMessage({
+                            id: 'live.create.form.visibilityUnlisted',
+                          }),
+                          value: 'unlisted',
+                        },
+                        {
+                          label: intl.formatMessage({
+                            id: 'video.visibility.private',
+                          }),
+                          value: 'private',
+                        },
                       ]}
                     />
                   </Form.Item>
                   <Form.Item
-                    label="QR Code (Optional)"
+                    label={intl.formatMessage({
+                      id: 'live.create.form.qrOptional',
+                    })}
                     style={{ marginBottom: 16 }}
                   >
                     <Space
@@ -1259,12 +1362,14 @@ export default function LiveCreatePage() {
                         style={{ width: '100%' }}
                       >
                         <Text type="secondary">
-                          Enter a wallet/payment address to generate the Pay QR.
-                          This QR is used for payment/support, not for watching
-                          the stream.
+                          {intl.formatMessage({
+                            id: 'live.create.form.qrHint',
+                          })}
                         </Text>
                         <Input
-                          placeholder="Payment Address"
+                          placeholder={intl.formatMessage({
+                            id: 'live.create.form.paymentAddress',
+                          })}
                           value={payQrPayload}
                           onChange={(event) =>
                             setPayQrPayload(event.target.value)
@@ -1274,7 +1379,9 @@ export default function LiveCreatePage() {
                       <QrCodePanel
                         payload={payQrPayload}
                         size={160}
-                        emptyText="Enter a payment address to generate the Pay QR."
+                        emptyText={intl.formatMessage({
+                          id: 'live.create.form.qrEmpty',
+                        })}
                       />
                     </Space>
                   </Form.Item>
@@ -1287,7 +1394,7 @@ export default function LiveCreatePage() {
                     }}
                   >
                     <Button onClick={() => history.push('/live')}>
-                      Cancel
+                      {intl.formatMessage({ id: 'common.cancel' })}
                     </Button>
                     <Button
                       type="primary"
@@ -1295,7 +1402,7 @@ export default function LiveCreatePage() {
                       icon={<VideoCameraOutlined />}
                       loading={submitting}
                     >
-                      Create Live Session
+                      {intl.formatMessage({ id: 'live.create.form.submit' })}
                     </Button>
                   </div>
                 </Form>
@@ -1314,15 +1421,23 @@ export default function LiveCreatePage() {
                       style={{ width: '100%' }}
                     >
                       <Tag color={createdLive ? 'processing' : 'default'}>
-                        {createdLive ? 'SESSION READY' : 'WAITING FOR SESSION'}
+                        {createdLive
+                          ? intl.formatMessage({
+                              id: 'live.create.sessionReady',
+                            })
+                          : intl.formatMessage({
+                              id: 'live.create.waitingForSession',
+                            })}
                       </Tag>
                       <Title level={4} style={{ margin: 0 }}>
-                        Broadcast preparation
+                        {intl.formatMessage({
+                          id: 'live.create.broadcastPreparation',
+                        })}
                       </Title>
                       <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                        Build your live session in the browser now, then plug
-                        the same session into Ant Media publishing in the next
-                        step.
+                        {intl.formatMessage({
+                          id: 'live.create.broadcastPreparationHint',
+                        })}
                       </Paragraph>
                     </Space>
                   </Col>
@@ -1339,7 +1454,9 @@ export default function LiveCreatePage() {
                         disabled={!createdLive}
                         onClick={() => setBroadcastMode('camera')}
                       >
-                        Start with Camera
+                        {intl.formatMessage({
+                          id: 'live.create.startWithCamera',
+                        })}
                       </Button>
                       <Button
                         type={
@@ -1349,7 +1466,7 @@ export default function LiveCreatePage() {
                         disabled={!createdLive}
                         onClick={() => setBroadcastMode('stream-key')}
                       >
-                        Use Stream Key
+                        {intl.formatMessage({ id: 'live.create.useStreamKey' })}
                       </Button>
                     </Space>
                   </Col>
@@ -1369,12 +1486,18 @@ export default function LiveCreatePage() {
                     >
                       <div>
                         <Title level={4} style={{ margin: 0 }}>
-                          Preview panel
+                          {intl.formatMessage({
+                            id: 'live.create.previewPanel',
+                          })}
                         </Title>
                         <Text type="secondary">
                           {broadcastMode === 'camera'
-                            ? 'Request local camera and microphone access to verify readiness before publishing.'
-                            : 'Stream key mode keeps your OBS or encoder details in the stream details card on the right, while this panel stays focused on browser preview workflows.'}
+                            ? intl.formatMessage({
+                                id: 'live.create.previewPanel.cameraHint',
+                              })
+                            : intl.formatMessage({
+                                id: 'live.create.previewPanel.streamKeyHint',
+                              })}
                         </Text>
                       </div>
 
@@ -1415,8 +1538,12 @@ export default function LiveCreatePage() {
                                 />
                                 <Text style={{ color: '#fff' }}>
                                   {createdLive
-                                    ? 'Enable camera preview to check framing, audio, and readiness.'
-                                    : 'Create a session first to unlock browser camera preview.'}
+                                    ? intl.formatMessage({
+                                        id: 'live.create.previewPanel.enableCameraHint',
+                                      })
+                                    : intl.formatMessage({
+                                        id: 'live.create.previewPanel.createFirstHint',
+                                      })}
                                 </Text>
                               </Space>
                             )}
@@ -1444,7 +1571,9 @@ export default function LiveCreatePage() {
                               disabled={isStartWithCameraDisabled}
                               onClick={handleStartWithCamera}
                             >
-                              Start with Camera
+                              {intl.formatMessage({
+                                id: 'live.create.startWithCamera',
+                              })}
                             </Button>
                             <Button
                               icon={
@@ -1457,7 +1586,13 @@ export default function LiveCreatePage() {
                               disabled={devicePermissionStatus !== 'ready'}
                               onClick={() => toggleTrack('audio')}
                             >
-                              {isMicEnabled ? 'Mute Mic' : 'Unmute Mic'}
+                              {isMicEnabled
+                                ? intl.formatMessage({
+                                    id: 'live.create.muteMic',
+                                  })
+                                : intl.formatMessage({
+                                    id: 'live.create.unmuteMic',
+                                  })}
                             </Button>
                             <Button
                               icon={<VideoCameraOutlined />}
@@ -1465,22 +1600,30 @@ export default function LiveCreatePage() {
                               onClick={() => toggleTrack('video')}
                             >
                               {isCameraEnabled
-                                ? 'Turn Camera Off'
-                                : 'Turn Camera On'}
+                                ? intl.formatMessage({
+                                    id: 'live.create.turnCameraOff',
+                                  })
+                                : intl.formatMessage({
+                                    id: 'live.create.turnCameraOn',
+                                  })}
                             </Button>
                             <Button
                               icon={<ReloadOutlined />}
                               disabled={isStartWithCameraDisabled}
                               onClick={handleStartWithCamera}
                             >
-                              Refresh Devices
+                              {intl.formatMessage({
+                                id: 'live.create.refreshDevices',
+                              })}
                             </Button>
                             <Button
                               danger
                               disabled={publishingStatus === 'idle'}
                               onClick={handleStopPublishing}
                             >
-                              Stop Publishing
+                              {intl.formatMessage({
+                                id: 'live.create.stopPublishing',
+                              })}
                             </Button>
                           </Space>
                         </>
@@ -1488,10 +1631,16 @@ export default function LiveCreatePage() {
                         <Alert
                           type="info"
                           showIcon
-                          message="Use Stream Key mode keeps the RTMP Server, Stream Key, and Playback URL in separate fields so OBS configuration is clearer and less error-prone."
+                          message={intl.formatMessage({
+                            id: 'live.create.streamKeyInfo',
+                          })}
                         />
                       ) : (
-                        <Empty description="Create a live session to reveal RTMP details." />
+                        <Empty
+                          description={intl.formatMessage({
+                            id: 'live.create.streamKeyEmpty',
+                          })}
+                        />
                       )}
                     </Space>
                   </Card>
@@ -1506,7 +1655,9 @@ export default function LiveCreatePage() {
                     <Card
                       variant="borderless"
                       style={{ borderRadius: 20 }}
-                      title="Status area"
+                      title={intl.formatMessage({
+                        id: 'live.create.statusArea',
+                      })}
                     >
                       <Space
                         direction="vertical"
@@ -1516,8 +1667,10 @@ export default function LiveCreatePage() {
                         <Tag
                           color={getPermissionTagColor(devicePermissionStatus)}
                         >
-                          Device readiness:{' '}
-                          {devicePermissionStatus.toUpperCase()}
+                          {intl.formatMessage({
+                            id: 'live.create.deviceReadiness',
+                          })}
+                          : {devicePermissionStatus.toUpperCase()}
                         </Tag>
                         <Tag
                           color={
@@ -1532,8 +1685,10 @@ export default function LiveCreatePage() {
                               : 'default'
                           }
                         >
-                          Browser publish (local transport):{' '}
-                          {publishingStatus.toUpperCase()}
+                          {intl.formatMessage({
+                            id: 'live.create.browserPublish',
+                          })}
+                          : {publishingStatus.toUpperCase()}
                         </Tag>
                         <Tag
                           color={
@@ -1546,7 +1701,10 @@ export default function LiveCreatePage() {
                               : 'default'
                           }
                         >
-                          Prepare handshake: {preparePhase.toUpperCase()}
+                          {intl.formatMessage({
+                            id: 'live.create.prepareHandshake',
+                          })}
+                          : {preparePhase.toUpperCase()}
                         </Tag>
                         <Tag
                           color={
@@ -1557,7 +1715,10 @@ export default function LiveCreatePage() {
                               : 'processing'
                           }
                         >
-                          Live status (backend):{' '}
+                          {intl.formatMessage({
+                            id: 'live.create.liveStatusBackend',
+                          })}
+                          :{' '}
                           {String(
                             backendStatus?.normalized_status || 'unknown',
                           ).toUpperCase()}
@@ -1565,17 +1726,26 @@ export default function LiveCreatePage() {
                         <Text type="secondary">{prepareMessage}</Text>
                         {prepareSession?.session_id ? (
                           <Text type="secondary">
-                            Prepare session: {prepareSession.session_id}
+                            {intl.formatMessage({
+                              id: 'live.create.prepareSession',
+                            })}
+                            : {prepareSession.session_id}
                           </Text>
                         ) : null}
                         {backendStatus?.message ? (
                           <Text type="secondary">
-                            Backend status: {backendStatus.message}
+                            {intl.formatMessage({
+                              id: 'live.create.backendStatus',
+                            })}
+                            : {backendStatus.message}
                           </Text>
                         ) : null}
                         {backendStatus?.status_source ? (
                           <Text type="secondary">
-                            Status source: {backendStatus.status_source}
+                            {intl.formatMessage({
+                              id: 'live.create.statusSource',
+                            })}
+                            : {backendStatus.status_source}
                           </Text>
                         ) : null}
                         {backendStatus?.sync_ok === false ? (
@@ -1584,7 +1754,9 @@ export default function LiveCreatePage() {
                             showIcon
                             message={
                               backendStatus.sync_error ||
-                              'Backend and media server status are out of sync.'
+                              intl.formatMessage({
+                                id: 'live.create.backendOutOfSync',
+                              })
                             }
                           />
                         ) : null}
@@ -1617,14 +1789,18 @@ export default function LiveCreatePage() {
                           <Alert
                             type="warning"
                             showIcon
-                            message="Camera streaming requires HTTPS"
+                            message={intl.formatMessage({
+                              id: 'live.create.httpsRequired',
+                            })}
                           />
                         ) : null}
                         {devicePermissionStatus === 'error' ? (
                           <Alert
                             type="warning"
                             showIcon
-                            message="Browser permissions are required for local camera preview. RTMP mode remains available if you prefer your encoder."
+                            message={intl.formatMessage({
+                              id: 'live.create.permissionRequiredHint',
+                            })}
                           />
                         ) : null}
                         <Space wrap size={[8, 8]}>
@@ -1883,7 +2059,9 @@ export default function LiveCreatePage() {
                     <Card
                       variant="borderless"
                       style={{ borderRadius: 20 }}
-                      title="Device checklist"
+                      title={intl.formatMessage({
+                        id: 'live.create.deviceChecklist',
+                      })}
                     >
                       <Descriptions column={1} labelStyle={{ width: 136 }}>
                         {deviceChecklist.map((item) => (
@@ -1900,7 +2078,9 @@ export default function LiveCreatePage() {
                     <Card
                       variant="borderless"
                       style={{ borderRadius: 20 }}
-                      title="Stream details card"
+                      title={intl.formatMessage({
+                        id: 'live.create.streamDetailsCard',
+                      })}
                     >
                       {createdLive ? (
                         <Space
@@ -1917,11 +2097,18 @@ export default function LiveCreatePage() {
                               style={{ display: 'block', marginTop: 6 }}
                             >
                               {createdLive.description ||
-                                'Session is prepared and ready for browser preview or RTMP publishing.'}
+                                intl.formatMessage({
+                                  id: 'live.create.sessionReadyHint',
+                                })}
                             </Text>
                           </div>
                           <Space wrap>
-                            <Tag>{createdLive.category || 'General'}</Tag>
+                            <Tag>
+                              {createdLive.category ||
+                                intl.formatMessage({
+                                  id: 'live.create.generalCategory',
+                                })}
+                            </Tag>
                             <Tag color="processing">
                               {String(
                                 createdLive.visibility || 'public',
@@ -1942,7 +2129,10 @@ export default function LiveCreatePage() {
                                   align="start"
                                 >
                                   <Text code style={{ wordBreak: 'break-all' }}>
-                                    {item.value || 'Not provided'}
+                                    {item.value ||
+                                      intl.formatMessage({
+                                        id: 'live.create.notProvided',
+                                      })}
                                   </Text>
                                   <Button
                                     icon={<CopyOutlined />}
@@ -1950,7 +2140,9 @@ export default function LiveCreatePage() {
                                       copyValue(item.value, item.label)
                                     }
                                   >
-                                    Copy
+                                    {intl.formatMessage({
+                                      id: 'live.create.copy',
+                                    })}
                                   </Button>
                                 </Space>
                               </Descriptions.Item>
@@ -1959,7 +2151,9 @@ export default function LiveCreatePage() {
                           <Alert
                             type="info"
                             showIcon
-                            message="OBS setup tip: paste the RTMP Server into the server field and the Stream Key into the stream key field. Keep Playback URL separate for monitoring and QA."
+                            message={intl.formatMessage({
+                              id: 'live.create.obsSetupTip',
+                            })}
                           />
                           <Button
                             type="primary"
@@ -1974,7 +2168,9 @@ export default function LiveCreatePage() {
                               history.push(nextWatchUrl);
                             }}
                           >
-                            Open Watch Page
+                            {intl.formatMessage({
+                              id: 'live.create.openWatchPage',
+                            })}
                           </Button>
                           <Button
                             icon={<EyeOutlined />}
@@ -1995,12 +2191,16 @@ export default function LiveCreatePage() {
                               strong
                               style={{ display: 'block', marginBottom: 8 }}
                             >
-                              Watch QR
+                              {intl.formatMessage({
+                                id: 'live.create.watchQr',
+                              })}
                             </Text>
                             <QrCodePanel
                               payload={watchQrPayload}
                               size={150}
-                              emptyText="Watch URL is not available yet."
+                              emptyText={intl.formatMessage({
+                                id: 'live.create.watchQrEmpty',
+                              })}
                             />
                           </div>
                         </Space>
@@ -2008,7 +2208,9 @@ export default function LiveCreatePage() {
                         <Alert
                           type="info"
                           showIcon
-                          message="Session details appear here after you create the live broadcast."
+                          message={intl.formatMessage({
+                            id: 'live.create.sessionDetailsPlaceholder',
+                          })}
                         />
                       )}
                     </Card>
