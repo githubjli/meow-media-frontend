@@ -1,9 +1,13 @@
 import {
   CopyOutlined,
+  DownOutlined,
   EyeOutlined,
+  MessageOutlined,
   PlayCircleOutlined,
   PoweroffOutlined,
   QrcodeOutlined,
+  ShopOutlined,
+  ShoppingOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
@@ -14,11 +18,13 @@ import {
   Button,
   Card,
   Col,
+  Collapse,
+  Divider,
   Empty,
+  Input,
   Row,
   Skeleton,
   Space,
-  Statistic,
   Tag,
   Typography,
   message,
@@ -32,11 +38,12 @@ import {
   getLiveBroadcast,
   getLiveBroadcastStatus,
   getSafeWatchUrl,
-  normalizeLiveStatus,
   startLiveBroadcast,
   type LiveBroadcast,
   type LiveBroadcastStatus,
 } from '@/services/live';
+import { getLocalizedCategoryLabel } from '@/utils/categoryI18n';
+import { getLiveStatusPresentation } from '@/utils/liveStatusPresentation';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -58,20 +65,6 @@ declare global {
     Hls?: HlsCtor;
   }
 }
-
-const getStatusColor = (status?: string) => {
-  const normalized = normalizeLiveStatus(status);
-  switch (normalized) {
-    case 'live':
-      return 'error';
-    case 'ended':
-      return 'default';
-    case 'ready':
-    case 'waiting_for_signal':
-    default:
-      return 'processing';
-  }
-};
 
 const copyValue = async (value: string, label: string) => {
   if (!value) {
@@ -164,7 +157,7 @@ export default function LiveRoomPage() {
   );
   const [errorMessage, setErrorMessage] = useState('');
   const [playerStatus, setPlayerStatus] = useState(
-    'Waiting for a playback URL from Django.',
+    intl.formatMessage({ id: 'live.room.player.waitingPlaybackUrl' }),
   );
   const [playerPhase, setPlayerPhase] = useState<PlayerPhase>('idle');
   const [payQrPayload, setPayQrPayload] = useState('');
@@ -182,18 +175,39 @@ export default function LiveRoomPage() {
     backendStatus?.django_status ||
     broadcast?.normalized_status ||
     broadcast?.status;
-  const normalizedBusinessStatus = normalizeLiveStatus(effectiveBackendStatus);
+  const statusPresentation = getLiveStatusPresentation(
+    effectiveBackendStatus,
+    intl,
+  );
   const playbackUrl =
     backendStatus?.playback_url || broadcast?.playback_url || '';
-  const watchUrl = getSafeWatchUrl({
-    id: backendStatus?.id || broadcast?.id,
-  });
-  const title = broadcast?.title || broadcast?.name || 'Live Stream';
+  const rawWatchUrl =
+    backendStatus?.watch_url ||
+    broadcast?.watch_url ||
+    getSafeWatchUrl({
+      id: backendStatus?.id || broadcast?.id,
+    });
+  const watchUrl = useMemo(() => {
+    const candidate = String(rawWatchUrl || '').trim();
+    if (!candidate) return '';
+    if (/^https?:\/\//i.test(candidate)) {
+      return candidate;
+    }
+    const path = candidate.startsWith('/') ? candidate : `/${candidate}`;
+    const origin =
+      liveConfig.watchPageOrigin ||
+      (typeof window !== 'undefined' ? window.location.origin : '');
+    return origin ? `${String(origin).replace(/\/$/, '')}${path}` : path;
+  }, [rawWatchUrl]);
+  const title =
+    broadcast?.title ||
+    broadcast?.name ||
+    intl.formatMessage({ id: 'live.room.fallbackTitle' });
   const creatorName =
     broadcast?.creator?.name ||
     broadcast?.creator?.username ||
     broadcast?.creator?.email ||
-    'Creator';
+    intl.formatMessage({ id: 'live.common.creatorFallback' });
   const viewerCount =
     backendStatus?.viewer_count ??
     backendStatus?.viewerCount ??
@@ -203,19 +217,12 @@ export default function LiveRoomPage() {
   const canStartLive =
     typeof backendStatus?.can_start === 'boolean'
       ? backendStatus.can_start
-      : normalizedBusinessStatus !== 'live';
+      : statusPresentation.uiStatus !== 'live';
   const canEndLive =
     typeof backendStatus?.can_end === 'boolean'
       ? backendStatus.can_end
-      : normalizedBusinessStatus !== 'ended';
-
-  const detailItems = useMemo(
-    () => [
-      { label: 'RTMP Server', value: broadcast?.rtmp_url || '' },
-      { label: 'Playback URL', value: playbackUrl },
-    ],
-    [broadcast?.rtmp_url, playbackUrl],
-  );
+      : statusPresentation.uiStatus !== 'ended';
+  const canShowChatInput = false;
 
   const loadBroadcast = async (showLoader = false) => {
     if (!id) {
@@ -233,10 +240,14 @@ export default function LiveRoomPage() {
       setErrorMessage('');
       setPlayerPhase(data?.playback_url ? 'loading' : 'waiting');
       setPlayerStatus(
-        data?.playback_url ? 'Waiting for stream...' : 'Stream not started yet',
+        data?.playback_url
+          ? intl.formatMessage({ id: 'live.room.player.waitingStream' })
+          : intl.formatMessage({ id: 'live.room.player.notStarted' }),
       );
     } catch (error: any) {
-      setErrorMessage(error?.message || 'Unable to load the live room.');
+      setErrorMessage(
+        error?.message || intl.formatMessage({ id: 'live.room.error.load' }),
+      );
       setBroadcast(null);
     } finally {
       setLoading(false);
@@ -274,7 +285,9 @@ export default function LiveRoomPage() {
     const videoElement = videoElementRef.current;
     if (!videoElement || !playbackUrl) {
       setPlayerPhase('waiting');
-      setPlayerStatus('Stream not started yet');
+      setPlayerStatus(
+        intl.formatMessage({ id: 'live.room.player.notStarted' }),
+      );
       return;
     }
 
@@ -288,7 +301,9 @@ export default function LiveRoomPage() {
       hlsRef.current?.destroy();
       hlsRef.current = null;
       setPlayerPhase('loading');
-      setPlayerStatus('Waiting for stream...');
+      setPlayerStatus(
+        intl.formatMessage({ id: 'live.room.player.waitingStream' }),
+      );
       videoElement.pause();
       videoElement.removeAttribute('src');
       videoElement.load();
@@ -300,21 +315,27 @@ export default function LiveRoomPage() {
       const handlePlaying = () => {
         if (!cancelled) {
           setPlayerPhase('playing');
-          setPlayerStatus('Live stream is playing.');
+          setPlayerStatus(
+            intl.formatMessage({ id: 'live.room.player.playing' }),
+          );
         }
       };
 
       const handleWaiting = () => {
         if (!cancelled) {
           setPlayerPhase('waiting');
-          setPlayerStatus('Waiting for stream...');
+          setPlayerStatus(
+            intl.formatMessage({ id: 'live.room.player.waitingStream' }),
+          );
         }
       };
 
       const handlePlaybackError = () => {
         if (!cancelled) {
           setPlayerPhase('error');
-          setPlayerStatus('Stream not started yet');
+          setPlayerStatus(
+            intl.formatMessage({ id: 'live.room.player.notStarted' }),
+          );
         }
       };
 
@@ -343,14 +364,18 @@ export default function LiveRoomPage() {
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             if (!cancelled) {
               setPlayerPhase('loading');
-              setPlayerStatus('Waiting for stream...');
+              setPlayerStatus(
+                intl.formatMessage({ id: 'live.room.player.waitingStream' }),
+              );
               videoElement.play().catch(() => undefined);
             }
           });
           hls.on(Hls.Events.ERROR, () => {
             if (!cancelled) {
               setPlayerPhase('error');
-              setPlayerStatus('Stream not started yet');
+              setPlayerStatus(
+                intl.formatMessage({ id: 'live.room.player.notStarted' }),
+              );
             }
           });
           return;
@@ -358,14 +383,14 @@ export default function LiveRoomPage() {
       } catch (error) {
         setPlayerPhase('error');
         setPlayerStatus(
-          'Unable to load HLS playback support in this browser. Please try Safari or verify your network access to the hls.js CDN.',
+          intl.formatMessage({ id: 'live.room.player.hlsLoadError' }),
         );
         return;
       }
 
       setPlayerPhase('error');
       setPlayerStatus(
-        'This browser does not support HLS playback for the provided stream.',
+        intl.formatMessage({ id: 'live.room.player.hlsUnsupported' }),
       );
     };
 
@@ -414,7 +439,9 @@ export default function LiveRoomPage() {
       await loadBroadcast(false);
       setPlayerPhase(next?.playback_url ? 'loading' : playerPhase);
       setPlayerStatus(
-        next?.playback_url ? 'Waiting for stream...' : playerStatus,
+        next?.playback_url
+          ? intl.formatMessage({ id: 'live.room.player.waitingStream' })
+          : playerStatus,
       );
       message.success(
         type === 'start'
@@ -469,45 +496,24 @@ export default function LiveRoomPage() {
                     style={{ width: '100%' }}
                   >
                     <Space wrap>
-                      <Tag color={getStatusColor(normalizedBusinessStatus)}>
-                        LIVE STATUS: {normalizedBusinessStatus.toUpperCase()}
+                      <Tag color={statusPresentation.color}>
+                        {statusPresentation.label}
                       </Tag>
                       {broadcast.category ? (
-                        <Tag>{broadcast.category}</Tag>
+                        <Tag>
+                          {getLocalizedCategoryLabel(intl, {
+                            slug: broadcast.category,
+                            name: broadcast.category,
+                          })}
+                        </Tag>
                       ) : null}
                       <Tag icon={<EyeOutlined />}>
-                        {viewerCount.toLocaleString()} viewers
+                        {intl.formatMessage(
+                          { id: 'live.common.viewers' },
+                          { count: viewerCount.toLocaleString() },
+                        )}
                       </Tag>
                     </Space>
-                    <Title level={2} style={{ margin: 0 }}>
-                      {title}
-                    </Title>
-                    <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                      {broadcast.description ||
-                        'Professional live room with Django-managed stream lifecycle and Ant Media playback.'}
-                    </Paragraph>
-                    {backendStatus?.message ? (
-                      <Alert
-                        type="info"
-                        showIcon
-                        message={backendStatus.message}
-                      />
-                    ) : null}
-                    {backendStatus?.status_source ? (
-                      <Text type="secondary">
-                        Status source: {backendStatus.status_source}
-                      </Text>
-                    ) : null}
-                    {backendStatus?.sync_ok === false ? (
-                      <Alert
-                        type="warning"
-                        showIcon
-                        message={
-                          backendStatus.sync_error ||
-                          'Backend and media server status are out of sync.'
-                        }
-                      />
-                    ) : null}
                     <Space align="center" size={12}>
                       <Avatar
                         icon={<UserOutlined />}
@@ -517,9 +523,20 @@ export default function LiveRoomPage() {
                         <Text strong style={{ display: 'block' }}>
                           {creatorName}
                         </Text>
-                        <Text type="secondary">Stream host</Text>
+                        <Text type="secondary">
+                          {intl.formatMessage({ id: 'live.room.streamHost' })}
+                        </Text>
                       </div>
                     </Space>
+                    <Title level={2} style={{ margin: 0 }}>
+                      {title}
+                    </Title>
+                    <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                      {broadcast.description ||
+                        intl.formatMessage({
+                          id: 'live.room.descriptionFallback',
+                        })}
+                    </Paragraph>
                   </Space>
                 </Col>
                 <Col xs={24} lg={8}>
@@ -544,12 +561,6 @@ export default function LiveRoomPage() {
                       onClick={() => handleAction('end')}
                     >
                       {intl.formatMessage({ id: 'live.control.endCta' })}
-                    </Button>
-                    <Button
-                      icon={<CopyOutlined />}
-                      onClick={() => copyValue(playbackUrl, 'Playback URL')}
-                    >
-                      {intl.formatMessage({ id: 'live.control.copyPlayback' })}
                     </Button>
                   </Space>
                 </Col>
@@ -593,47 +604,81 @@ export default function LiveRoomPage() {
                         <Alert type="info" showIcon message={playerStatus} />
                       </Space>
                     ) : (
-                      <Empty description="Playback URL is not available yet. Start your encoder and refresh this room once Django provides the playback endpoint." />
+                      <Empty
+                        description={intl.formatMessage({
+                          id: 'live.room.playbackUnavailable',
+                        })}
+                      />
                     )}
                   </Card>
                   <Card
                     variant="borderless"
                     style={{ borderRadius: 20 }}
-                    title="Stream details"
+                    title={intl.formatMessage({ id: 'live.room.viewerChat' })}
                   >
                     <Space
                       direction="vertical"
-                      size={16}
+                      size={12}
                       style={{ width: '100%' }}
                     >
-                      {detailItems.map((item) => (
-                        <div key={item.label}>
-                          <Text
-                            strong
-                            style={{ display: 'block', marginBottom: 6 }}
-                          >
-                            {item.label}
-                          </Text>
-                          <Space
-                            align="start"
-                            style={{
-                              width: '100%',
-                              justifyContent: 'space-between',
-                            }}
-                          >
-                            <Text code style={{ wordBreak: 'break-all' }}>
-                              {item.value || 'Not available'}
-                            </Text>
-                            <Button
-                              size="small"
-                              icon={<CopyOutlined />}
-                              onClick={() => copyValue(item.value, item.label)}
-                            >
-                              Copy
-                            </Button>
-                          </Space>
-                        </div>
-                      ))}
+                      <Text type="secondary">
+                        {intl.formatMessage({ id: 'live.room.viewerChatHint' })}
+                      </Text>
+                      <Card
+                        size="small"
+                        style={{ borderRadius: 12, minHeight: 180 }}
+                        bodyStyle={{ padding: 16 }}
+                      >
+                        <Space
+                          direction="vertical"
+                          size={10}
+                          style={{ width: '100%' }}
+                        >
+                          {!isLoggedIn ? (
+                            <Alert
+                              type="info"
+                              showIcon
+                              message={intl.formatMessage({
+                                id: 'live.room.chatSignedOut',
+                              })}
+                            />
+                          ) : statusPresentation.uiStatus === 'ended' ? (
+                            <Alert
+                              type="warning"
+                              showIcon
+                              message={intl.formatMessage({
+                                id: 'live.room.chatUnavailableEnded',
+                              })}
+                            />
+                          ) : (
+                            <Empty
+                              image={Empty.PRESENTED_IMAGE_SIMPLE}
+                              description={intl.formatMessage({
+                                id: 'live.room.chatEmpty',
+                              })}
+                            />
+                          )}
+                        </Space>
+                      </Card>
+                      <Divider style={{ margin: '4px 0' }} />
+                      <Space
+                        direction="vertical"
+                        size={8}
+                        style={{ width: '100%' }}
+                      >
+                        <Input.TextArea
+                          rows={3}
+                          disabled={!canShowChatInput}
+                          placeholder={intl.formatMessage({
+                            id: 'live.room.chatInputPlaceholder',
+                          })}
+                        />
+                        <Space style={{ width: '100%', justifyContent: 'end' }}>
+                          <Button type="primary" disabled={!canShowChatInput}>
+                            {intl.formatMessage({ id: 'live.room.chatSend' })}
+                          </Button>
+                        </Space>
+                      </Space>
                     </Space>
                   </Card>
                 </Space>
@@ -641,84 +686,197 @@ export default function LiveRoomPage() {
 
               <Col xs={24} md={8} xl={8}>
                 <Space direction="vertical" size={20} style={{ width: '100%' }}>
-                  <Card
-                    variant="borderless"
-                    style={{ borderRadius: 20 }}
-                    title={
-                      <Space size={8}>
-                        <QrcodeOutlined />
-                        <span>Pay QR</span>
-                      </Space>
-                    }
-                  >
-                    <QrCodePanel
-                      payload={payQrPayload}
-                      emptyText="Payment address is not available yet."
-                    />
-                    <Space style={{ width: '100%', justifyContent: 'center' }}>
-                      <Button
-                        size="small"
-                        icon={<CopyOutlined />}
-                        onClick={() =>
-                          copyValue(payQrPayload, 'Payment address')
-                        }
-                      >
-                        Copy address
-                      </Button>
-                    </Space>
-                  </Card>
-                  <Card
-                    variant="borderless"
-                    style={{ borderRadius: 20 }}
-                    title={
-                      <Space size={8}>
-                        <QrcodeOutlined />
-                        <span>Watch QR</span>
-                      </Space>
-                    }
-                  >
-                    <QrCodePanel
-                      payload={watchUrl}
-                      emptyText="Watch URL is not available yet."
-                    />
-                    <Space style={{ width: '100%', justifyContent: 'center' }}>
-                      <Button
-                        size="small"
-                        icon={<CopyOutlined />}
-                        onClick={() => copyValue(watchUrl, 'Watch URL')}
-                      >
-                        Copy watch URL
-                      </Button>
-                    </Space>
-                  </Card>
-                  <Card
-                    variant="borderless"
-                    style={{ borderRadius: 20 }}
-                    title="Viewer & chat"
-                  >
-                    <Space
-                      direction="vertical"
-                      size={12}
-                      style={{ width: '100%' }}
-                    >
-                      <Statistic title="Current viewers" value={viewerCount} />
-                      <Text type="secondary">
-                        Live playback is bound directly to the `playback_url`
-                        returned by Django so OBS/Ant Media broadcasts can be
-                        validated here.
-                      </Text>
-                      <Empty
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        description="Chat placeholder"
+                  <Collapse
+                    bordered={false}
+                    defaultActiveKey={[]}
+                    expandIconPosition="end"
+                    expandIcon={({ isActive }) => (
+                      <DownOutlined
+                        style={{
+                          transform: isActive
+                            ? 'rotate(180deg)'
+                            : 'rotate(0deg)',
+                          transition: 'transform 0.2s ease',
+                        }}
                       />
-                    </Space>
-                  </Card>
+                    )}
+                    items={[
+                      {
+                        key: 'sidebar-watch-qr',
+                        label: (
+                          <Space size={8}>
+                            <QrcodeOutlined />
+                            <span>
+                              {intl.formatMessage({ id: 'live.room.watchQr' })}
+                            </span>
+                          </Space>
+                        ),
+                        extra: (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<CopyOutlined />}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              copyValue(
+                                watchUrl,
+                                intl.formatMessage({
+                                  id: 'live.room.watchUrl',
+                                }),
+                              );
+                            }}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.room.copy',
+                            })}
+                          </Button>
+                        ),
+                        children: (
+                          <QrCodePanel
+                            payload={watchUrl}
+                            emptyText={intl.formatMessage({
+                              id: 'live.room.watchUrlUnavailable',
+                            })}
+                          />
+                        ),
+                      },
+                      {
+                        key: 'sidebar-pay-qr',
+                        label: (
+                          <Space size={8}>
+                            <QrcodeOutlined />
+                            <span>
+                              {intl.formatMessage({ id: 'live.room.payQr' })}
+                            </span>
+                          </Space>
+                        ),
+                        extra: (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<CopyOutlined />}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              copyValue(
+                                payQrPayload,
+                                intl.formatMessage({
+                                  id: 'live.room.paymentAddress',
+                                }),
+                              );
+                            }}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.room.copy',
+                            })}
+                          </Button>
+                        ),
+                        children: (
+                          <QrCodePanel
+                            payload={payQrPayload}
+                            emptyText={intl.formatMessage({
+                              id: 'live.room.paymentAddressUnavailable',
+                            })}
+                          />
+                        ),
+                      },
+                      {
+                        key: 'sidebar-live-chat',
+                        label: (
+                          <Space size={8}>
+                            <MessageOutlined />
+                            <span>
+                              {intl.formatMessage({
+                                id: 'live.room.sidebar.liveChat',
+                              })}
+                            </span>
+                          </Space>
+                        ),
+                        children: (
+                          <Alert
+                            type="info"
+                            showIcon
+                            message={intl.formatMessage({
+                              id: 'live.room.sidebar.liveChatPlaceholder',
+                            })}
+                          />
+                        ),
+                      },
+                      {
+                        key: 'sidebar-product-listings',
+                        label: (
+                          <Space size={8}>
+                            <ShoppingOutlined />
+                            <span>
+                              {intl.formatMessage({
+                                id: 'live.room.sidebar.productListings',
+                              })}
+                            </span>
+                          </Space>
+                        ),
+                        children: (
+                          <Alert
+                            type="info"
+                            showIcon
+                            message={intl.formatMessage({
+                              id: 'live.room.sidebar.productListingsPlaceholder',
+                            })}
+                          />
+                        ),
+                      },
+                      {
+                        key: 'sidebar-seller-store',
+                        label: (
+                          <Space size={8}>
+                            <ShopOutlined />
+                            <span>
+                              {intl.formatMessage({
+                                id: 'live.room.sidebar.sellerStore',
+                              })}
+                            </span>
+                          </Space>
+                        ),
+                        children: (
+                          <Alert
+                            type="info"
+                            showIcon
+                            message={intl.formatMessage({
+                              id: 'live.room.sidebar.sellerStorePlaceholder',
+                            })}
+                          />
+                        ),
+                      },
+                      {
+                        key: 'sidebar-paid-programming-qr',
+                        label: (
+                          <Space size={8}>
+                            <QrcodeOutlined />
+                            <span>
+                              {intl.formatMessage({
+                                id: 'live.room.sidebar.paidProgrammingQr',
+                              })}
+                            </span>
+                          </Space>
+                        ),
+                        children: (
+                          <Alert
+                            type="info"
+                            showIcon
+                            message={intl.formatMessage({
+                              id: 'live.room.sidebar.paidProgrammingQrPlaceholder',
+                            })}
+                          />
+                        ),
+                      },
+                    ]}
+                  />
                 </Space>
               </Col>
             </Row>
           </Space>
         ) : (
-          <Empty description="Live room unavailable." />
+          <Empty
+            description={intl.formatMessage({ id: 'live.room.unavailable' })}
+          />
         )}
       </div>
     </PageContainer>
