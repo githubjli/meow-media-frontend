@@ -1,9 +1,12 @@
 import {
   CopyOutlined,
   EyeOutlined,
+  MessageOutlined,
   PlayCircleOutlined,
   PoweroffOutlined,
   QrcodeOutlined,
+  ShopOutlined,
+  ShoppingOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
@@ -731,84 +734,100 @@ export default function LiveRoomPage() {
 
               <Col xs={24} md={8} xl={8}>
                 <Space direction="vertical" size={20} style={{ width: '100%' }}>
-                  <Card
-                    variant="borderless"
-                    style={{ borderRadius: 20 }}
-                    title={
-                      <Space size={8}>
-                        <QrcodeOutlined />
-                        <span>
-                          {intl.formatMessage({ id: 'live.room.watchQr' })}
-                        </span>
-                      </Space>
-                    }
-                  >
-                    <QrCodePanel
-                      payload={watchUrl}
-                      emptyText={intl.formatMessage({
-                        id: 'live.room.watchUrlUnavailable',
-                      })}
-                    />
-                    <Space style={{ width: '100%', justifyContent: 'center' }}>
-                      <Button
-                        type="primary"
-                        size="small"
-                        icon={<CopyOutlined />}
-                        onClick={() =>
-                          copyValue(
-                            watchUrl,
-                            intl.formatMessage({ id: 'live.room.watchUrl' }),
-                          )
-                        }
-                      >
-                        {intl.formatMessage({ id: 'live.room.copyWatchUrl' })}
-                      </Button>
-                    </Space>
-                  </Card>
-                  <Card
-                    variant="borderless"
-                    style={{ borderRadius: 20 }}
-                    title={
-                      <Space size={8}>
-                        <QrcodeOutlined />
-                        <span>
-                          {intl.formatMessage({ id: 'live.room.payQr' })}
-                        </span>
-                      </Space>
-                    }
-                  >
-                    <QrCodePanel
-                      payload={payQrPayload}
-                      emptyText={intl.formatMessage({
-                        id: 'live.room.paymentAddressUnavailable',
-                      })}
-                    />
-                    <Space style={{ width: '100%', justifyContent: 'center' }}>
-                      <Button
-                        size="small"
-                        icon={<CopyOutlined />}
-                        onClick={() =>
-                          copyValue(
-                            payQrPayload,
-                            intl.formatMessage({
-                              id: 'live.room.paymentAddress',
-                            }),
-                          )
-                        }
-                      >
-                        {intl.formatMessage({ id: 'live.room.copyAddress' })}
-                      </Button>
-                    </Space>
-                  </Card>
                   <Collapse
                     bordered={false}
                     defaultActiveKey={[]}
                     items={[
                       {
+                        key: 'sidebar-watch-qr',
+                        label: (
+                          <Space size={8}>
+                            <QrcodeOutlined />
+                            <span>
+                              {intl.formatMessage({ id: 'live.room.watchQr' })}
+                            </span>
+                          </Space>
+                        ),
+                        extra: (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<CopyOutlined />}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              copyValue(
+                                watchUrl,
+                                intl.formatMessage({
+                                  id: 'live.room.watchUrl',
+                                }),
+                              );
+                            }}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.room.copyWatchUrl',
+                            })}
+                          </Button>
+                        ),
+                        children: (
+                          <QrCodePanel
+                            payload={watchUrl}
+                            emptyText={intl.formatMessage({
+                              id: 'live.room.watchUrlUnavailable',
+                            })}
+                          />
+                        ),
+                      },
+                      {
+                        key: 'sidebar-pay-qr',
+                        label: (
+                          <Space size={8}>
+                            <QrcodeOutlined />
+                            <span>
+                              {intl.formatMessage({ id: 'live.room.payQr' })}
+                            </span>
+                          </Space>
+                        ),
+                        extra: (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<CopyOutlined />}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              copyValue(
+                                payQrPayload,
+                                intl.formatMessage({
+                                  id: 'live.room.paymentAddress',
+                                }),
+                              );
+                            }}
+                          >
+                            {intl.formatMessage({
+                              id: 'live.room.copyAddress',
+                            })}
+                          </Button>
+                        ),
+                        children: (
+                          <QrCodePanel
+                            payload={payQrPayload}
+                            emptyText={intl.formatMessage({
+                              id: 'live.room.paymentAddressUnavailable',
+                            })}
+                          />
+                        ),
+                      },
+                      {
                         key: 'sidebar-live-chat',
-                        label: intl.formatMessage({
-                          id: 'live.room.sidebar.liveChat',
-                        }),
+                        label: (
+                          <Space size={8}>
+                            <MessageOutlined />
+                            <span>
+                              {intl.formatMessage({
+                                id: 'live.room.sidebar.liveChat',
+                              })}
+                            </span>
+                          </Space>
+                        ),
                         children: (
                           <Alert
                             type="info"
@@ -821,9 +840,16 @@ export default function LiveRoomPage() {
                       },
                       {
                         key: 'sidebar-product-listings',
-                        label: intl.formatMessage({
-                          id: 'live.room.sidebar.productListings',
-                        }),
+                        label: (
+                          <Space size={8}>
+                            <ShoppingOutlined />
+                            <span>
+                              {intl.formatMessage({
+                                id: 'live.room.sidebar.productListings',
+                              })}
+                            </span>
+                          </Space>
+                        ),
                         children: (
                           <Alert
                             type="info"
@@ -836,9 +862,16 @@ export default function LiveRoomPage() {
                       },
                       {
                         key: 'sidebar-seller-store',
-                        label: intl.formatMessage({
-                          id: 'live.room.sidebar.sellerStore',
-                        }),
+                        label: (
+                          <Space size={8}>
+                            <ShopOutlined />
+                            <span>
+                              {intl.formatMessage({
+                                id: 'live.room.sidebar.sellerStore',
+                              })}
+                            </span>
+                          </Space>
+                        ),
                         children: (
                           <Alert
                             type="info"
@@ -851,9 +884,16 @@ export default function LiveRoomPage() {
                       },
                       {
                         key: 'sidebar-paid-programming-qr',
-                        label: intl.formatMessage({
-                          id: 'live.room.sidebar.paidProgrammingQr',
-                        }),
+                        label: (
+                          <Space size={8}>
+                            <QrcodeOutlined />
+                            <span>
+                              {intl.formatMessage({
+                                id: 'live.room.sidebar.paidProgrammingQr',
+                              })}
+                            </span>
+                          </Space>
+                        ),
                         children: (
                           <Alert
                             type="info"
