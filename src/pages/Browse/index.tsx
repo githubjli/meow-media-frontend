@@ -1,10 +1,11 @@
+import PageIntroCard from '@/components/PageIntroCard';
 import VideoCard from '@/components/VideoCard';
 import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
+import { getLocalizedCategoryLabel } from '@/utils/categoryI18n';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, useModel, useSearchParams } from '@umijs/max';
 import {
   Alert,
-  Card,
   Col,
   Empty,
   Input,
@@ -13,11 +14,8 @@ import {
   Select,
   Space,
   Spin,
-  Typography,
 } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-
-const { Title, Text } = Typography;
 const PAGE_SIZE = 12;
 
 const toCardData = (video: PublicVideo) => ({
@@ -115,82 +113,61 @@ export default function BrowsePage() {
     [count],
   );
   const categoryOptions = categories.map((item) => ({
-    label: item.name,
+    label: getLocalizedCategoryLabel(intl, item),
     value: item.slug,
   }));
 
   return (
     <PageContainer title={false}>
       <div style={{ padding: '8px 8px 20px' }}>
-        <Card
-          variant="borderless"
-          style={{
-            borderRadius: 16,
-            marginBottom: 20,
-            border: isDark
-              ? '1px solid rgba(255,255,255,0.08)'
-              : '1px solid rgba(15, 23, 42, 0.06)',
-            background: isDark ? '#2A241F' : undefined,
-          }}
+        <PageIntroCard
+          title={intl.formatMessage({ id: 'browse.title' })}
+          description={intl.formatMessage({ id: 'browse.subtitle' })}
         >
-          <Space direction="vertical" size={16} style={{ width: '100%' }}>
-            <div>
-              <Title level={2} style={{ margin: 0, fontSize: 28 }}>
-                {intl.formatMessage({ id: 'browse.title' })}
-              </Title>
-              <Text type="secondary">
-                {intl.formatMessage({ id: 'browse.subtitle' })}
-              </Text>
-            </div>
-
-            <Space
-              wrap
-              size={[10, 10]}
-              style={{
-                width: '100%',
-                padding: 10,
-                borderRadius: 14,
-                background: isDark
-                  ? 'rgba(255,255,255,0.04)'
-                  : 'rgba(15, 23, 42, 0.03)',
-                border: isDark
-                  ? '1px solid rgba(255,255,255,0.08)'
-                  : '1px solid rgba(15, 23, 42, 0.05)',
-              }}
-            >
-              <Input.Search
-                value={searchDraft}
-                onChange={(event) => setSearchDraft(event.target.value)}
-                onSearch={(value) => updateQuery({ search: value, page: 1 })}
-                placeholder={intl.formatMessage({
-                  id: 'browse.search.placeholder',
-                })}
-                allowClear
-                size="large"
-                className="browse-search-input"
-                style={{ minWidth: 240, flex: 1 }}
-              />
-              <Select
-                allowClear
-                placeholder={intl.formatMessage({
-                  id: 'browse.category.placeholder',
-                })}
-                value={category || undefined}
-                size="large"
-                style={{ minWidth: 170 }}
-                options={categoryOptions}
-                onChange={(value) => updateQuery({ category: value, page: 1 })}
-              />
-              <Select
-                value={ordering}
-                size="large"
-                style={{ minWidth: 170 }}
-                options={orderOptions}
-                onChange={(value) => updateQuery({ ordering: value, page: 1 })}
-              />
-            </Space>
+          <Space
+            wrap
+            size={[8, 8]}
+            style={{
+              width: '100%',
+              padding: 8,
+              borderRadius: 12,
+              background: isDark
+                ? 'rgba(255,255,255,0.04)'
+                : 'rgba(15, 23, 42, 0.03)',
+              border: isDark
+                ? '1px solid rgba(255,255,255,0.08)'
+                : '1px solid rgba(15, 23, 42, 0.05)',
+            }}
+          >
+            <Input.Search
+              value={searchDraft}
+              onChange={(event) => setSearchDraft(event.target.value)}
+              onSearch={(value) => updateQuery({ search: value, page: 1 })}
+              placeholder={intl.formatMessage({
+                id: 'browse.search.placeholder',
+              })}
+              allowClear
+              className="browse-search-input"
+              style={{ minWidth: 220, flex: 1 }}
+            />
+            <Select
+              allowClear
+              placeholder={intl.formatMessage({
+                id: 'browse.category.placeholder',
+              })}
+              value={category || undefined}
+              style={{ minWidth: 160 }}
+              options={categoryOptions}
+              onChange={(value) => updateQuery({ category: value, page: 1 })}
+            />
+            <Select
+              value={ordering}
+              style={{ minWidth: 160 }}
+              options={orderOptions}
+              onChange={(value) => updateQuery({ ordering: value, page: 1 })}
+            />
           </Space>
-        </Card>
+        </PageIntroCard>
 
         {errorMessage ? (
           <Alert
@@ -209,7 +186,7 @@ export default function BrowsePage() {
           <Empty description={intl.formatMessage({ id: 'browse.empty' })} />
         ) : (
           <>
-            <Row gutter={[14, 18]}>
+            <Row gutter={[9, 11]}>
               {videos.map((video) => (
                 <Col xs={24} sm={12} md={8} lg={6} xl={6} key={video.id}>
                   <VideoCard data={toCardData(video)} />
