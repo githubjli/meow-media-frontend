@@ -368,9 +368,7 @@ export const layout: RunTimeLayoutConfig = ({
             normalizeCategoryKey(fallbackCategory.slug),
           );
           const slug = matchedCategory?.slug || fallbackCategory.slug;
-          const name =
-            matchedCategory?.name ||
-            intl.formatMessage({ id: fallbackCategory.key });
+          const name = intl.formatMessage({ id: fallbackCategory.key });
 
           return {
             name,
