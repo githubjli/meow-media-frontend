@@ -375,5 +375,41 @@ export default {
   'live.create.readyForBrowserPublish':
     'Ant Media browser publishing အတွက်အဆင်သင့်',
   'live.create.unknown': 'Unknown',
+  'live.room.fallbackTitle': 'Live Stream',
+  'live.room.player.waitingPlaybackUrl':
+    'Server မှ playback URL ပြန်လာရန် စောင့်နေသည်။',
+  'live.room.player.waitingStream': 'Stream ကို စောင့်နေသည်...',
+  'live.room.player.notStarted': 'Stream မစသေးပါ',
+  'live.room.player.playing': 'Live stream ပြသနေပါသည်။',
+  'live.room.player.hlsLoadError':
+    'ဤ browser တွင် HLS playback support မတင်နိုင်ပါ။',
+  'live.room.player.hlsUnsupported':
+    'ဤ browser သည် ဤ stream အတွက် HLS playback မထောက်ပံ့ပါ။',
+  'live.room.error.load': 'Live room ကို မဖွင့်နိုင်ပါ။',
+  'live.room.descriptionFallback': 'Live ကြည့်ရှုရန် စာမျက်နှာ။',
+  'live.room.statusSource': 'Status source',
+  'live.room.syncOutOfSync': 'Backend နှင့် media server status မကိုက်ညီပါ။',
+  'live.room.streamHost': 'Stream host',
+  'live.room.streamDetails.title': 'Stream details',
+  'live.room.streamDetails.rtmpServer': 'RTMP Server',
+  'live.room.streamDetails.streamKey': 'Stream Key',
+  'live.room.notAvailable': 'မရရှိသေးပါ',
+  'live.room.copy': 'Copy',
+  'live.room.playbackUnavailable':
+    'Playback မရရှိသေးပါ။ encoder စတင်ပြီး ဤစာမျက်နှာကို refresh လုပ်ပါ။',
+  'live.room.payQr': 'Pay QR',
+  'live.room.paymentAddressUnavailable': 'Payment address မရရှိသေးပါ။',
+  'live.room.paymentAddress': 'Payment address',
+  'live.room.copyAddress': 'Copy address',
+  'live.room.watchQr': 'Watch QR',
+  'live.room.watchUrl': 'Watch URL',
+  'live.room.watchUrlUnavailable': 'Watch URL မရရှိသေးပါ။',
+  'live.room.copyWatchUrl': 'Copy watch URL',
+  'live.room.viewerChat': 'Viewer & chat',
+  'live.room.currentViewers': 'Current viewers',
+  'live.room.viewerChatHint':
+    'Audience နှင့် chat integration အတွက် ဤအပိုင်းကို သုံးနိုင်သည်။',
+  'live.room.chatPlaceholder': 'Chat placeholder',
+  'live.room.unavailable': 'Live room မရရှိနိုင်ပါ။',
   'videoCard.live': 'တိုက်ရိုက်',
 };

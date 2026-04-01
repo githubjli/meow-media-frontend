@@ -36,6 +36,7 @@ import {
   type LiveBroadcast,
   type LiveBroadcastStatus,
 } from '@/services/live';
+import { getLocalizedCategoryLabel } from '@/utils/categoryI18n';
 import { getLiveStatusPresentation } from '@/utils/liveStatusPresentation';
 
 const { Title, Text, Paragraph } = Typography;
@@ -150,7 +151,7 @@ export default function LiveRoomPage() {
   );
   const [errorMessage, setErrorMessage] = useState('');
   const [playerStatus, setPlayerStatus] = useState(
-    'Waiting for a playback URL from Django.',
+    intl.formatMessage({ id: 'live.room.player.waitingPlaybackUrl' }),
   );
   const [playerPhase, setPlayerPhase] = useState<PlayerPhase>('idle');
   const [payQrPayload, setPayQrPayload] = useState('');
@@ -174,15 +175,41 @@ export default function LiveRoomPage() {
   );
   const playbackUrl =
     backendStatus?.playback_url || broadcast?.playback_url || '';
-  const watchUrl = getSafeWatchUrl({
-    id: backendStatus?.id || broadcast?.id,
-  });
-  const title = broadcast?.title || broadcast?.name || 'Live Stream';
+  const rawWatchUrl =
+    backendStatus?.watch_url ||
+    broadcast?.watch_url ||
+    getSafeWatchUrl({
+      id: backendStatus?.id || broadcast?.id,
+    });
+  const watchUrl = useMemo(() => {
+    const candidate = String(rawWatchUrl || '').trim();
+    if (!candidate) return '';
+    if (/^https?:\/\//i.test(candidate)) {
+      return candidate;
+    }
+    const path = candidate.startsWith('/') ? candidate : `/${candidate}`;
+    const origin =
+      liveConfig.watchPageOrigin ||
+      (typeof window !== 'undefined' ? window.location.origin : '');
+    return origin ? `${String(origin).replace(/\/$/, '')}${path}` : path;
+  }, [rawWatchUrl]);
+  const title =
+    broadcast?.title ||
+    broadcast?.name ||
+    intl.formatMessage({ id: 'live.room.fallbackTitle' });
   const creatorName =
     broadcast?.creator?.name ||
     broadcast?.creator?.username ||
     broadcast?.creator?.email ||
-    'Creator';
+    intl.formatMessage({ id: 'live.common.creatorFallback' });
+  const streamKey = useMemo(() => {
+    const explicit = String(
+      broadcast?.stream_key || (broadcast as any)?.streamKey || '',
+    ).trim();
+    if (explicit) return explicit;
+    const match = String(playbackUrl || '').match(/\/([^/?]+)\.m3u8(?:$|\?)/i);
+    return (match?.[1] || '').trim();
+  }, [broadcast, playbackUrl]);
   const viewerCount =
     backendStatus?.viewer_count ??
     backendStatus?.viewerCount ??
@@ -197,14 +224,22 @@ export default function LiveRoomPage() {
     typeof backendStatus?.can_end === 'boolean'
       ? backendStatus.can_end
       : statusPresentation.uiStatus !== 'ended';
-  const showLiveViewerDiagnostics = process.env.NODE_ENV === 'development';
+  const showLiveViewerDiagnostics =
+    process.env.NODE_ENV === 'development' &&
+    new URLSearchParams(location.search).get('liveDebug') === '1';
 
   const detailItems = useMemo(
     () => [
-      { label: 'RTMP Server', value: broadcast?.rtmp_url || '' },
-      { label: 'Playback URL', value: playbackUrl },
+      {
+        label: intl.formatMessage({ id: 'live.room.streamDetails.rtmpServer' }),
+        value: broadcast?.rtmp_url || '',
+      },
+      {
+        label: intl.formatMessage({ id: 'live.room.streamDetails.streamKey' }),
+        value: streamKey,
+      },
     ],
-    [broadcast?.rtmp_url, playbackUrl],
+    [broadcast?.rtmp_url, intl, streamKey],
   );
 
   const loadBroadcast = async (showLoader = false) => {
@@ -223,10 +258,14 @@ export default function LiveRoomPage() {
       setErrorMessage('');
       setPlayerPhase(data?.playback_url ? 'loading' : 'waiting');
       setPlayerStatus(
-        data?.playback_url ? 'Waiting for stream...' : 'Stream not started yet',
+        data?.playback_url
+          ? intl.formatMessage({ id: 'live.room.player.waitingStream' })
+          : intl.formatMessage({ id: 'live.room.player.notStarted' }),
       );
     } catch (error: any) {
-      setErrorMessage(error?.message || 'Unable to load the live room.');
+      setErrorMessage(
+        error?.message || intl.formatMessage({ id: 'live.room.error.load' }),
+      );
       setBroadcast(null);
     } finally {
       setLoading(false);
@@ -264,7 +303,9 @@ export default function LiveRoomPage() {
     const videoElement = videoElementRef.current;
     if (!videoElement || !playbackUrl) {
       setPlayerPhase('waiting');
-      setPlayerStatus('Stream not started yet');
+      setPlayerStatus(
+        intl.formatMessage({ id: 'live.room.player.notStarted' }),
+      );
       return;
     }
 
@@ -278,7 +319,9 @@ export default function LiveRoomPage() {
       hlsRef.current?.destroy();
       hlsRef.current = null;
       setPlayerPhase('loading');
-      setPlayerStatus('Waiting for stream...');
+      setPlayerStatus(
+        intl.formatMessage({ id: 'live.room.player.waitingStream' }),
+      );
       videoElement.pause();
       videoElement.removeAttribute('src');
       videoElement.load();
@@ -290,21 +333,27 @@ export default function LiveRoomPage() {
       const handlePlaying = () => {
         if (!cancelled) {
           setPlayerPhase('playing');
-          setPlayerStatus('Live stream is playing.');
+          setPlayerStatus(
+            intl.formatMessage({ id: 'live.room.player.playing' }),
+          );
         }
       };
 
       const handleWaiting = () => {
         if (!cancelled) {
           setPlayerPhase('waiting');
-          setPlayerStatus('Waiting for stream...');
+          setPlayerStatus(
+            intl.formatMessage({ id: 'live.room.player.waitingStream' }),
+          );
         }
       };
 
       const handlePlaybackError = () => {
         if (!cancelled) {
           setPlayerPhase('error');
-          setPlayerStatus('Stream not started yet');
+          setPlayerStatus(
+            intl.formatMessage({ id: 'live.room.player.notStarted' }),
+          );
         }
       };
 
@@ -333,14 +382,18 @@ export default function LiveRoomPage() {
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             if (!cancelled) {
               setPlayerPhase('loading');
-              setPlayerStatus('Waiting for stream...');
+              setPlayerStatus(
+                intl.formatMessage({ id: 'live.room.player.waitingStream' }),
+              );
               videoElement.play().catch(() => undefined);
             }
           });
           hls.on(Hls.Events.ERROR, () => {
             if (!cancelled) {
               setPlayerPhase('error');
-              setPlayerStatus('Stream not started yet');
+              setPlayerStatus(
+                intl.formatMessage({ id: 'live.room.player.notStarted' }),
+              );
             }
           });
           return;
@@ -348,14 +401,14 @@ export default function LiveRoomPage() {
       } catch (error) {
         setPlayerPhase('error');
         setPlayerStatus(
-          'Unable to load HLS playback support in this browser. Please try Safari or verify your network access to the hls.js CDN.',
+          intl.formatMessage({ id: 'live.room.player.hlsLoadError' }),
         );
         return;
       }
 
       setPlayerPhase('error');
       setPlayerStatus(
-        'This browser does not support HLS playback for the provided stream.',
+        intl.formatMessage({ id: 'live.room.player.hlsUnsupported' }),
       );
     };
 
@@ -404,7 +457,9 @@ export default function LiveRoomPage() {
       await loadBroadcast(false);
       setPlayerPhase(next?.playback_url ? 'loading' : playerPhase);
       setPlayerStatus(
-        next?.playback_url ? 'Waiting for stream...' : playerStatus,
+        next?.playback_url
+          ? intl.formatMessage({ id: 'live.room.player.waitingStream' })
+          : playerStatus,
       );
       message.success(
         type === 'start'
@@ -463,10 +518,18 @@ export default function LiveRoomPage() {
                         {statusPresentation.label}
                       </Tag>
                       {broadcast.category ? (
-                        <Tag>{broadcast.category}</Tag>
+                        <Tag>
+                          {getLocalizedCategoryLabel(intl, {
+                            slug: broadcast.category,
+                            name: broadcast.category,
+                          })}
+                        </Tag>
                       ) : null}
                       <Tag icon={<EyeOutlined />}>
-                        {viewerCount.toLocaleString()} viewers
+                        {intl.formatMessage(
+                          { id: 'live.common.viewers' },
+                          { count: viewerCount.toLocaleString() },
+                        )}
                       </Tag>
                     </Space>
                     <Title level={2} style={{ margin: 0 }}>
@@ -474,7 +537,9 @@ export default function LiveRoomPage() {
                     </Title>
                     <Paragraph type="secondary" style={{ marginBottom: 0 }}>
                       {broadcast.description ||
-                        'Professional live room with Django-managed stream lifecycle and Ant Media playback.'}
+                        intl.formatMessage({
+                          id: 'live.room.descriptionFallback',
+                        })}
                     </Paragraph>
                     {showLiveViewerDiagnostics && backendStatus?.message ? (
                       <Alert
@@ -483,18 +548,23 @@ export default function LiveRoomPage() {
                         message={backendStatus.message}
                       />
                     ) : null}
-                    {showLiveViewerDiagnostics && backendStatus?.status_source ? (
+                    {showLiveViewerDiagnostics &&
+                    backendStatus?.status_source ? (
                       <Text type="secondary">
-                        Status source: {backendStatus.status_source}
+                        {intl.formatMessage({ id: 'live.room.statusSource' })}:{' '}
+                        {backendStatus.status_source}
                       </Text>
                     ) : null}
-                    {showLiveViewerDiagnostics && backendStatus?.sync_ok === false ? (
+                    {showLiveViewerDiagnostics &&
+                    backendStatus?.sync_ok === false ? (
                       <Alert
                         type="warning"
                         showIcon
                         message={
                           backendStatus.sync_error ||
-                          'Backend and media server status are out of sync.'
+                          intl.formatMessage({
+                            id: 'live.room.syncOutOfSync',
+                          })
                         }
                       />
                     ) : null}
@@ -507,7 +577,9 @@ export default function LiveRoomPage() {
                         <Text strong style={{ display: 'block' }}>
                           {creatorName}
                         </Text>
-                        <Text type="secondary">Stream host</Text>
+                        <Text type="secondary">
+                          {intl.formatMessage({ id: 'live.room.streamHost' })}
+                        </Text>
                       </div>
                     </Space>
                   </Space>
@@ -537,9 +609,14 @@ export default function LiveRoomPage() {
                     </Button>
                     <Button
                       icon={<CopyOutlined />}
-                      onClick={() => copyValue(playbackUrl, 'Playback URL')}
+                      onClick={() =>
+                        copyValue(
+                          watchUrl,
+                          intl.formatMessage({ id: 'live.room.watchUrl' }),
+                        )
+                      }
                     >
-                      {intl.formatMessage({ id: 'live.control.copyPlayback' })}
+                      {intl.formatMessage({ id: 'live.room.copyWatchUrl' })}
                     </Button>
                   </Space>
                 </Col>
@@ -583,13 +660,19 @@ export default function LiveRoomPage() {
                         <Alert type="info" showIcon message={playerStatus} />
                       </Space>
                     ) : (
-                      <Empty description="Playback URL is not available yet. Start your encoder and refresh this room once Django provides the playback endpoint." />
+                      <Empty
+                        description={intl.formatMessage({
+                          id: 'live.room.playbackUnavailable',
+                        })}
+                      />
                     )}
                   </Card>
                   <Card
                     variant="borderless"
                     style={{ borderRadius: 20 }}
-                    title="Stream details"
+                    title={intl.formatMessage({
+                      id: 'live.room.streamDetails.title',
+                    })}
                   >
                     <Space
                       direction="vertical"
@@ -612,18 +695,50 @@ export default function LiveRoomPage() {
                             }}
                           >
                             <Text code style={{ wordBreak: 'break-all' }}>
-                              {item.value || 'Not available'}
+                              {item.value ||
+                                intl.formatMessage({
+                                  id: 'live.room.notAvailable',
+                                })}
                             </Text>
                             <Button
                               size="small"
                               icon={<CopyOutlined />}
                               onClick={() => copyValue(item.value, item.label)}
                             >
-                              Copy
+                              {intl.formatMessage({
+                                id: 'live.room.copy',
+                              })}
                             </Button>
                           </Space>
                         </div>
                       ))}
+                    </Space>
+                  </Card>
+                  <Card
+                    variant="borderless"
+                    style={{ borderRadius: 20 }}
+                    title={intl.formatMessage({ id: 'live.room.viewerChat' })}
+                  >
+                    <Space
+                      direction="vertical"
+                      size={12}
+                      style={{ width: '100%' }}
+                    >
+                      <Statistic
+                        title={intl.formatMessage({
+                          id: 'live.room.currentViewers',
+                        })}
+                        value={viewerCount}
+                      />
+                      <Text type="secondary">
+                        {intl.formatMessage({ id: 'live.room.viewerChatHint' })}
+                      </Text>
+                      <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description={intl.formatMessage({
+                          id: 'live.room.chatPlaceholder',
+                        })}
+                      />
                     </Space>
                   </Card>
                 </Space>
@@ -637,23 +752,32 @@ export default function LiveRoomPage() {
                     title={
                       <Space size={8}>
                         <QrcodeOutlined />
-                        <span>Pay QR</span>
+                        <span>
+                          {intl.formatMessage({ id: 'live.room.payQr' })}
+                        </span>
                       </Space>
                     }
                   >
                     <QrCodePanel
                       payload={payQrPayload}
-                      emptyText="Payment address is not available yet."
+                      emptyText={intl.formatMessage({
+                        id: 'live.room.paymentAddressUnavailable',
+                      })}
                     />
                     <Space style={{ width: '100%', justifyContent: 'center' }}>
                       <Button
                         size="small"
                         icon={<CopyOutlined />}
                         onClick={() =>
-                          copyValue(payQrPayload, 'Payment address')
+                          copyValue(
+                            payQrPayload,
+                            intl.formatMessage({
+                              id: 'live.room.paymentAddress',
+                            }),
+                          )
                         }
                       >
-                        Copy address
+                        {intl.formatMessage({ id: 'live.room.copyAddress' })}
                       </Button>
                     </Space>
                   </Card>
@@ -663,44 +787,31 @@ export default function LiveRoomPage() {
                     title={
                       <Space size={8}>
                         <QrcodeOutlined />
-                        <span>Watch QR</span>
+                        <span>
+                          {intl.formatMessage({ id: 'live.room.watchQr' })}
+                        </span>
                       </Space>
                     }
                   >
                     <QrCodePanel
                       payload={watchUrl}
-                      emptyText="Watch URL is not available yet."
+                      emptyText={intl.formatMessage({
+                        id: 'live.room.watchUrlUnavailable',
+                      })}
                     />
                     <Space style={{ width: '100%', justifyContent: 'center' }}>
                       <Button
                         size="small"
                         icon={<CopyOutlined />}
-                        onClick={() => copyValue(watchUrl, 'Watch URL')}
+                        onClick={() =>
+                          copyValue(
+                            watchUrl,
+                            intl.formatMessage({ id: 'live.room.watchUrl' }),
+                          )
+                        }
                       >
-                        Copy watch URL
+                        {intl.formatMessage({ id: 'live.room.copyWatchUrl' })}
                       </Button>
-                    </Space>
-                  </Card>
-                  <Card
-                    variant="borderless"
-                    style={{ borderRadius: 20 }}
-                    title="Viewer & chat"
-                  >
-                    <Space
-                      direction="vertical"
-                      size={12}
-                      style={{ width: '100%' }}
-                    >
-                      <Statistic title="Current viewers" value={viewerCount} />
-                      <Text type="secondary">
-                        Live playback is bound directly to the `playback_url`
-                        returned by Django so OBS/Ant Media broadcasts can be
-                        validated here.
-                      </Text>
-                      <Empty
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        description="Chat placeholder"
-                      />
                     </Space>
                   </Card>
                 </Space>
@@ -708,7 +819,9 @@ export default function LiveRoomPage() {
             </Row>
           </Space>
         ) : (
-          <Empty description="Live room unavailable." />
+          <Empty
+            description={intl.formatMessage({ id: 'live.room.unavailable' })}
+          />
         )}
       </div>
     </PageContainer>

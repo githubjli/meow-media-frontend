@@ -370,5 +370,42 @@ export default {
   'live.create.readyForBrowserPublish':
     'Ready for Ant Media browser publishing',
   'live.create.unknown': 'Unknown',
+  'live.room.fallbackTitle': 'Live Stream',
+  'live.room.player.waitingPlaybackUrl':
+    'Waiting for a playback URL from the server.',
+  'live.room.player.waitingStream': 'Waiting for stream...',
+  'live.room.player.notStarted': 'Stream not started yet',
+  'live.room.player.playing': 'Live stream is playing.',
+  'live.room.player.hlsLoadError':
+    'Unable to load HLS playback support in this browser.',
+  'live.room.player.hlsUnsupported':
+    'This browser does not support HLS playback for this stream.',
+  'live.room.error.load': 'Unable to load the live room.',
+  'live.room.descriptionFallback': 'Professional live room for playback.',
+  'live.room.statusSource': 'Status source',
+  'live.room.syncOutOfSync': 'Backend and media server status are out of sync.',
+  'live.room.streamHost': 'Stream host',
+  'live.room.streamDetails.title': 'Stream details',
+  'live.room.streamDetails.rtmpServer': 'RTMP Server',
+  'live.room.streamDetails.streamKey': 'Stream Key',
+  'live.room.notAvailable': 'Not available',
+  'live.room.copy': 'Copy',
+  'live.room.playbackUnavailable':
+    'Playback is not available yet. Start your encoder and refresh this room.',
+  'live.room.payQr': 'Pay QR',
+  'live.room.paymentAddressUnavailable':
+    'Payment address is not available yet.',
+  'live.room.paymentAddress': 'Payment address',
+  'live.room.copyAddress': 'Copy address',
+  'live.room.watchQr': 'Watch QR',
+  'live.room.watchUrl': 'Watch URL',
+  'live.room.watchUrlUnavailable': 'Watch URL is not available yet.',
+  'live.room.copyWatchUrl': 'Copy watch URL',
+  'live.room.viewerChat': 'Viewer & chat',
+  'live.room.currentViewers': 'Current viewers',
+  'live.room.viewerChatHint':
+    'Use this section for audience and chat integrations.',
+  'live.room.chatPlaceholder': 'Chat placeholder',
+  'live.room.unavailable': 'Live room unavailable.',
   'videoCard.live': 'LIVE',
 };
