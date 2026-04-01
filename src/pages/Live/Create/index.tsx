@@ -924,6 +924,10 @@ export default function LiveCreatePage() {
       startFlowLockRef.current = false;
       setIsStartFlowInProgress(false);
     }
+    } finally {
+      startFlowLockRef.current = false;
+      setIsStartFlowInProgress(false);
+    }
   };
 
   const handleStopPublishing = () => {
