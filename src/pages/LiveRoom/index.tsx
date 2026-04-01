@@ -1,5 +1,6 @@
 import {
   CopyOutlined,
+  DownOutlined,
   EyeOutlined,
   MessageOutlined,
   PlayCircleOutlined,
@@ -688,6 +689,17 @@ export default function LiveRoomPage() {
                   <Collapse
                     bordered={false}
                     defaultActiveKey={[]}
+                    expandIconPosition="end"
+                    expandIcon={({ isActive }) => (
+                      <DownOutlined
+                        style={{
+                          transform: isActive
+                            ? 'rotate(180deg)'
+                            : 'rotate(0deg)',
+                          transition: 'transform 0.2s ease',
+                        }}
+                      />
+                    )}
                     items={[
                       {
                         key: 'sidebar-watch-qr',
@@ -715,7 +727,7 @@ export default function LiveRoomPage() {
                             }}
                           >
                             {intl.formatMessage({
-                              id: 'live.room.copyWatchUrl',
+                              id: 'live.room.copy',
                             })}
                           </Button>
                         ),
@@ -754,7 +766,7 @@ export default function LiveRoomPage() {
                             }}
                           >
                             {intl.formatMessage({
-                              id: 'live.room.copyAddress',
+                              id: 'live.room.copy',
                             })}
                           </Button>
                         ),
