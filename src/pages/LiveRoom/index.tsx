@@ -24,7 +24,6 @@ import {
   Row,
   Skeleton,
   Space,
-  Statistic,
   Tag,
   Typography,
   message,
@@ -514,15 +513,6 @@ export default function LiveRoomPage() {
                         )}
                       </Tag>
                     </Space>
-                    <Title level={2} style={{ margin: 0 }}>
-                      {title}
-                    </Title>
-                    <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                      {broadcast.description ||
-                        intl.formatMessage({
-                          id: 'live.room.descriptionFallback',
-                        })}
-                    </Paragraph>
                     <Space align="center" size={12}>
                       <Avatar
                         icon={<UserOutlined />}
@@ -537,6 +527,15 @@ export default function LiveRoomPage() {
                         </Text>
                       </div>
                     </Space>
+                    <Title level={2} style={{ margin: 0 }}>
+                      {title}
+                    </Title>
+                    <Paragraph type="secondary" style={{ marginBottom: 0 }}>
+                      {broadcast.description ||
+                        intl.formatMessage({
+                          id: 'live.room.descriptionFallback',
+                        })}
+                    </Paragraph>
                   </Space>
                 </Col>
                 <Col xs={24} lg={8}>
@@ -561,17 +560,6 @@ export default function LiveRoomPage() {
                       onClick={() => handleAction('end')}
                     >
                       {intl.formatMessage({ id: 'live.control.endCta' })}
-                    </Button>
-                    <Button
-                      icon={<CopyOutlined />}
-                      onClick={() =>
-                        copyValue(
-                          watchUrl,
-                          intl.formatMessage({ id: 'live.room.watchUrl' }),
-                        )
-                      }
-                    >
-                      {intl.formatMessage({ id: 'live.room.copyWatchUrl' })}
                     </Button>
                   </Space>
                 </Col>
@@ -632,43 +620,6 @@ export default function LiveRoomPage() {
                       size={12}
                       style={{ width: '100%' }}
                     >
-                      <Row gutter={[12, 12]}>
-                        <Col xs={24} sm={12}>
-                          <Card
-                            size="small"
-                            style={{ borderRadius: 12 }}
-                            bodyStyle={{ padding: 12 }}
-                          >
-                            <Statistic
-                              title={intl.formatMessage({
-                                id: 'live.room.currentViewers',
-                              })}
-                              value={viewerCount}
-                            />
-                          </Card>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          <Card
-                            size="small"
-                            style={{ borderRadius: 12 }}
-                            bodyStyle={{ padding: 12 }}
-                          >
-                            <Text strong>
-                              {intl.formatMessage({
-                                id: 'live.room.chatMessages',
-                              })}
-                            </Text>
-                            <Text
-                              type="secondary"
-                              style={{ display: 'block', marginTop: 4 }}
-                            >
-                              {intl.formatMessage({
-                                id: 'live.room.chatStatusPlaceholder',
-                              })}
-                            </Text>
-                          </Card>
-                        </Col>
-                      </Row>
                       <Text type="secondary">
                         {intl.formatMessage({ id: 'live.room.viewerChatHint' })}
                       </Text>
