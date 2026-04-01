@@ -54,6 +54,7 @@ export default defineConfig({
     { path: '/videos/:id', component: './Videos/Detail', hideInMenu: true },
     { path: '/browse/:id', component: './PublicVideoDetail', hideInMenu: true },
     { path: '/live/create', component: './Live/Create', hideInMenu: true },
+    { path: '/live/mine', component: './Live', hideInMenu: true },
     { path: '/live/:id', component: './LiveRoom', hideInMenu: true },
     { path: '/news', redirect: '/news/channel', hideInMenu: true },
     { path: '/news/live', component: './Live', hideInMenu: true },
