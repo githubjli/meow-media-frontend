@@ -150,6 +150,20 @@ const normalizeCategoryKey = (value?: string) => {
   return normalized;
 };
 
+const resolveMenuSelectedPath = (pathname: string, search: string) => {
+  if (pathname === '/live/create') return '/live/create';
+  if (pathname === '/live/mine') return '/live/mine';
+  if (
+    pathname === '/live' &&
+    new URLSearchParams(search || '').get('scope') === 'my'
+  ) {
+    return '/live/mine';
+  }
+  if (pathname === '/live') return '/live';
+  if (pathname.startsWith('/live/')) return '/live';
+  return pathname;
+};
+
 const isAdminUser = (user?: CurrentUser | null) =>
   Boolean(
     user &&
@@ -684,6 +698,14 @@ export const layout: RunTimeLayoutConfig = ({
         )}
       </Space>
     ),
+    menuProps: {
+      selectedKeys: [
+        resolveMenuSelectedPath(
+          history.location?.pathname || '/',
+          history.location?.search || '',
+        ),
+      ],
+    },
     token: {
       pageContainer: {
         paddingInlinePageContainerContent: 16,
