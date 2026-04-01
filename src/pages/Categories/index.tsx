@@ -1,6 +1,10 @@
 import PageIntroCard from '@/components/PageIntroCard';
 import VideoCard from '@/components/VideoCard';
 import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
+import {
+  getCanonicalCategorySlug,
+  getLocalizedCategoryLabel,
+} from '@/utils/categoryI18n';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel, useParams } from '@umijs/max';
 import { Alert, Button, Col, Empty, Row, Spin } from 'antd';
@@ -53,10 +57,12 @@ export default function CategoryBrowsePage() {
     () => categories.find((item) => item.slug === category),
     [categories, category],
   );
-  const pageTitle =
-    currentCategory?.name ||
-    category ||
-    intl.formatMessage({ id: 'categories.fallbackTitle' });
+  const pageTitle = category
+    ? getLocalizedCategoryLabel(intl, {
+        slug: getCanonicalCategorySlug(category),
+        name: currentCategory?.name || category,
+      })
+    : intl.formatMessage({ id: 'categories.fallbackTitle' });
 
   return (
     <PageContainer title={false}>

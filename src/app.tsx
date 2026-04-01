@@ -6,6 +6,10 @@ import {
 import { getMyStore } from '@/services/store';
 import { clearStoredTokens } from '@/utils/auth';
 import {
+  getCanonicalCategorySlug,
+  getLocalizedCategoryLabel,
+} from '@/utils/categoryI18n';
+import {
   AlertOutlined,
   BgColorsOutlined,
   CarOutlined,
@@ -384,7 +388,12 @@ export const layout: RunTimeLayoutConfig = ({
             normalizeCategoryKey(fallbackCategory.slug),
           );
           const slug = matchedCategory?.slug || fallbackCategory.slug;
-          const name = intl.formatMessage({ id: fallbackCategory.key });
+          const canonicalSlug = getCanonicalCategorySlug(slug);
+          const fallbackName = intl.formatMessage({ id: fallbackCategory.key });
+          const name = getLocalizedCategoryLabel(intl, {
+            slug: canonicalSlug,
+            name: matchedCategory?.name || fallbackName,
+          });
 
           return {
             name,

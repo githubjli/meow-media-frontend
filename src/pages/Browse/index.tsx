@@ -1,6 +1,7 @@
 import PageIntroCard from '@/components/PageIntroCard';
 import VideoCard from '@/components/VideoCard';
 import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
+import { getLocalizedCategoryLabel } from '@/utils/categoryI18n';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, useModel, useSearchParams } from '@umijs/max';
 import {
@@ -112,7 +113,7 @@ export default function BrowsePage() {
     [count],
   );
   const categoryOptions = categories.map((item) => ({
-    label: item.name,
+    label: getLocalizedCategoryLabel(intl, item),
     value: item.slug,
   }));
 
