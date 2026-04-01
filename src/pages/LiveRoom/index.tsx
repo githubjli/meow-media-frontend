@@ -20,6 +20,7 @@ import {
   Col,
   Collapse,
   Empty,
+  Input,
   Row,
   Skeleton,
   Space,
@@ -424,6 +425,17 @@ export default function LiveRoomPage() {
       window.clearInterval(chatInterval);
     };
   }, [id, chatAfterId]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !manageEnabled) {
+      setSellerProducts([]);
+      return;
+    }
+
+    getMyProducts()
+      .then((data) => setSellerProducts(data.results || []))
+      .catch(() => setSellerProducts([]));
+  }, [isLoggedIn, manageEnabled]);
 
   useEffect(() => {
     if (!isLoggedIn || !manageEnabled) {
