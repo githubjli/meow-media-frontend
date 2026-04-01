@@ -128,7 +128,8 @@ export default ({ data }: { data: any }) => {
   const { initialState } = useModel('@@initialState');
   const isDark = Boolean(initialState?.darkTheme);
   const title = data.title || data.name;
-  const description = data.description_preview || data.description;
+  const description =
+    data.status_description || data.description_preview || data.description;
   const normalizedTitle = String(title || '')
     .trim()
     .toLowerCase();
@@ -167,7 +168,9 @@ export default ({ data }: { data: any }) => {
   const isStarting = normalizedStatus === 'waiting_for_signal';
   const isReady = normalizedStatus === 'ready';
 
-  const statusLabel = isLive
+  const statusLabel = data.status_label
+    ? String(data.status_label)
+    : isLive
     ? intl.formatMessage({ id: 'videoCard.live' })
     : isStarting
     ? intl.formatMessage({ id: 'live.status.starting' })
@@ -286,67 +289,72 @@ export default ({ data }: { data: any }) => {
             {categoryLabel}
           </Text>
         ) : null}
-        <Title
-          level={5}
-          style={{
-            margin: '0 0 1px',
-            fontSize: 14,
-            lineHeight: 1.38,
-            fontWeight: 700,
-            color: titleColor,
-          }}
-          ellipsis={{ rows: 2 }}
-        >
-          {title}
-        </Title>
-        {shouldShowDescription ? (
-          <Paragraph
-            type="secondary"
-            ellipsis={{ rows: 2 }}
-            style={{
-              margin: '0 0 6px',
-              fontSize: 11,
-              lineHeight: 1.5,
-              color: descriptionColor,
-            }}
-          >
-            {description}
-          </Paragraph>
-        ) : null}
         <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            minWidth: 0,
-          }}
+          style={{ display: 'flex', flexDirection: 'column', minHeight: 96 }}
         >
-          <Avatar
-            src={`https://api.dicebear.com/7.x/identicon/svg?seed=${uploaderLabel}`}
-            size={28}
-            style={{ flexShrink: 0 }}
-          />
-          <Text
-            type="secondary"
+          <Title
+            level={5}
             style={{
-              fontSize: 11,
-              lineHeight: 1.45,
-              flex: 1,
-              minWidth: 0,
-              display: 'block',
-              color: metaColor,
+              margin: '0 0 1px',
+              fontSize: 14,
+              lineHeight: 1.38,
+              fontWeight: 700,
+              color: titleColor,
             }}
-            ellipsis
+            ellipsis={{ rows: 2 }}
           >
-            {metaLine}
-          </Text>
-          <CheckCircleFilled
+            {title}
+          </Title>
+          {shouldShowDescription ? (
+            <Paragraph
+              type="secondary"
+              ellipsis={{ rows: 2 }}
+              style={{
+                margin: '0 0 6px',
+                fontSize: 11,
+                lineHeight: 1.5,
+                color: descriptionColor,
+              }}
+            >
+              {description}
+            </Paragraph>
+          ) : null}
+          <div style={{ flex: 1 }} />
+          <div
             style={{
-              color: isDark ? '#EFBC5C' : '#b8872e',
-              fontSize: 10,
-              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              minWidth: 0,
             }}
-          />
+          >
+            <Avatar
+              src={`https://api.dicebear.com/7.x/identicon/svg?seed=${uploaderLabel}`}
+              size={28}
+              style={{ flexShrink: 0 }}
+            />
+            <Text
+              type="secondary"
+              style={{
+                fontSize: 11,
+                lineHeight: 1.45,
+                flex: 1,
+                minWidth: 0,
+                display: 'block',
+                color: metaColor,
+              }}
+              ellipsis
+            >
+              {metaLine}
+            </Text>
+            <CheckCircleFilled
+              style={{
+                color: isDark ? '#EFBC5C' : '#b8872e',
+                fontSize: 10,
+                flexShrink: 0,
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
