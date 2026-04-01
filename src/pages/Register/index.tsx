@@ -5,13 +5,15 @@ import {
 } from '@/services/auth';
 import { setStoredTokens } from '@/utils/auth';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useLocation, useModel } from '@umijs/max';
 import { Alert, Button, Card, Form, Input, Space, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 
 const { Title, Text } = Typography;
 
 export default function RegisterPage() {
+  const intl = useIntl();
+  const location = useLocation();
   const [form] = Form.useForm();
   const { initialState, setInitialState } = useModel('@@initialState');
   const [submitting, setSubmitting] = useState(false);
@@ -19,6 +21,9 @@ export default function RegisterPage() {
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const isCheckingAuth = Boolean(initialState?.authLoading);
+  const showAuthDebugNote =
+    process.env.NODE_ENV === 'development' &&
+    new URLSearchParams(location.search).get('authDebug') === '1';
 
   useEffect(() => {
     if (!isCheckingAuth && isLoggedIn) {
@@ -52,7 +57,9 @@ export default function RegisterPage() {
             });
 
       if (!resolvedTokens.access || !resolvedTokens.refresh) {
-        throw new Error('Registration succeeded but tokens were not returned.');
+        throw new Error(
+          intl.formatMessage({ id: 'auth.register.error.tokens' }),
+        );
       }
 
       setStoredTokens({
@@ -71,7 +78,8 @@ export default function RegisterPage() {
       history.push('/home');
     } catch (error: any) {
       setErrorMessage(
-        error?.message || 'Unable to create your account right now.',
+        error?.message ||
+          intl.formatMessage({ id: 'auth.register.error.unavailable' }),
       );
     } finally {
       setSubmitting(false);
@@ -102,19 +110,21 @@ export default function RegisterPage() {
                 letterSpacing: '0.08em',
               }}
             >
-              Create account
+              {intl.formatMessage({ id: 'auth.register.welcome' })}
             </Text>
             <Title level={2} style={{ margin: '8px 0 8px' }}>
-              Join Media Stream
+              {intl.formatMessage({ id: 'auth.register.title' })}
             </Title>
             <Text type="secondary">
-              Register with your email to get started.
+              {intl.formatMessage({ id: 'auth.register.subtitle' })}
             </Text>
           </div>
 
-          <Text type="secondary">
-            Your requests will use the app's local /api proxy.
-          </Text>
+          {showAuthDebugNote ? (
+            <Text type="secondary">
+              {intl.formatMessage({ id: 'auth.common.proxyNotice' })}
+            </Text>
+          ) : null}
 
           {errorMessage ? (
             <Alert type="error" message={errorMessage} showIcon />
@@ -127,11 +137,21 @@ export default function RegisterPage() {
             requiredMark={false}
           >
             <Form.Item
-              label="Email"
+              label={intl.formatMessage({ id: 'auth.common.email' })}
               name="email"
               rules={[
-                { required: true, message: 'Please enter your email.' },
-                { type: 'email', message: 'Please enter a valid email.' },
+                {
+                  required: true,
+                  message: intl.formatMessage({
+                    id: 'auth.common.emailRequired',
+                  }),
+                },
+                {
+                  type: 'email',
+                  message: intl.formatMessage({
+                    id: 'auth.common.emailInvalid',
+                  }),
+                },
               ]}
             >
               <Input
@@ -142,39 +162,66 @@ export default function RegisterPage() {
               />
             </Form.Item>
             <Form.Item
-              label="Password"
+              label={intl.formatMessage({ id: 'auth.common.password' })}
               name="password"
               rules={[
-                { required: true, message: 'Please enter your password.' },
-                { min: 8, message: 'Use at least 8 characters.' },
+                {
+                  required: true,
+                  message: intl.formatMessage({
+                    id: 'auth.common.passwordRequired',
+                  }),
+                },
+                {
+                  min: 8,
+                  message: intl.formatMessage({
+                    id: 'auth.register.passwordMin',
+                  }),
+                },
               ]}
             >
               <Input.Password
                 prefix={<LockOutlined />}
-                placeholder="Create a password"
+                placeholder={intl.formatMessage({
+                  id: 'auth.register.passwordPlaceholder',
+                })}
                 size="large"
                 autoComplete="new-password"
               />
             </Form.Item>
             <Form.Item
-              label="Confirm password"
+              label={intl.formatMessage({
+                id: 'auth.register.confirmPassword',
+              })}
               name="confirmPassword"
               dependencies={['password']}
               rules={[
-                { required: true, message: 'Please confirm your password.' },
+                {
+                  required: true,
+                  message: intl.formatMessage({
+                    id: 'auth.register.confirmRequired',
+                  }),
+                },
                 ({ getFieldValue }) => ({
                   validator(_, value) {
                     if (!value || getFieldValue('password') === value) {
                       return Promise.resolve();
                     }
-                    return Promise.reject(new Error('Passwords do not match.'));
+                    return Promise.reject(
+                      new Error(
+                        intl.formatMessage({
+                          id: 'auth.register.confirmMismatch',
+                        }),
+                      ),
+                    );
                   },
                 }),
               ]}
             >
               <Input.Password
                 prefix={<LockOutlined />}
-                placeholder="Confirm your password"
+                placeholder={intl.formatMessage({
+                  id: 'auth.register.confirmPlaceholder',
+                })}
                 size="large"
                 autoComplete="new-password"
               />
@@ -186,7 +233,7 @@ export default function RegisterPage() {
               size="large"
               loading={submitting}
             >
-              Create Account
+              {intl.formatMessage({ id: 'auth.register.submit' })}
             </Button>
           </Form>
 
@@ -195,7 +242,7 @@ export default function RegisterPage() {
             onClick={() => history.push('/login')}
             style={{ padding: 0, alignSelf: 'flex-start' }}
           >
-            Already have an account? Log in
+            {intl.formatMessage({ id: 'auth.register.logIn' })}
           </Button>
         </Space>
       </Card>
