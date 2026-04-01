@@ -4,6 +4,7 @@ import {
   type FrontendLiveStatus,
   type LiveBroadcast,
 } from '@/services/live';
+import { getLiveStatusPresentation, toLiveUiStatus } from '@/utils/liveStatusPresentation';
 import { VideoCameraOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useLocation, useModel } from '@umijs/max';
@@ -22,38 +23,6 @@ import { useEffect, useState } from 'react';
 
 const { Title, Text } = Typography;
 
-const getStatusPresentation = (status: FrontendLiveStatus, intl: any) => {
-  if (status === 'live') {
-    return {
-      label: intl.formatMessage({ id: 'live.status.live' }),
-      description: intl.formatMessage({ id: 'live.status.onAir' }),
-      isLive: true,
-    };
-  }
-
-  if (status === 'ready') {
-    return {
-      label: intl.formatMessage({ id: 'live.status.notStarted' }),
-      description: intl.formatMessage({ id: 'live.status.readyToGoLive' }),
-      isLive: false,
-    };
-  }
-
-  if (status === 'ended') {
-    return {
-      label: intl.formatMessage({ id: 'live.status.ended' }),
-      description: intl.formatMessage({ id: 'live.status.broadcastEnded' }),
-      isLive: false,
-    };
-  }
-
-  return {
-    label: intl.formatMessage({ id: 'live.status.starting' }),
-    description: intl.formatMessage({ id: 'live.status.streamStarting' }),
-    isLive: false,
-  };
-};
-
 const LIVE_FALLBACK_COVER = '/assets/NotStart.png';
 
 const getPosterUrl = (item: LiveBroadcast) =>
@@ -69,7 +38,8 @@ const isNewsLiveStream = (stream: LiveBroadcast) => {
 
 const toLiveVideoCardData = (item: LiveBroadcast, intl: any) => {
   const normalizedStatus = item.normalized_status || 'waiting_for_signal';
-  const status = getStatusPresentation(normalizedStatus, intl);
+  const status = getLiveStatusPresentation(normalizedStatus, intl);
+  const uiStatus = toLiveUiStatus(normalizedStatus);
   const creatorName =
     item.creator?.name ||
     item.creator?.username ||
@@ -101,13 +71,13 @@ const toLiveVideoCardData = (item: LiveBroadcast, intl: any) => {
       { id: 'live.common.viewers' },
       { count: viewerCount.toLocaleString() },
     ),
+    status_label: status.label,
+    status_description: status.description,
     description: `${status.description} · ${status.label.toUpperCase()}`,
     description_preview: `${
       status.description
     } · ${status.label.toUpperCase()}`,
-    status: status.isLive
-      ? 'broadcasting'
-      : String(item.status || '').toLowerCase(),
+    status: uiStatus === 'live' ? 'broadcasting' : String(item.status || '').toLowerCase(),
     normalized_status: normalizedStatus,
     duration_display: status.isLive
       ? intl.formatMessage({ id: 'videoCard.live' })
@@ -131,9 +101,21 @@ export default function ExploreLivePage() {
         initialState.currentUser.user_type === 'creator'),
   );
   const showNewsOnly = location.pathname === '/news/live';
+  const showMineOnly =
+    location.pathname === '/live/mine' ||
+    new URLSearchParams(location.search).get('scope') === 'my';
   const visibleStreams = streams.filter((item) =>
-    showNewsOnly ? isNewsLiveStream(item) : true,
+    showNewsOnly
+      ? isNewsLiveStream(item)
+      : showMineOnly
+      ? String(item.creator?.email || '').toLowerCase() ===
+        String(initialState?.currentUser?.email || '').toLowerCase()
+      : true,
   );
+  const pageTitleKey = showMineOnly ? 'menu.live.sessions' : 'nav.exploreLive';
+  const pageSubtitleKey = showMineOnly
+    ? 'live.explore.subtitle.mine'
+    : 'live.explore.subtitle';
   const getLiveCreateUrl = () => '/live/create';
   const handleGoLiveClick = () => {
     history.push(
@@ -183,10 +165,10 @@ export default function ExploreLivePage() {
           >
             <div>
               <Title level={2} style={{ margin: 0 }}>
-                {intl.formatMessage({ id: 'nav.exploreLive' })}
+                {intl.formatMessage({ id: pageTitleKey })}
               </Title>
               <Text type="secondary">
-                {intl.formatMessage({ id: 'live.explore.subtitle' })}
+                {intl.formatMessage({ id: pageSubtitleKey })}
               </Text>
             </div>
             <Button
