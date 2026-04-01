@@ -30,7 +30,7 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import LiveProductsPanel from '@/components/live-room/LiveProductsPanel';
+import LiveInteractionPanel from '@/components/live-room/LiveInteractionPanel';
 import ManageLiveProductsDrawer from '@/components/live-room/ManageLiveProductsDrawer';
 import QrCodePanel from '@/components/QrCodePanel';
 import { liveConfig } from '@/config/live';
@@ -44,6 +44,12 @@ import {
   type LiveBroadcastStatus,
 } from '@/services/live';
 import {
+  deleteLiveChatMessage,
+  getLiveChatMessages,
+  pinLiveChatMessage,
+  postLiveChatMessage,
+} from '@/services/liveChat';
+import {
   createLiveProductBinding,
   deleteLiveProductBinding,
   getManageLiveProducts,
@@ -51,6 +57,7 @@ import {
   updateLiveProductBinding,
 } from '@/services/liveProducts';
 import { getMyProducts } from '@/services/product';
+import type { LiveChatMessage } from '@/types/liveChat';
 import type { LiveProductBinding } from '@/types/liveProduct';
 import type { Product } from '@/types/product';
 import { getLocalizedCategoryLabel } from '@/utils/categoryI18n';
@@ -185,6 +192,10 @@ export default function LiveRoomPage() {
   const [manageError, setManageError] = useState('');
   const [manageDrawerOpen, setManageDrawerOpen] = useState(false);
   const [sellerProducts, setSellerProducts] = useState<Product[]>([]);
+  const [chatMessages, setChatMessages] = useState<LiveChatMessage[]>([]);
+  const [chatLoading, setChatLoading] = useState(true);
+  const [chatError, setChatError] = useState('');
+  const [chatAfterId, setChatAfterId] = useState<number | string | null>(null);
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const isCreator = Boolean(
@@ -246,7 +257,15 @@ export default function LiveRoomPage() {
     typeof backendStatus?.can_end === 'boolean'
       ? backendStatus.can_end
       : statusPresentation.uiStatus !== 'ended';
-  const canShowChatInput = false;
+  const canShowChatInput =
+    isLoggedIn && statusPresentation.uiStatus !== 'ended';
+  const canModerateChat = Boolean(
+    initialState?.currentUser &&
+      (manageEnabled ||
+        initialState.currentUser.is_admin ||
+        initialState.currentUser.is_staff ||
+        initialState.currentUser.is_superuser),
+  );
 
   const loadPublicProducts = async () => {
     if (!id) return;
@@ -289,6 +308,54 @@ export default function LiveRoomPage() {
         error?.message ||
           intl.formatMessage({ id: 'live.products.error.manage' }),
       );
+    }
+  };
+
+  const loadInitialChat = async () => {
+    if (!id) return;
+    setChatLoading(true);
+    setChatError('');
+    try {
+      const response = await getLiveChatMessages(id, { limit: 50 });
+      setChatMessages(response.results || []);
+      setChatAfterId(
+        response.next_after_id ??
+          (response.results?.length
+            ? response.results[response.results.length - 1]?.id
+            : null),
+      );
+    } catch (error: any) {
+      setChatMessages([]);
+      setChatError(
+        error?.message || intl.formatMessage({ id: 'live.chat.error.load' }),
+      );
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const pollChat = async () => {
+    if (!id) return;
+    try {
+      const response = await getLiveChatMessages(id, {
+        limit: 50,
+        after_id: chatAfterId || undefined,
+      });
+      if (response.results?.length) {
+        setChatMessages((prev) => [...prev, ...response.results]);
+      }
+      if (
+        response.next_after_id !== undefined &&
+        response.next_after_id !== null
+      ) {
+        setChatAfterId(response.next_after_id);
+      } else if (response.results?.length) {
+        setChatAfterId(
+          response.results[response.results.length - 1]?.id ?? chatAfterId,
+        );
+      }
+    } catch (error) {
+      // silent polling failures
     }
   };
 
@@ -340,6 +407,7 @@ export default function LiveRoomPage() {
     loadBackendStatus();
     loadPublicProducts();
     loadManageProducts();
+    loadInitialChat();
     const detailInterval = window.setInterval(
       () => loadBroadcast(false),
       20000,
@@ -349,12 +417,25 @@ export default function LiveRoomPage() {
       () => loadPublicProducts(),
       18000,
     );
+    const chatInterval = window.setInterval(() => pollChat(), 6000);
     return () => {
       window.clearInterval(detailInterval);
       window.clearInterval(statusInterval);
       window.clearInterval(productsInterval);
+      window.clearInterval(chatInterval);
     };
-  }, [id]);
+  }, [id, chatAfterId]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !manageEnabled) {
+      setSellerProducts([]);
+      return;
+    }
+
+    getMyProducts()
+      .then((data) => setSellerProducts(data.results || []))
+      .catch(() => setSellerProducts([]));
+  }, [isLoggedIn, manageEnabled]);
 
   useEffect(() => {
     if (!isLoggedIn || !manageEnabled) {
@@ -556,6 +637,57 @@ export default function LiveRoomPage() {
     }
   };
 
+  const handleSendChat = async (content: string) => {
+    if (!id || !content.trim()) return;
+    try {
+      const created = await postLiveChatMessage(id, {
+        content: content.trim(),
+      });
+      setChatMessages((prev) => [...prev, created]);
+      if (created?.id !== undefined && created?.id !== null) {
+        setChatAfterId(created.id);
+      }
+    } catch (error: any) {
+      message.warning(
+        error?.message || intl.formatMessage({ id: 'live.chat.error.load' }),
+      );
+    }
+  };
+
+  const handlePinToggleChat = async (item: LiveChatMessage) => {
+    if (!id || !item?.id) return;
+    try {
+      const updated = await pinLiveChatMessage(id, item.id, {
+        is_pinned: !item.is_pinned,
+      });
+      setChatMessages((prev) =>
+        prev.map((messageItem) =>
+          String(messageItem.id) === String(item.id) ? updated : messageItem,
+        ),
+      );
+    } catch (error: any) {
+      message.warning(
+        error?.message || intl.formatMessage({ id: 'live.chat.error.load' }),
+      );
+    }
+  };
+
+  const handleDeleteChat = async (item: LiveChatMessage) => {
+    if (!id || !item?.id) return;
+    try {
+      await deleteLiveChatMessage(id, item.id);
+      setChatMessages((prev) =>
+        prev.filter(
+          (messageItem) => String(messageItem.id) !== String(item.id),
+        ),
+      );
+    } catch (error: any) {
+      message.warning(
+        error?.message || intl.formatMessage({ id: 'live.chat.error.load' }),
+      );
+    }
+  };
+
   const startButtonLabel = !isLoggedIn
     ? intl.formatMessage({ id: 'live.control.startCtaLogin' })
     : isCreator
@@ -721,68 +853,19 @@ export default function LiveRoomPage() {
                       />
                     )}
                   </Card>
-                  <LiveProductsPanel
-                    loading={publicProductsLoading}
-                    errorMessage={publicProductsError}
+                  <LiveInteractionPanel
+                    productsLoading={publicProductsLoading}
+                    productsError={publicProductsError}
                     products={publicProducts}
+                    chatLoading={chatLoading}
+                    chatError={chatError}
+                    chatMessages={chatMessages}
+                    canCompose={canShowChatInput}
+                    canModerate={canModerateChat}
+                    onSend={handleSendChat}
+                    onPinToggle={handlePinToggleChat}
+                    onDelete={handleDeleteChat}
                   />
-                  <Card
-                    variant="borderless"
-                    style={{ borderRadius: 20 }}
-                    title={intl.formatMessage({ id: 'live.room.viewerChat' })}
-                  >
-                    <Space
-                      direction="vertical"
-                      size={10}
-                      style={{ width: '100%' }}
-                    >
-                      <div
-                        style={{
-                          borderRadius: 12,
-                          minHeight: 180,
-                          padding: 12,
-                          background: 'rgba(255, 252, 243, 0.8)',
-                        }}
-                      >
-                        {!isLoggedIn ? (
-                          <Alert
-                            type="info"
-                            showIcon
-                            message={intl.formatMessage({
-                              id: 'live.room.chatSignedOut',
-                            })}
-                          />
-                        ) : statusPresentation.uiStatus === 'ended' ? (
-                          <Alert
-                            type="warning"
-                            showIcon
-                            message={intl.formatMessage({
-                              id: 'live.room.chatUnavailableEnded',
-                            })}
-                          />
-                        ) : (
-                          <Empty
-                            image={Empty.PRESENTED_IMAGE_SIMPLE}
-                            description={intl.formatMessage({
-                              id: 'live.room.chatEmpty',
-                            })}
-                          />
-                        )}
-                      </div>
-                      <Input.TextArea
-                        rows={3}
-                        disabled={!canShowChatInput}
-                        placeholder={intl.formatMessage({
-                          id: 'live.room.chatInputPlaceholder',
-                        })}
-                      />
-                      <Space style={{ width: '100%', justifyContent: 'end' }}>
-                        <Button type="primary" disabled={!canShowChatInput}>
-                          {intl.formatMessage({ id: 'live.room.chatSend' })}
-                        </Button>
-                      </Space>
-                    </Space>
-                  </Card>
                 </Space>
               </Col>
 

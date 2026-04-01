@@ -414,6 +414,12 @@ export default {
   'live.room.chatEmpty': 'No messages yet.',
   'live.room.chatInputPlaceholder': 'Type a message (coming soon)',
   'live.room.chatSend': 'Send',
+  'live.chat.subtitle': 'Chat is updated automatically.',
+  'live.chat.empty': 'No chat messages yet.',
+  'live.chat.input.placeholder': 'Type your message...',
+  'live.chat.actions.pinToggle': 'Pin / unpin',
+  'live.chat.error.load': 'Unable to load chat messages.',
+  'live.chat.user.unknown': 'Guest',
   'live.room.unavailable': 'Live room unavailable.',
   'live.room.sidebar.liveChat': 'Live Chat',
   'live.room.sidebar.liveChatPlaceholder':

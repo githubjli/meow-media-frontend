@@ -418,6 +418,12 @@ export default {
   'live.room.chatEmpty': 'Messages မရှိသေးပါ။',
   'live.room.chatInputPlaceholder': 'Message ရိုက်ထည့်ပါ (မကြာမီ)',
   'live.room.chatSend': 'ပို့မည်',
+  'live.chat.subtitle': 'Chat မက်ဆေ့ခ်ျများကို အလိုအလျောက် အပ်ဒိတ်လုပ်သည်။',
+  'live.chat.empty': 'Chat မက်ဆေ့ခ်ျ မရှိသေးပါ။',
+  'live.chat.input.placeholder': 'မက်ဆေ့ခ်ျရိုက်ထည့်ပါ...',
+  'live.chat.actions.pinToggle': 'Pin / ဖြုတ်မည်',
+  'live.chat.error.load': 'Chat မက်ဆေ့ခ်ျများကို မဖတ်ယူနိုင်ပါ။',
+  'live.chat.user.unknown': 'ဧည့်သည်',
   'live.room.unavailable': 'Live room မရရှိနိုင်ပါ။',
   'live.room.sidebar.liveChat': 'Live Chat',
   'live.room.sidebar.liveChatPlaceholder':
