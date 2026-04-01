@@ -187,6 +187,7 @@ export default {
   'videoCard.time.years': '{count} 年前',
   'live.status.live': 'LIVE',
   'live.status.starting': 'STARTING',
+  'live.status.unavailable': 'UNAVAILABLE',
   'live.status.notStarted': 'NOT STARTED',
   'live.status.ended': 'ENDED',
   'live.status.onAir': '正在直播',

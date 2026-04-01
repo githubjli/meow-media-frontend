@@ -87,6 +87,7 @@ const getCommerceIcon = (slug?: string) => {
 const getLiveChildIcon = (path: string, slug?: string) => {
   if (path === '/live') return <PlayCircleOutlined />;
   if (path === '/live/create') return <VideoCameraOutlined />;
+  if (path === '/live/mine') return <PlaySquareOutlined />;
 
   const value = String(slug || '').toLowerCase();
   if (value === 'selling') return <ShopOutlined />;
@@ -118,7 +119,7 @@ const COMMERCE_CATEGORY_ITEMS = [
 const LIVE_SECTION_ITEMS = [
   { key: 'menu.live.explore', path: '/live', slug: 'live' },
   { key: 'menu.live.create', path: '/live/create', slug: 'live-create' },
-  { key: 'menu.live.sessions', path: '/live?scope=my', slug: 'live-sessions' },
+  { key: 'menu.live.sessions', path: '/live/mine', slug: 'live-sessions' },
 ];
 
 const NEWS_SECTION_ITEMS = [

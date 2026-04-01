@@ -194,6 +194,7 @@ export default {
   'videoCard.time.years': '{count} နှစ်ခန့်က',
   'live.status.live': 'LIVE',
   'live.status.starting': 'STARTING',
+  'live.status.unavailable': 'UNAVAILABLE',
   'live.status.notStarted': 'NOT STARTED',
   'live.status.ended': 'ENDED',
   'live.status.onAir': 'On air now',
