@@ -1,9 +1,11 @@
 import LiveProductCard from '@/components/live-room/LiveProductCard';
 import type { LiveChatMessage } from '@/types/liveChat';
+import type { LivePaymentMethod } from '@/types/livePaymentMethod';
 import type { LiveProductBinding } from '@/types/liveProduct';
 import { useIntl } from '@umijs/max';
 import { Alert, Col, Empty, Row, Skeleton, Tabs } from 'antd';
 import LiveChatPanel from './LiveChatPanel';
+import LivePaymentsPanel from './LivePaymentsPanel';
 
 export default function LiveInteractionPanel({
   productsLoading,
@@ -12,8 +14,12 @@ export default function LiveInteractionPanel({
   chatLoading,
   chatError,
   chatMessages,
+  paymentsLoading,
+  paymentsError,
+  paymentMethods,
   canCompose,
   canModerate,
+  onCopyPaymentValue,
   onSend,
   onPinToggle,
   onDelete,
@@ -24,8 +30,12 @@ export default function LiveInteractionPanel({
   chatLoading: boolean;
   chatError: string;
   chatMessages: LiveChatMessage[];
+  paymentsLoading: boolean;
+  paymentsError: string;
+  paymentMethods: LivePaymentMethod[];
   canCompose: boolean;
   canModerate: boolean;
+  onCopyPaymentValue: (value: string, label: string) => void;
   onSend: (content: string) => Promise<void>;
   onPinToggle: (item: LiveChatMessage) => Promise<void>;
   onDelete: (item: LiveChatMessage) => Promise<void>;
@@ -70,6 +80,18 @@ export default function LiveInteractionPanel({
               onSend={onSend}
               onPinToggle={onPinToggle}
               onDelete={onDelete}
+            />
+          ),
+        },
+        {
+          key: 'payments',
+          label: intl.formatMessage({ id: 'live.payments.title' }),
+          children: (
+            <LivePaymentsPanel
+              loading={paymentsLoading}
+              errorMessage={paymentsError}
+              items={paymentMethods}
+              onCopy={onCopyPaymentValue}
             />
           ),
         },

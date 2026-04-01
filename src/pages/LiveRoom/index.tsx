@@ -31,6 +31,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import LiveInteractionPanel from '@/components/live-room/LiveInteractionPanel';
+import ManageLivePaymentsDrawer from '@/components/live-room/ManageLivePaymentsDrawer';
 import ManageLiveProductsDrawer from '@/components/live-room/ManageLiveProductsDrawer';
 import QrCodePanel from '@/components/QrCodePanel';
 import { liveConfig } from '@/config/live';
@@ -50,6 +51,13 @@ import {
   postLiveChatMessage,
 } from '@/services/liveChat';
 import {
+  createLivePaymentMethod,
+  deleteLivePaymentMethod,
+  getManageLivePaymentMethods,
+  getPublicLivePaymentMethods,
+  updateLivePaymentMethod,
+} from '@/services/livePaymentMethods';
+import {
   createLiveProductBinding,
   deleteLiveProductBinding,
   getManageLiveProducts,
@@ -58,6 +66,10 @@ import {
 } from '@/services/liveProducts';
 import { getMyProducts } from '@/services/product';
 import type { LiveChatMessage } from '@/types/liveChat';
+import type {
+  LivePaymentMethod,
+  ManageLivePaymentMethod,
+} from '@/types/livePaymentMethod';
 import type { LiveProductBinding } from '@/types/liveProduct';
 import type { Product } from '@/types/product';
 import { getLocalizedCategoryLabel } from '@/utils/categoryI18n';
@@ -196,6 +208,17 @@ export default function LiveRoomPage() {
   const [chatLoading, setChatLoading] = useState(true);
   const [chatError, setChatError] = useState('');
   const [chatAfterId, setChatAfterId] = useState<number | string | null>(null);
+  const [publicPayments, setPublicPayments] = useState<LivePaymentMethod[]>([]);
+  const [publicPaymentsLoading, setPublicPaymentsLoading] = useState(true);
+  const [publicPaymentsError, setPublicPaymentsError] = useState('');
+  const [managePayments, setManagePayments] = useState<
+    ManageLivePaymentMethod[]
+  >([]);
+  const [managePaymentsEnabled, setManagePaymentsEnabled] = useState(false);
+  const [managePaymentsLoading, setManagePaymentsLoading] = useState(false);
+  const [managePaymentsError, setManagePaymentsError] = useState('');
+  const [managePaymentsDrawerOpen, setManagePaymentsDrawerOpen] =
+    useState(false);
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const isCreator = Boolean(
@@ -311,6 +334,50 @@ export default function LiveRoomPage() {
     }
   };
 
+  const loadPublicPayments = async () => {
+    if (!id) return;
+    setPublicPaymentsLoading(true);
+    setPublicPaymentsError('');
+    try {
+      const items = await getPublicLivePaymentMethods(id);
+      setPublicPayments(items);
+    } catch (error: any) {
+      setPublicPayments([]);
+      setPublicPaymentsError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.payments.error.load' }),
+      );
+    } finally {
+      setPublicPaymentsLoading(false);
+    }
+  };
+
+  const loadManagePayments = async () => {
+    if (!id || !isLoggedIn) {
+      setManagePaymentsEnabled(false);
+      return;
+    }
+
+    try {
+      const items = await getManageLivePaymentMethods(id);
+      setManagePayments(items);
+      setManagePaymentsEnabled(true);
+      setManagePaymentsError('');
+    } catch (error: any) {
+      if (error?.status === 403 || error?.status === 404) {
+        setManagePaymentsEnabled(false);
+        setManagePayments([]);
+        return;
+      }
+
+      setManagePaymentsEnabled(false);
+      setManagePaymentsError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.payments.error.manage' }),
+      );
+    }
+  };
+
   const loadInitialChat = async () => {
     if (!id) return;
     setChatLoading(true);
@@ -407,6 +474,8 @@ export default function LiveRoomPage() {
     loadBackendStatus();
     loadPublicProducts();
     loadManageProducts();
+    loadPublicPayments();
+    loadManagePayments();
     loadInitialChat();
     const detailInterval = window.setInterval(
       () => loadBroadcast(false),
@@ -417,11 +486,16 @@ export default function LiveRoomPage() {
       () => loadPublicProducts(),
       18000,
     );
+    const paymentsInterval = window.setInterval(
+      () => loadPublicPayments(),
+      18000,
+    );
     const chatInterval = window.setInterval(() => pollChat(), 6000);
     return () => {
       window.clearInterval(detailInterval);
       window.clearInterval(statusInterval);
       window.clearInterval(productsInterval);
+      window.clearInterval(paymentsInterval);
       window.clearInterval(chatInterval);
     };
   }, [id, chatAfterId]);
@@ -677,6 +751,64 @@ export default function LiveRoomPage() {
     }
   };
 
+  const handleCreatePaymentMethod = async (
+    payload: Partial<ManageLivePaymentMethod>,
+  ) => {
+    if (!id) return;
+    setManagePaymentsLoading(true);
+    try {
+      await createLivePaymentMethod(id, payload);
+      await Promise.all([loadManagePayments(), loadPublicPayments()]);
+      message.success(intl.formatMessage({ id: 'common.saved' }));
+    } catch (error: any) {
+      setManagePaymentsError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.payments.error.manage' }),
+      );
+    } finally {
+      setManagePaymentsLoading(false);
+    }
+  };
+
+  const handleUpdatePaymentMethod = async (
+    paymentMethodId: string | number,
+    payload: Partial<ManageLivePaymentMethod>,
+  ) => {
+    if (!id) return;
+    setManagePaymentsLoading(true);
+    try {
+      await updateLivePaymentMethod(id, paymentMethodId, payload);
+      await Promise.all([loadManagePayments(), loadPublicPayments()]);
+      message.success(intl.formatMessage({ id: 'common.saved' }));
+    } catch (error: any) {
+      setManagePaymentsError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.payments.error.manage' }),
+      );
+    } finally {
+      setManagePaymentsLoading(false);
+    }
+  };
+
+  const handleDeletePaymentMethod = async (
+    paymentMethodId: string | number,
+  ) => {
+    if (!id) return;
+    setManagePaymentsLoading(true);
+    try {
+      await deleteLivePaymentMethod(id, paymentMethodId);
+      await Promise.all([loadManagePayments(), loadPublicPayments()]);
+      message.success(intl.formatMessage({ id: 'common.saved' }));
+    } catch (error: any) {
+      setManagePaymentsError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.payments.error.manage' }),
+      );
+    } finally {
+      setManagePaymentsLoading(false);
+    }
+  };
+
   const startButtonLabel = !isLoggedIn
     ? intl.formatMessage({ id: 'live.control.startCtaLogin' })
     : isCreator
@@ -730,6 +862,15 @@ export default function LiveRoomPage() {
                         <Button onClick={() => setManageDrawerOpen(true)}>
                           {intl.formatMessage({
                             id: 'live.products.manage.open',
+                          })}
+                        </Button>
+                      ) : null}
+                      {managePaymentsEnabled ? (
+                        <Button
+                          onClick={() => setManagePaymentsDrawerOpen(true)}
+                        >
+                          {intl.formatMessage({
+                            id: 'live.payments.manage.open',
                           })}
                         </Button>
                       ) : null}
@@ -849,8 +990,12 @@ export default function LiveRoomPage() {
                     chatLoading={chatLoading}
                     chatError={chatError}
                     chatMessages={chatMessages}
+                    paymentsLoading={publicPaymentsLoading}
+                    paymentsError={publicPaymentsError}
+                    paymentMethods={publicPayments}
                     canCompose={canShowChatInput}
                     canModerate={canModerateChat}
+                    onCopyPaymentValue={copyValue}
                     onSend={handleSendChat}
                     onPinToggle={handlePinToggleChat}
                     onDelete={handleDeleteChat}
@@ -1123,6 +1268,17 @@ export default function LiveRoomPage() {
                   setManageLoading(false);
                 }
               }}
+            />
+            <ManageLivePaymentsDrawer
+              open={managePaymentsDrawerOpen}
+              loading={managePaymentsLoading}
+              errorMessage={managePaymentsError}
+              items={managePayments}
+              onClose={() => setManagePaymentsDrawerOpen(false)}
+              onRefresh={loadManagePayments}
+              onCreate={handleCreatePaymentMethod}
+              onUpdate={handleUpdatePaymentMethod}
+              onDelete={handleDeletePaymentMethod}
             />
           </Space>
         ) : (
