@@ -5,7 +5,7 @@ import {
 } from '@/services/auth';
 import { setStoredTokens } from '@/utils/auth';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { history, useIntl, useModel } from '@umijs/max';
+import { history, useIntl, useLocation, useModel } from '@umijs/max';
 import { Alert, Button, Card, Form, Input, Space, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 
@@ -13,6 +13,7 @@ const { Title, Text } = Typography;
 
 export default function RegisterPage() {
   const intl = useIntl();
+  const location = useLocation();
   const [form] = Form.useForm();
   const { initialState, setInitialState } = useModel('@@initialState');
   const [submitting, setSubmitting] = useState(false);
@@ -20,6 +21,9 @@ export default function RegisterPage() {
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const isCheckingAuth = Boolean(initialState?.authLoading);
+  const showAuthDebugNote =
+    process.env.NODE_ENV === 'development' &&
+    new URLSearchParams(location.search).get('authDebug') === '1';
 
   useEffect(() => {
     if (!isCheckingAuth && isLoggedIn) {
@@ -116,9 +120,11 @@ export default function RegisterPage() {
             </Text>
           </div>
 
-          <Text type="secondary">
-            {intl.formatMessage({ id: 'auth.common.proxyNotice' })}
-          </Text>
+          {showAuthDebugNote ? (
+            <Text type="secondary">
+              {intl.formatMessage({ id: 'auth.common.proxyNotice' })}
+            </Text>
+          ) : null}
 
           {errorMessage ? (
             <Alert type="error" message={errorMessage} showIcon />
@@ -136,11 +142,15 @@ export default function RegisterPage() {
               rules={[
                 {
                   required: true,
-                  message: intl.formatMessage({ id: 'auth.common.emailRequired' }),
+                  message: intl.formatMessage({
+                    id: 'auth.common.emailRequired',
+                  }),
                 },
                 {
                   type: 'email',
-                  message: intl.formatMessage({ id: 'auth.common.emailInvalid' }),
+                  message: intl.formatMessage({
+                    id: 'auth.common.emailInvalid',
+                  }),
                 },
               ]}
             >
@@ -163,7 +173,9 @@ export default function RegisterPage() {
                 },
                 {
                   min: 8,
-                  message: intl.formatMessage({ id: 'auth.register.passwordMin' }),
+                  message: intl.formatMessage({
+                    id: 'auth.register.passwordMin',
+                  }),
                 },
               ]}
             >
@@ -177,7 +189,9 @@ export default function RegisterPage() {
               />
             </Form.Item>
             <Form.Item
-              label={intl.formatMessage({ id: 'auth.register.confirmPassword' })}
+              label={intl.formatMessage({
+                id: 'auth.register.confirmPassword',
+              })}
               name="confirmPassword"
               dependencies={['password']}
               rules={[

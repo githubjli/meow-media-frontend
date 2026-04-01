@@ -19,6 +19,9 @@ export default function LoginPage() {
   const isCheckingAuth = Boolean(initialState?.authLoading);
   const redirectTarget =
     new URLSearchParams(location.search).get('redirect') || '/home';
+  const showAuthDebugNote =
+    process.env.NODE_ENV === 'development' &&
+    new URLSearchParams(location.search).get('authDebug') === '1';
 
   useEffect(() => {
     if (!isCheckingAuth && isLoggedIn) {
@@ -95,9 +98,11 @@ export default function LoginPage() {
             </Text>
           </div>
 
-          <Text type="secondary">
-            {intl.formatMessage({ id: 'auth.common.proxyNotice' })}
-          </Text>
+          {showAuthDebugNote ? (
+            <Text type="secondary">
+              {intl.formatMessage({ id: 'auth.common.proxyNotice' })}
+            </Text>
+          ) : null}
 
           {errorMessage ? (
             <Alert type="error" message={errorMessage} showIcon />
@@ -115,11 +120,15 @@ export default function LoginPage() {
               rules={[
                 {
                   required: true,
-                  message: intl.formatMessage({ id: 'auth.common.emailRequired' }),
+                  message: intl.formatMessage({
+                    id: 'auth.common.emailRequired',
+                  }),
                 },
                 {
                   type: 'email',
-                  message: intl.formatMessage({ id: 'auth.common.emailInvalid' }),
+                  message: intl.formatMessage({
+                    id: 'auth.common.emailInvalid',
+                  }),
                 },
               ]}
             >
