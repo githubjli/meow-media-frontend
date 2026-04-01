@@ -246,6 +246,9 @@ export default function LiveCreatePage() {
   } | null>(null);
   const hasTriggeredPublishAttemptRef = useRef(false);
   const hasLoggedFirstPublishFailureRef = useRef(false);
+  const startFlowLockRef = useRef(false);
+  const prepareRequestInFlightRef = useRef<Promise<LiveBroadcast> | null>(null);
+  const [isStartFlowInProgress, setIsStartFlowInProgress] = useState(false);
   const [activePublishStreamId, setActivePublishStreamId] = useState('');
   const activePublishStreamIdRef = useRef('');
   const [backendStatus, setBackendStatus] =
@@ -365,6 +368,10 @@ export default function LiveCreatePage() {
       setWebRtcCallbackEvents([]);
       setLatestWebRtcCallbackInfo('');
       setWebRtcCallbackError(null);
+      startFlowLockRef.current = false;
+      prepareRequestInFlightRef.current = null;
+      setIsStartFlowInProgress(false);
+      hasTriggeredPublishAttemptRef.current = false;
       setActivePublishStreamId('');
       setBackendStatus(null);
       message.success(
@@ -459,11 +466,41 @@ export default function LiveCreatePage() {
       message.error('Create your live session first.');
       return;
     }
-
-    const prePrepareChecks = await runPreflightChecks();
-    if (!prePrepareChecks.ok) {
+    if (
+      startFlowLockRef.current ||
+      isStartFlowInProgress ||
+      prepareRequestInFlightRef.current
+    ) {
+      console.warn('LIVE_CREATE start blocked: startup flow already in progress', {
+        liveId: createdLive.id,
+        startFlowLock: startFlowLockRef.current,
+        isStartFlowInProgress,
+        hasPrepareRequestInFlight: Boolean(prepareRequestInFlightRef.current),
+      });
       return;
     }
+    if (
+      activePublishStreamIdRef.current ||
+      publishingStatus === 'connecting' ||
+      publishingStatus === 'publishing' ||
+      hasTriggeredPublishAttemptRef.current
+    ) {
+      console.warn('LIVE_CREATE start blocked: active/pending publish session exists', {
+        liveId: createdLive.id,
+        activePublishStreamId: activePublishStreamIdRef.current || '',
+        publishingStatus,
+        hasTriggeredPublishAttempt: hasTriggeredPublishAttemptRef.current,
+      });
+      return;
+    }
+    startFlowLockRef.current = true;
+    setIsStartFlowInProgress(true);
+    try {
+
+      const prePrepareChecks = await runPreflightChecks();
+      if (!prePrepareChecks.ok) {
+        return;
+      }
 
     let preparedLiveForPublish: LiveBroadcast | null = createdLive;
     setPreparePhase('preparing');
@@ -471,7 +508,14 @@ export default function LiveCreatePage() {
     setPrepareSession(undefined);
 
     try {
-      const preparedLive = await prepareLiveBroadcast(createdLive.id);
+      let preparePromise = prepareRequestInFlightRef.current;
+      if (!preparePromise) {
+        preparePromise = prepareLiveBroadcast(createdLive.id);
+        prepareRequestInFlightRef.current = preparePromise.finally(() => {
+          prepareRequestInFlightRef.current = null;
+        });
+      }
+      const preparedLive = await preparePromise;
       console.log('START WITH CAMERA: prepare returned', preparedLive);
       setCreatedLive(preparedLive);
       preparedLiveForPublish = preparedLive;
@@ -729,7 +773,6 @@ export default function LiveCreatePage() {
               {
                 publishStreamId: chosenPublishStreamId,
                 info,
-                debugDisableReconnect,
               },
             );
           }
@@ -750,6 +793,7 @@ export default function LiveCreatePage() {
           }
 
           if (info === 'publish_finished') {
+            hasTriggeredPublishAttemptRef.current = false;
             setPublishingStatus('idle');
             setPublishingMessage(
               'Browser publishing stopped. OBS workflow remains available.',
@@ -788,6 +832,7 @@ export default function LiveCreatePage() {
             ...structuredError,
           });
           setWebRtcCallbackError({ error, messageText });
+          hasTriggeredPublishAttemptRef.current = false;
           setPublishingStatus('error');
           setPublishingMessage(
             messageText || error?.toString?.() || 'Browser publishing failed.',
@@ -830,6 +875,7 @@ export default function LiveCreatePage() {
       });
     } catch (error: any) {
       console.error('START WITH CAMERA: adaptor creation failed', error);
+      hasTriggeredPublishAttemptRef.current = false;
       setPublishingStatus('error');
       setPublishingMessage(
         error?.message || 'Unable to connect browser publishing to Ant Media.',
@@ -837,6 +883,10 @@ export default function LiveCreatePage() {
       setDebugLastError(
         error?.message || 'Unable to connect browser publishing to Ant Media.',
       );
+    }
+    } finally {
+      startFlowLockRef.current = false;
+      setIsStartFlowInProgress(false);
     }
   };
 
@@ -851,6 +901,7 @@ export default function LiveCreatePage() {
       activePublishStreamId,
     });
     webRTCAdaptorRef.current.stop(activePublishStreamId);
+    hasTriggeredPublishAttemptRef.current = false;
     setActivePublishStreamId('');
     setPublishingStatus('idle');
     setPublishingMessage(
@@ -1083,6 +1134,13 @@ export default function LiveCreatePage() {
         : 'Unknown',
     },
   ];
+  const isStartWithCameraDisabled =
+    !createdLive ||
+    isStartFlowInProgress ||
+    preparePhase === 'preparing' ||
+    publishingStatus === 'connecting' ||
+    publishingStatus === 'publishing' ||
+    Boolean(activePublishStreamId);
 
   if (
     !initialState?.authLoading &&
@@ -1381,7 +1439,7 @@ export default function LiveCreatePage() {
                             <Button
                               type="primary"
                               icon={<VideoCameraAddOutlined />}
-                              disabled={!createdLive}
+                              disabled={isStartWithCameraDisabled}
                               onClick={handleStartWithCamera}
                             >
                               Start with Camera
@@ -1410,7 +1468,7 @@ export default function LiveCreatePage() {
                             </Button>
                             <Button
                               icon={<ReloadOutlined />}
-                              disabled={!createdLive}
+                              disabled={isStartWithCameraDisabled}
                               onClick={handleStartWithCamera}
                             >
                               Refresh Devices
