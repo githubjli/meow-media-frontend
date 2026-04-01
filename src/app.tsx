@@ -3,6 +3,7 @@ import {
   listPublicCategories,
   type PublicCategory,
 } from '@/services/publicCategories';
+import { getMyStore } from '@/services/store';
 import { clearStoredTokens } from '@/utils/auth';
 import {
   AlertOutlined,
@@ -161,6 +162,8 @@ const resolveMenuSelectedPath = (pathname: string, search: string) => {
   }
   if (pathname === '/live') return '/live';
   if (pathname.startsWith('/live/')) return '/live';
+  if (pathname.startsWith('/seller/store')) return '/seller/store';
+  if (pathname.startsWith('/seller/products')) return '/seller/products';
   return pathname;
 };
 
@@ -185,6 +188,7 @@ type InitialState = {
   name: string;
   darkTheme: boolean;
   currentUser?: CurrentUser | null;
+  sellerHasStore?: boolean;
   authLoading?: boolean;
   fetchCurrentUser?: () => Promise<CurrentUser | null>;
   publicCategories: PublicCategory[];
@@ -205,11 +209,22 @@ export async function getInitialState(): Promise<InitialState> {
   }
 
   const currentUser = await resolveCurrentUser();
+  let sellerHasStore = false;
+
+  if (currentUser?.email) {
+    try {
+      await getMyStore();
+      sellerHasStore = true;
+    } catch (error: any) {
+      sellerHasStore = false;
+    }
+  }
 
   return {
     name: 'Meow Media Stream User',
     darkTheme: false,
     currentUser,
+    sellerHasStore,
     authLoading: false,
     fetchCurrentUser: resolveCurrentUser,
     publicCategories,
@@ -226,6 +241,7 @@ export const layout: RunTimeLayoutConfig = ({
   const isLoggedIn = Boolean(currentUser?.email);
   const isAdmin = isAdminUser(currentUser);
   const isCreator = isCreatorUser(currentUser);
+  const sellerHasStore = Boolean(initialState?.sellerHasStore);
   const utilityButtonStyle = {
     width: 40,
     height: 40,
@@ -435,11 +451,35 @@ export const layout: RunTimeLayoutConfig = ({
         })),
       };
 
+      const sellerItem = isLoggedIn
+        ? {
+            name: intl.formatMessage({ id: 'menu.seller' }),
+            path: '/seller/products',
+            icon: <ShopOutlined />,
+            className: 'sidebar-menu-item sidebar-menu-item-category',
+            children: [
+              {
+                name: intl.formatMessage({ id: 'menu.seller.store' }),
+                path: '/seller/store',
+                icon: <ShopOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.products' }),
+                path: '/seller/products',
+                icon: <PlaySquareOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
+            ],
+          }
+        : null;
+
       return [
         ...primaryItems,
         newsItem,
         liveItem,
         ...adminItems,
+        ...(sellerItem ? [sellerItem] : []),
         { type: 'divider', key: 'sidebar-divider-primary' } as any,
         ...categoryItems,
         { type: 'divider', key: 'sidebar-divider-commerce' } as any,
@@ -535,7 +575,10 @@ export const layout: RunTimeLayoutConfig = ({
           }}
           onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
         />
-        <Dropdown trigger={['click']} menu={{ items: languageMenuItems as any }}>
+        <Dropdown
+          trigger={['click']}
+          menu={{ items: languageMenuItems as any }}
+        >
           <Button
             type="text"
             icon={<GlobalOutlined />}
@@ -600,6 +643,14 @@ export const layout: RunTimeLayoutConfig = ({
                       } as const,
                     ]
                   : []),
+                {
+                  key: 'seller-center',
+                  icon: <ShopOutlined />,
+                  label: intl.formatMessage({
+                    id: sellerHasStore ? 'nav.myStore' : 'nav.openStore',
+                  }),
+                  onClick: () => history.push('/seller/store'),
+                },
                 {
                   type: 'divider',
                 },
