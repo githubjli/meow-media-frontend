@@ -4,7 +4,10 @@ import {
   type FrontendLiveStatus,
   type LiveBroadcast,
 } from '@/services/live';
-import { getLiveStatusPresentation, toLiveUiStatus } from '@/utils/liveStatusPresentation';
+import {
+  getLiveStatusPresentation,
+  toLiveUiStatus,
+} from '@/utils/liveStatusPresentation';
 import { VideoCameraOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useLocation, useModel } from '@umijs/max';
@@ -77,7 +80,10 @@ const toLiveVideoCardData = (item: LiveBroadcast, intl: any) => {
     description_preview: `${
       status.description
     } · ${status.label.toUpperCase()}`,
-    status: uiStatus === 'live' ? 'broadcasting' : String(item.status || '').toLowerCase(),
+    status:
+      uiStatus === 'live'
+        ? 'broadcasting'
+        : String(item.status || '').toLowerCase(),
     normalized_status: normalizedStatus,
     duration_display: status.isLive
       ? intl.formatMessage({ id: 'videoCard.live' })
@@ -157,7 +163,10 @@ export default function ExploreLivePage() {
   return (
     <PageContainer title={false}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '8px 0 24px' }}>
-        <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 20 }}>
+        <Card
+          variant="borderless"
+          style={{ borderRadius: 20, marginBottom: 20 }}
+        >
           <Space
             align="start"
             style={{ width: '100%', justifyContent: 'space-between' }}
@@ -206,7 +215,7 @@ export default function ExploreLivePage() {
             </Empty>
           </Card>
         ) : (
-          <Row gutter={[14, 18]}>
+          <Row gutter={[12, 14]}>
             {visibleStreams.map((item) => (
               <Col xs={24} sm={12} md={8} lg={6} xl={6} key={String(item.id)}>
                 <VideoCard data={toLiveVideoCardData(item, intl)} />

@@ -152,10 +152,10 @@ export default ({ data }: { data: any }) => {
   const metaLine = [uploaderLabel, publishedLabel, viewsLabel]
     .filter(Boolean)
     .join(' • ');
-  const cardBackground = isDark ? '#2F2923' : '#fffdf8';
+  const cardBackground = isDark ? '#302A24' : '#fffaf2';
   const cardBorder = isDark
-    ? '1px solid rgba(255,255,255,0.08)'
-    : '1px solid rgba(184, 135, 46, 0.18)';
+    ? '1px solid rgba(255,255,255,0.06)'
+    : '1px solid rgba(184, 135, 46, 0.1)';
   const titleColor = isDark ? '#F5F1EA' : '#2c2c2c';
   const descriptionColor = isDark ? '#CBBBAA' : '#745f40';
   const metaColor = isDark ? '#CBBBAA' : '#948261';
@@ -186,24 +186,33 @@ export default ({ data }: { data: any }) => {
       style={{
         cursor: 'pointer',
         borderRadius: 14,
-        padding: 8,
+        padding: 7,
         border: cardBorder,
         background: cardBackground,
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        transition:
+          'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease',
         opacity: isEnded ? 0.74 : 1,
       }}
       onMouseEnter={(event) => {
         event.currentTarget.style.transform = 'translateY(-2px)';
+        event.currentTarget.style.borderColor = isDark
+          ? 'rgba(255,255,255,0.1)'
+          : 'rgba(184, 135, 46, 0.18)';
+        event.currentTarget.style.background = isDark ? '#342E28' : '#fff9ef';
         event.currentTarget.style.boxShadow = isDark
-          ? '0 10px 24px rgba(0, 0, 0, 0.34)'
-          : '0 10px 22px rgba(116, 95, 64, 0.12)';
+          ? '0 10px 20px rgba(0, 0, 0, 0.24)'
+          : '0 8px 18px rgba(116, 95, 64, 0.09)';
         const image = event.currentTarget.querySelector('img');
         if (image) {
-          (image as HTMLImageElement).style.transform = 'scale(1.02)';
+          (image as HTMLImageElement).style.transform = 'scale(1.015)';
         }
       }}
       onMouseLeave={(event) => {
         event.currentTarget.style.transform = 'translateY(0)';
+        event.currentTarget.style.borderColor = isDark
+          ? 'rgba(255,255,255,0.06)'
+          : 'rgba(184, 135, 46, 0.1)';
+        event.currentTarget.style.background = isDark ? '#302A24' : '#fffaf2';
         event.currentTarget.style.boxShadow = 'none';
         const image = event.currentTarget.querySelector('img');
         if (image) {
@@ -217,7 +226,7 @@ export default ({ data }: { data: any }) => {
           borderRadius: 12,
           overflow: 'hidden',
           aspectRatio: '16/9',
-          marginBottom: 8,
+          marginBottom: 7,
           background: thumbBackground,
         }}
       >
