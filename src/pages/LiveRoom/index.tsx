@@ -19,7 +19,6 @@ import {
   Card,
   Col,
   Collapse,
-  Divider,
   Empty,
   Input,
   Row,
@@ -488,94 +487,103 @@ export default function LiveRoomPage() {
         ) : broadcast ? (
           <Space direction="vertical" size={20} style={{ width: '100%' }}>
             <Card variant="borderless" style={{ borderRadius: 20 }}>
-              <Row gutter={[20, 20]} align="middle">
-                <Col xs={24} lg={16}>
-                  <Space
-                    direction="vertical"
-                    size={12}
-                    style={{ width: '100%' }}
-                  >
-                    <Space wrap>
-                      <Tag color={statusPresentation.color}>
-                        {statusPresentation.label}
-                      </Tag>
-                      {broadcast.category ? (
-                        <Tag>
-                          {getLocalizedCategoryLabel(intl, {
-                            slug: broadcast.category,
-                            name: broadcast.category,
-                          })}
-                        </Tag>
-                      ) : null}
-                      <Tag icon={<EyeOutlined />}>
-                        {intl.formatMessage(
-                          { id: 'live.common.viewers' },
-                          { count: viewerCount.toLocaleString() },
-                        )}
-                      </Tag>
+              <Space direction="vertical" size={14} style={{ width: '100%' }}>
+                <Space wrap>
+                  <Tag color={statusPresentation.color}>
+                    {statusPresentation.label}
+                  </Tag>
+                  {broadcast.category ? (
+                    <Tag>
+                      {getLocalizedCategoryLabel(intl, {
+                        slug: broadcast.category,
+                        name: broadcast.category,
+                      })}
+                    </Tag>
+                  ) : null}
+                  <Tag icon={<EyeOutlined />}>
+                    {intl.formatMessage(
+                      { id: 'live.common.viewers' },
+                      { count: viewerCount.toLocaleString() },
+                    )}
+                  </Tag>
+                </Space>
+                <Row gutter={[14, 10]} align="middle">
+                  <Col xs={24} lg={16}>
+                    <Title level={2} style={{ margin: 0 }}>
+                      {title}
+                    </Title>
+                  </Col>
+                  <Col xs={24} lg={8}>
+                    <Space
+                      wrap
+                      style={{ justifyContent: 'flex-end', width: '100%' }}
+                    >
+                      <Button
+                        type="primary"
+                        icon={<PlayCircleOutlined />}
+                        loading={actionLoading === 'start'}
+                        disabled={!canStartLive || !isCreator}
+                        onClick={() => handleAction('start')}
+                      >
+                        {startButtonLabel}
+                      </Button>
+                      <Button
+                        danger
+                        icon={<PoweroffOutlined />}
+                        loading={actionLoading === 'end'}
+                        disabled={!canEndLive || !isCreator}
+                        onClick={() => handleAction('end')}
+                      >
+                        {intl.formatMessage({ id: 'live.control.endCta' })}
+                      </Button>
                     </Space>
-                    <Row gutter={[16, 12]} align="middle">
-                      <Col xs={24} lg={8}>
-                        <Space align="center" size={12}>
-                          <Avatar
-                            icon={<UserOutlined />}
-                            src={broadcast.creator?.avatar_url}
-                          />
-                          <div>
-                            <Text strong style={{ display: 'block' }}>
-                              {creatorName}
-                            </Text>
-                            <Text type="secondary">
-                              {intl.formatMessage({
-                                id: 'live.room.streamHost',
-                              })}
-                            </Text>
-                          </div>
-                        </Space>
-                      </Col>
-                      <Col xs={24} lg={16}>
-                        <Title level={2} style={{ margin: 0 }}>
-                          {title}
-                        </Title>
-                        <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-                          {broadcast.description ||
-                            intl.formatMessage({
-                              id: 'live.room.descriptionFallback',
-                            })}
-                        </Paragraph>
-                      </Col>
-                    </Row>
-                  </Space>
-                </Col>
-                <Col xs={24} lg={8}>
-                  <Space
-                    wrap
-                    style={{ justifyContent: 'flex-end', width: '100%' }}
-                  >
-                    <Button
-                      type="primary"
-                      icon={<PlayCircleOutlined />}
-                      loading={actionLoading === 'start'}
-                      disabled={!canStartLive || !isCreator}
-                      onClick={() => handleAction('start')}
+                  </Col>
+                </Row>
+                <Row gutter={[14, 10]} align="middle">
+                  <Col xs={24} lg={8}>
+                    <Space align="center" size={10}>
+                      <Avatar
+                        icon={<UserOutlined />}
+                        src={broadcast.creator?.avatar_url}
+                      />
+                      <div>
+                        <Text
+                          style={{
+                            display: 'block',
+                            fontSize: 13,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {creatorName}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {intl.formatMessage({
+                            id: 'live.room.streamHost',
+                          })}
+                        </Text>
+                      </div>
+                    </Space>
+                  </Col>
+                  <Col xs={24} lg={16}>
+                    <Paragraph
+                      type="secondary"
+                      style={{
+                        marginBottom: 0,
+                        fontSize: 13,
+                        lineHeight: 1.65,
+                      }}
                     >
-                      {startButtonLabel}
-                    </Button>
-                    <Button
-                      danger
-                      icon={<PoweroffOutlined />}
-                      loading={actionLoading === 'end'}
-                      disabled={!canEndLive || !isCreator}
-                      onClick={() => handleAction('end')}
-                    >
-                      {intl.formatMessage({ id: 'live.control.endCta' })}
-                    </Button>
-                  </Space>
-                </Col>
-              </Row>
+                      {broadcast.description ||
+                        intl.formatMessage({
+                          id: 'live.room.descriptionFallback',
+                        })}
+                    </Paragraph>
+                  </Col>
+                </Row>
+              </Space>
             </Card>
 
-            <Row gutter={[20, 20]}>
+            <Row gutter={[16, 16]}>
               <Col xs={24} md={16} xl={16}>
                 <Space direction="vertical" size={20} style={{ width: '100%' }}>
                   <Card
@@ -626,66 +634,53 @@ export default function LiveRoomPage() {
                   >
                     <Space
                       direction="vertical"
-                      size={12}
+                      size={10}
                       style={{ width: '100%' }}
                     >
-                      <Text type="secondary">
-                        {intl.formatMessage({ id: 'live.room.viewerChatHint' })}
-                      </Text>
-                      <Card
-                        size="small"
-                        style={{ borderRadius: 12, minHeight: 180 }}
-                        bodyStyle={{ padding: 16 }}
+                      <div
+                        style={{
+                          borderRadius: 12,
+                          minHeight: 180,
+                          padding: 12,
+                          background: 'rgba(255, 252, 243, 0.8)',
+                        }}
                       >
-                        <Space
-                          direction="vertical"
-                          size={10}
-                          style={{ width: '100%' }}
-                        >
-                          {!isLoggedIn ? (
-                            <Alert
-                              type="info"
-                              showIcon
-                              message={intl.formatMessage({
-                                id: 'live.room.chatSignedOut',
-                              })}
-                            />
-                          ) : statusPresentation.uiStatus === 'ended' ? (
-                            <Alert
-                              type="warning"
-                              showIcon
-                              message={intl.formatMessage({
-                                id: 'live.room.chatUnavailableEnded',
-                              })}
-                            />
-                          ) : (
-                            <Empty
-                              image={Empty.PRESENTED_IMAGE_SIMPLE}
-                              description={intl.formatMessage({
-                                id: 'live.room.chatEmpty',
-                              })}
-                            />
-                          )}
-                        </Space>
-                      </Card>
-                      <Divider style={{ margin: '4px 0' }} />
-                      <Space
-                        direction="vertical"
-                        size={8}
-                        style={{ width: '100%' }}
-                      >
-                        <Input.TextArea
-                          rows={3}
-                          disabled={!canShowChatInput}
-                          placeholder={intl.formatMessage({
-                            id: 'live.room.chatInputPlaceholder',
-                          })}
-                        />
-                        <Space style={{ width: '100%', justifyContent: 'end' }}>
-                          <Button type="primary" disabled={!canShowChatInput}>
-                            {intl.formatMessage({ id: 'live.room.chatSend' })}
-                          </Button>
-                        </Space>
+                        {!isLoggedIn ? (
+                          <Alert
+                            type="info"
+                            showIcon
+                            message={intl.formatMessage({
+                              id: 'live.room.chatSignedOut',
+                            })}
+                          />
+                        ) : statusPresentation.uiStatus === 'ended' ? (
+                          <Alert
+                            type="warning"
+                            showIcon
+                            message={intl.formatMessage({
+                              id: 'live.room.chatUnavailableEnded',
+                            })}
+                          />
+                        ) : (
+                          <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description={intl.formatMessage({
+                              id: 'live.room.chatEmpty',
+                            })}
+                          />
+                        )}
+                      </div>
+                      <Input.TextArea
+                        rows={3}
+                        disabled={!canShowChatInput}
+                        placeholder={intl.formatMessage({
+                          id: 'live.room.chatInputPlaceholder',
+                        })}
+                      />
+                      <Space style={{ width: '100%', justifyContent: 'end' }}>
+                        <Button type="primary" disabled={!canShowChatInput}>
+                          {intl.formatMessage({ id: 'live.room.chatSend' })}
+                        </Button>
                       </Space>
                     </Space>
                   </Card>

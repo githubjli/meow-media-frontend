@@ -194,17 +194,17 @@ export default ({ data }: { data: any }) => {
         opacity: isEnded ? 0.74 : 1,
       }}
       onMouseEnter={(event) => {
-        event.currentTarget.style.transform = 'translateY(-2px)';
+        event.currentTarget.style.transform = 'translateY(-1px)';
         event.currentTarget.style.borderColor = isDark
           ? 'rgba(255,255,255,0.1)'
           : 'rgba(184, 135, 46, 0.1)';
         event.currentTarget.style.background = isDark ? '#342E28' : '#fff9ef';
         event.currentTarget.style.boxShadow = isDark
-          ? '0 10px 20px rgba(0, 0, 0, 0.24)'
-          : '0 6px 14px rgba(116, 95, 64, 0.08)';
+          ? '0 8px 16px rgba(0, 0, 0, 0.22)'
+          : '0 4px 12px rgba(116, 95, 64, 0.07)';
         const image = event.currentTarget.querySelector('img');
         if (image) {
-          (image as HTMLImageElement).style.transform = 'scale(1.015)';
+          (image as HTMLImageElement).style.transform = 'scale(1.01)';
         }
       }}
       onMouseLeave={(event) => {
