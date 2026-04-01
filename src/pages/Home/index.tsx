@@ -106,7 +106,7 @@ const ChannelRow = ({ title, path, items, description, intl }: any) => (
         )}
       />
     ) : (
-      <Row gutter={[10, 12]}>
+      <Row gutter={[9, 11]}>
         {items.map((item: PublicVideo) => (
           <Col xs={24} sm={12} md={8} lg={6} xl={6} key={item.id}>
             <VideoCard data={toCardData(item)} />

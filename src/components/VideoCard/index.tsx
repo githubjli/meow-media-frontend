@@ -155,7 +155,7 @@ export default ({ data }: { data: any }) => {
   const cardBackground = isDark ? '#302A24' : '#fffaf2';
   const cardBorder = isDark
     ? '1px solid rgba(255,255,255,0.06)'
-    : '1px solid rgba(184, 135, 46, 0.04)';
+    : '1px solid transparent';
   const titleColor = isDark ? '#F5F1EA' : '#2c2c2c';
   const descriptionColor = isDark ? '#CBBBAA' : '#745f40';
   const metaColor = isDark ? '#CBBBAA' : '#948261';
@@ -186,7 +186,7 @@ export default ({ data }: { data: any }) => {
       style={{
         cursor: 'pointer',
         borderRadius: 14,
-        padding: 7,
+        padding: 6,
         border: cardBorder,
         background: cardBackground,
         transition:
@@ -197,7 +197,7 @@ export default ({ data }: { data: any }) => {
         event.currentTarget.style.transform = 'translateY(-2px)';
         event.currentTarget.style.borderColor = isDark
           ? 'rgba(255,255,255,0.1)'
-          : 'rgba(184, 135, 46, 0.12)';
+          : 'rgba(184, 135, 46, 0.1)';
         event.currentTarget.style.background = isDark ? '#342E28' : '#fff9ef';
         event.currentTarget.style.boxShadow = isDark
           ? '0 10px 20px rgba(0, 0, 0, 0.24)'
@@ -211,7 +211,7 @@ export default ({ data }: { data: any }) => {
         event.currentTarget.style.transform = 'translateY(0)';
         event.currentTarget.style.borderColor = isDark
           ? 'rgba(255,255,255,0.06)'
-          : 'rgba(184, 135, 46, 0.04)';
+          : 'transparent';
         event.currentTarget.style.background = isDark ? '#302A24' : '#fffaf2';
         event.currentTarget.style.boxShadow = 'none';
         const image = event.currentTarget.querySelector('img');
