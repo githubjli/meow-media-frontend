@@ -30,6 +30,8 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import LiveProductsPanel from '@/components/live-room/LiveProductsPanel';
+import ManageLiveProductsDrawer from '@/components/live-room/ManageLiveProductsDrawer';
 import QrCodePanel from '@/components/QrCodePanel';
 import { liveConfig } from '@/config/live';
 import {
@@ -41,6 +43,16 @@ import {
   type LiveBroadcast,
   type LiveBroadcastStatus,
 } from '@/services/live';
+import {
+  createLiveProductBinding,
+  deleteLiveProductBinding,
+  getManageLiveProducts,
+  getPublicLiveProducts,
+  updateLiveProductBinding,
+} from '@/services/liveProducts';
+import { getMyProducts } from '@/services/product';
+import type { LiveProductBinding } from '@/types/liveProduct';
+import type { Product } from '@/types/product';
 import { getLocalizedCategoryLabel } from '@/utils/categoryI18n';
 import { getLiveStatusPresentation } from '@/utils/liveStatusPresentation';
 
@@ -160,6 +172,19 @@ export default function LiveRoomPage() {
   );
   const [playerPhase, setPlayerPhase] = useState<PlayerPhase>('idle');
   const [payQrPayload, setPayQrPayload] = useState('');
+  const [publicProducts, setPublicProducts] = useState<LiveProductBinding[]>(
+    [],
+  );
+  const [publicProductsLoading, setPublicProductsLoading] = useState(true);
+  const [publicProductsError, setPublicProductsError] = useState('');
+  const [manageBindings, setManageBindings] = useState<LiveProductBinding[]>(
+    [],
+  );
+  const [manageEnabled, setManageEnabled] = useState(false);
+  const [manageLoading, setManageLoading] = useState(false);
+  const [manageError, setManageError] = useState('');
+  const [manageDrawerOpen, setManageDrawerOpen] = useState(false);
+  const [sellerProducts, setSellerProducts] = useState<Product[]>([]);
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const isCreator = Boolean(
@@ -223,6 +248,50 @@ export default function LiveRoomPage() {
       : statusPresentation.uiStatus !== 'ended';
   const canShowChatInput = false;
 
+  const loadPublicProducts = async () => {
+    if (!id) return;
+    setPublicProductsLoading(true);
+    setPublicProductsError('');
+    try {
+      const items = await getPublicLiveProducts(id);
+      setPublicProducts(items);
+    } catch (error: any) {
+      setPublicProducts([]);
+      setPublicProductsError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.products.error.load' }),
+      );
+    } finally {
+      setPublicProductsLoading(false);
+    }
+  };
+
+  const loadManageProducts = async () => {
+    if (!id || !isLoggedIn) {
+      setManageEnabled(false);
+      return;
+    }
+
+    try {
+      const items = await getManageLiveProducts(id);
+      setManageBindings(items);
+      setManageEnabled(true);
+      setManageError('');
+    } catch (error: any) {
+      if (error?.status === 403 || error?.status === 404) {
+        setManageEnabled(false);
+        setManageBindings([]);
+        return;
+      }
+
+      setManageEnabled(false);
+      setManageError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.products.error.manage' }),
+      );
+    }
+  };
+
   const loadBroadcast = async (showLoader = false) => {
     if (!id) {
       return;
@@ -269,16 +338,34 @@ export default function LiveRoomPage() {
   useEffect(() => {
     loadBroadcast(true);
     loadBackendStatus();
+    loadPublicProducts();
+    loadManageProducts();
     const detailInterval = window.setInterval(
       () => loadBroadcast(false),
       20000,
     );
     const statusInterval = window.setInterval(() => loadBackendStatus(), 12000);
+    const productsInterval = window.setInterval(
+      () => loadPublicProducts(),
+      18000,
+    );
     return () => {
       window.clearInterval(detailInterval);
       window.clearInterval(statusInterval);
+      window.clearInterval(productsInterval);
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !manageEnabled) {
+      setSellerProducts([]);
+      return;
+    }
+
+    getMyProducts()
+      .then((data) => setSellerProducts(data.results || []))
+      .catch(() => setSellerProducts([]));
+  }, [isLoggedIn, manageEnabled]);
 
   useEffect(() => {
     const videoElement = videoElementRef.current;
@@ -518,6 +605,13 @@ export default function LiveRoomPage() {
                       wrap
                       style={{ justifyContent: 'flex-end', width: '100%' }}
                     >
+                      {manageEnabled ? (
+                        <Button onClick={() => setManageDrawerOpen(true)}>
+                          {intl.formatMessage({
+                            id: 'live.products.manage.open',
+                          })}
+                        </Button>
+                      ) : null}
                       <Button
                         type="primary"
                         icon={<PlayCircleOutlined />}
@@ -627,6 +721,11 @@ export default function LiveRoomPage() {
                       />
                     )}
                   </Card>
+                  <LiveProductsPanel
+                    loading={publicProductsLoading}
+                    errorMessage={publicProductsError}
+                    products={publicProducts}
+                  />
                   <Card
                     variant="borderless"
                     style={{ borderRadius: 20 }}
@@ -875,6 +974,84 @@ export default function LiveRoomPage() {
                 </Space>
               </Col>
             </Row>
+            <ManageLiveProductsDrawer
+              open={manageDrawerOpen}
+              loading={manageLoading}
+              errorMessage={manageError}
+              bindings={manageBindings}
+              sellerProducts={sellerProducts}
+              onClose={() => setManageDrawerOpen(false)}
+              onRefresh={loadManageProducts}
+              onCreate={async (payload) => {
+                if (!id) return;
+                setManageLoading(true);
+                try {
+                  await createLiveProductBinding(id, payload);
+                  message.success(
+                    intl.formatMessage({ id: 'live.products.manage.created' }),
+                  );
+                  await Promise.all([
+                    loadManageProducts(),
+                    loadPublicProducts(),
+                  ]);
+                } catch (error: any) {
+                  message.warning(
+                    error?.message ||
+                      intl.formatMessage({
+                        id: 'live.products.manage.error.create',
+                      }),
+                  );
+                } finally {
+                  setManageLoading(false);
+                }
+              }}
+              onUpdate={async (bindingId, payload) => {
+                if (!id) return;
+                setManageLoading(true);
+                try {
+                  await updateLiveProductBinding(id, bindingId, payload);
+                  message.success(
+                    intl.formatMessage({ id: 'live.products.manage.updated' }),
+                  );
+                  await Promise.all([
+                    loadManageProducts(),
+                    loadPublicProducts(),
+                  ]);
+                } catch (error: any) {
+                  message.warning(
+                    error?.message ||
+                      intl.formatMessage({
+                        id: 'live.products.manage.error.update',
+                      }),
+                  );
+                } finally {
+                  setManageLoading(false);
+                }
+              }}
+              onDelete={async (bindingId) => {
+                if (!id) return;
+                setManageLoading(true);
+                try {
+                  await deleteLiveProductBinding(id, bindingId);
+                  message.success(
+                    intl.formatMessage({ id: 'live.products.manage.deleted' }),
+                  );
+                  await Promise.all([
+                    loadManageProducts(),
+                    loadPublicProducts(),
+                  ]);
+                } catch (error: any) {
+                  message.warning(
+                    error?.message ||
+                      intl.formatMessage({
+                        id: 'live.products.manage.error.delete',
+                      }),
+                  );
+                } finally {
+                  setManageLoading(false);
+                }
+              }}
+            />
           </Space>
         ) : (
           <Empty
