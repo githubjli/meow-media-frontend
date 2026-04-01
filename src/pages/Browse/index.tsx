@@ -209,7 +209,7 @@ export default function BrowsePage() {
           <Empty description={intl.formatMessage({ id: 'browse.empty' })} />
         ) : (
           <>
-            <Row gutter={[14, 18]}>
+            <Row gutter={[12, 14]}>
               {videos.map((video) => (
                 <Col xs={24} sm={12} md={8} lg={6} xl={6} key={video.id}>
                   <VideoCard data={toCardData(video)} />
