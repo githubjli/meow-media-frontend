@@ -87,6 +87,7 @@ const getCommerceIcon = (slug?: string) => {
 const getLiveChildIcon = (path: string, slug?: string) => {
   if (path === '/live') return <PlayCircleOutlined />;
   if (path === '/live/create') return <VideoCameraOutlined />;
+  if (path === '/live/mine') return <PlaySquareOutlined />;
 
   const value = String(slug || '').toLowerCase();
   if (value === 'selling') return <ShopOutlined />;
@@ -118,7 +119,7 @@ const COMMERCE_CATEGORY_ITEMS = [
 const LIVE_SECTION_ITEMS = [
   { key: 'menu.live.explore', path: '/live', slug: 'live' },
   { key: 'menu.live.create', path: '/live/create', slug: 'live-create' },
-  { key: 'menu.live.sessions', path: '/live?scope=my', slug: 'live-sessions' },
+  { key: 'menu.live.sessions', path: '/live/mine', slug: 'live-sessions' },
 ];
 
 const NEWS_SECTION_ITEMS = [
@@ -147,6 +148,20 @@ const normalizeCategoryKey = (value?: string) => {
   if (normalized === 'edu') return 'education';
   if (normalized === 'learning') return 'education';
   return normalized;
+};
+
+const resolveMenuSelectedPath = (pathname: string, search: string) => {
+  if (pathname === '/live/create') return '/live/create';
+  if (pathname === '/live/mine') return '/live/mine';
+  if (
+    pathname === '/live' &&
+    new URLSearchParams(search || '').get('scope') === 'my'
+  ) {
+    return '/live/mine';
+  }
+  if (pathname === '/live') return '/live';
+  if (pathname.startsWith('/live/')) return '/live';
+  return pathname;
 };
 
 const isAdminUser = (user?: CurrentUser | null) =>
@@ -220,6 +235,28 @@ export const layout: RunTimeLayoutConfig = ({
     justifyContent: 'center',
     color: isDark ? '#E4D5C5' : '#4b5563',
   } as const;
+  const languageMenuItems = [
+    {
+      key: 'lang-en-us',
+      label: LANGUAGE_LABELS['en-US'],
+      onClick: () => setLocale('en-US', true),
+    },
+    {
+      key: 'lang-zh-cn',
+      label: LANGUAGE_LABELS['zh-CN'],
+      onClick: () => setLocale('zh-CN', true),
+    },
+    {
+      key: 'lang-th-th',
+      label: LANGUAGE_LABELS['th-TH'],
+      onClick: () => setLocale('th-TH', true),
+    },
+    {
+      key: 'lang-my-mm',
+      label: LANGUAGE_LABELS['my-MM'],
+      onClick: () => setLocale('my-MM', true),
+    },
+  ] as const;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -500,6 +537,17 @@ export const layout: RunTimeLayoutConfig = ({
           }}
           onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
         />
+        <Dropdown trigger={['click']} menu={{ items: languageMenuItems as any }}>
+          <Button
+            type="text"
+            icon={<GlobalOutlined />}
+            style={{
+              ...utilityButtonStyle,
+              fontSize: 18,
+              color: isDark ? '#EFBC5C' : '#4b5563',
+            }}
+          />
+        </Dropdown>
         {isLoggedIn ? (
           <Dropdown
             trigger={['click']}
@@ -556,33 +604,6 @@ export const layout: RunTimeLayoutConfig = ({
                   : []),
                 {
                   type: 'divider',
-                },
-                {
-                  key: 'language-menu',
-                  icon: <GlobalOutlined />,
-                  label: intl.formatMessage({ id: 'nav.language' }),
-                  children: [
-                    {
-                      key: 'lang-en-us',
-                      label: LANGUAGE_LABELS['en-US'],
-                      onClick: () => setLocale('en-US', true),
-                    },
-                    {
-                      key: 'lang-zh-cn',
-                      label: LANGUAGE_LABELS['zh-CN'],
-                      onClick: () => setLocale('zh-CN', true),
-                    },
-                    {
-                      key: 'lang-th-th',
-                      label: LANGUAGE_LABELS['th-TH'],
-                      onClick: () => setLocale('th-TH', true),
-                    },
-                    {
-                      key: 'lang-my-mm',
-                      label: LANGUAGE_LABELS['my-MM'],
-                      onClick: () => setLocale('my-MM', true),
-                    },
-                  ],
                 },
                 {
                   key: 'theme-menu',
@@ -677,6 +698,14 @@ export const layout: RunTimeLayoutConfig = ({
         )}
       </Space>
     ),
+    menuProps: {
+      selectedKeys: [
+        resolveMenuSelectedPath(
+          history.location?.pathname || '/',
+          history.location?.search || '',
+        ),
+      ],
+    },
     token: {
       pageContainer: {
         paddingInlinePageContainerContent: 16,
