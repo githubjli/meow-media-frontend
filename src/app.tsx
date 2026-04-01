@@ -3,6 +3,7 @@ import {
   listPublicCategories,
   type PublicCategory,
 } from '@/services/publicCategories';
+import { getMyStore } from '@/services/store';
 import { clearStoredTokens } from '@/utils/auth';
 import {
   AlertOutlined,
@@ -87,6 +88,7 @@ const getCommerceIcon = (slug?: string) => {
 const getLiveChildIcon = (path: string, slug?: string) => {
   if (path === '/live') return <PlayCircleOutlined />;
   if (path === '/live/create') return <VideoCameraOutlined />;
+  if (path === '/live/mine') return <PlaySquareOutlined />;
 
   const value = String(slug || '').toLowerCase();
   if (value === 'selling') return <ShopOutlined />;
@@ -118,7 +120,7 @@ const COMMERCE_CATEGORY_ITEMS = [
 const LIVE_SECTION_ITEMS = [
   { key: 'menu.live.explore', path: '/live', slug: 'live' },
   { key: 'menu.live.create', path: '/live/create', slug: 'live-create' },
-  { key: 'menu.live.sessions', path: '/live?scope=my', slug: 'live-sessions' },
+  { key: 'menu.live.sessions', path: '/live/mine', slug: 'live-sessions' },
 ];
 
 const NEWS_SECTION_ITEMS = [
@@ -149,6 +151,22 @@ const normalizeCategoryKey = (value?: string) => {
   return normalized;
 };
 
+const resolveMenuSelectedPath = (pathname: string, search: string) => {
+  if (pathname === '/live/create') return '/live/create';
+  if (pathname === '/live/mine') return '/live/mine';
+  if (
+    pathname === '/live' &&
+    new URLSearchParams(search || '').get('scope') === 'my'
+  ) {
+    return '/live/mine';
+  }
+  if (pathname === '/live') return '/live';
+  if (pathname.startsWith('/live/')) return '/live';
+  if (pathname.startsWith('/seller/store')) return '/seller/store';
+  if (pathname.startsWith('/seller/products')) return '/seller/products';
+  return pathname;
+};
+
 const isAdminUser = (user?: CurrentUser | null) =>
   Boolean(
     user &&
@@ -170,6 +188,7 @@ type InitialState = {
   name: string;
   darkTheme: boolean;
   currentUser?: CurrentUser | null;
+  sellerHasStore?: boolean;
   authLoading?: boolean;
   fetchCurrentUser?: () => Promise<CurrentUser | null>;
   publicCategories: PublicCategory[];
@@ -190,11 +209,22 @@ export async function getInitialState(): Promise<InitialState> {
   }
 
   const currentUser = await resolveCurrentUser();
+  let sellerHasStore = false;
+
+  if (currentUser?.email) {
+    try {
+      await getMyStore();
+      sellerHasStore = true;
+    } catch (error: any) {
+      sellerHasStore = false;
+    }
+  }
 
   return {
     name: 'Meow Media Stream User',
     darkTheme: false,
     currentUser,
+    sellerHasStore,
     authLoading: false,
     fetchCurrentUser: resolveCurrentUser,
     publicCategories,
@@ -211,6 +241,7 @@ export const layout: RunTimeLayoutConfig = ({
   const isLoggedIn = Boolean(currentUser?.email);
   const isAdmin = isAdminUser(currentUser);
   const isCreator = isCreatorUser(currentUser);
+  const sellerHasStore = Boolean(initialState?.sellerHasStore);
   const utilityButtonStyle = {
     width: 40,
     height: 40,
@@ -220,6 +251,28 @@ export const layout: RunTimeLayoutConfig = ({
     justifyContent: 'center',
     color: isDark ? '#E4D5C5' : '#4b5563',
   } as const;
+  const languageMenuItems = [
+    {
+      key: 'lang-en-us',
+      label: LANGUAGE_LABELS['en-US'],
+      onClick: () => setLocale('en-US', true),
+    },
+    {
+      key: 'lang-zh-cn',
+      label: LANGUAGE_LABELS['zh-CN'],
+      onClick: () => setLocale('zh-CN', true),
+    },
+    {
+      key: 'lang-th-th',
+      label: LANGUAGE_LABELS['th-TH'],
+      onClick: () => setLocale('th-TH', true),
+    },
+    {
+      key: 'lang-my-mm',
+      label: LANGUAGE_LABELS['my-MM'],
+      onClick: () => setLocale('my-MM', true),
+    },
+  ] as const;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -331,9 +384,7 @@ export const layout: RunTimeLayoutConfig = ({
             normalizeCategoryKey(fallbackCategory.slug),
           );
           const slug = matchedCategory?.slug || fallbackCategory.slug;
-          const name =
-            matchedCategory?.name ||
-            intl.formatMessage({ id: fallbackCategory.key });
+          const name = intl.formatMessage({ id: fallbackCategory.key });
 
           return {
             name,
@@ -400,11 +451,35 @@ export const layout: RunTimeLayoutConfig = ({
         })),
       };
 
+      const sellerItem = isLoggedIn
+        ? {
+            name: intl.formatMessage({ id: 'menu.seller' }),
+            path: '/seller/products',
+            icon: <ShopOutlined />,
+            className: 'sidebar-menu-item sidebar-menu-item-category',
+            children: [
+              {
+                name: intl.formatMessage({ id: 'menu.seller.store' }),
+                path: '/seller/store',
+                icon: <ShopOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.products' }),
+                path: '/seller/products',
+                icon: <PlaySquareOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
+            ],
+          }
+        : null;
+
       return [
         ...primaryItems,
         newsItem,
         liveItem,
         ...adminItems,
+        ...(sellerItem ? [sellerItem] : []),
         { type: 'divider', key: 'sidebar-divider-primary' } as any,
         ...categoryItems,
         { type: 'divider', key: 'sidebar-divider-commerce' } as any,
@@ -500,6 +575,20 @@ export const layout: RunTimeLayoutConfig = ({
           }}
           onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
         />
+        <Dropdown
+          trigger={['click']}
+          menu={{ items: languageMenuItems as any }}
+        >
+          <Button
+            type="text"
+            icon={<GlobalOutlined />}
+            style={{
+              ...utilityButtonStyle,
+              fontSize: 18,
+              color: isDark ? '#EFBC5C' : '#4b5563',
+            }}
+          />
+        </Dropdown>
         {isLoggedIn ? (
           <Dropdown
             trigger={['click']}
@@ -555,34 +644,15 @@ export const layout: RunTimeLayoutConfig = ({
                     ]
                   : []),
                 {
-                  type: 'divider',
+                  key: 'seller-center',
+                  icon: <ShopOutlined />,
+                  label: intl.formatMessage({
+                    id: sellerHasStore ? 'nav.myStore' : 'nav.openStore',
+                  }),
+                  onClick: () => history.push('/seller/store'),
                 },
                 {
-                  key: 'language-menu',
-                  icon: <GlobalOutlined />,
-                  label: intl.formatMessage({ id: 'nav.language' }),
-                  children: [
-                    {
-                      key: 'lang-en-us',
-                      label: LANGUAGE_LABELS['en-US'],
-                      onClick: () => setLocale('en-US', true),
-                    },
-                    {
-                      key: 'lang-zh-cn',
-                      label: LANGUAGE_LABELS['zh-CN'],
-                      onClick: () => setLocale('zh-CN', true),
-                    },
-                    {
-                      key: 'lang-th-th',
-                      label: LANGUAGE_LABELS['th-TH'],
-                      onClick: () => setLocale('th-TH', true),
-                    },
-                    {
-                      key: 'lang-my-mm',
-                      label: LANGUAGE_LABELS['my-MM'],
-                      onClick: () => setLocale('my-MM', true),
-                    },
-                  ],
+                  type: 'divider',
                 },
                 {
                   key: 'theme-menu',
@@ -677,6 +747,14 @@ export const layout: RunTimeLayoutConfig = ({
         )}
       </Space>
     ),
+    menuProps: {
+      selectedKeys: [
+        resolveMenuSelectedPath(
+          history.location?.pathname || '/',
+          history.location?.search || '',
+        ),
+      ],
+    },
     token: {
       pageContainer: {
         paddingInlinePageContainerContent: 16,
