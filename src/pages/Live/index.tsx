@@ -1,3 +1,4 @@
+import PageIntroCard from '@/components/PageIntroCard';
 import VideoCard from '@/components/VideoCard';
 import {
   getLiveList,
@@ -11,20 +12,8 @@ import {
 import { VideoCameraOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useLocation, useModel } from '@umijs/max';
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Empty,
-  Row,
-  Skeleton,
-  Space,
-  Typography,
-} from 'antd';
+import { Alert, Button, Card, Col, Empty, Row, Skeleton } from 'antd';
 import { useEffect, useState } from 'react';
-
-const { Title, Text } = Typography;
 
 const LIVE_FALLBACK_COVER = '/assets/NotStart.png';
 
@@ -163,23 +152,10 @@ export default function ExploreLivePage() {
   return (
     <PageContainer title={false}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '8px 0 24px' }}>
-        <Card
-          variant="borderless"
-          style={{ borderRadius: 20, marginBottom: 20 }}
-        >
-          <Space
-            align="start"
-            style={{ width: '100%', justifyContent: 'space-between' }}
-            wrap
-          >
-            <div>
-              <Title level={2} style={{ margin: 0 }}>
-                {intl.formatMessage({ id: pageTitleKey })}
-              </Title>
-              <Text type="secondary">
-                {intl.formatMessage({ id: pageSubtitleKey })}
-              </Text>
-            </div>
+        <PageIntroCard
+          title={intl.formatMessage({ id: pageTitleKey })}
+          description={intl.formatMessage({ id: pageSubtitleKey })}
+          actions={
             <Button
               type="primary"
               icon={<VideoCameraOutlined />}
@@ -188,8 +164,8 @@ export default function ExploreLivePage() {
             >
               {intl.formatMessage({ id: 'nav.goLive' })}
             </Button>
-          </Space>
-        </Card>
+          }
+        />
 
         {errorMessage ? (
           <Alert

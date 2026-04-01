@@ -1,3 +1,4 @@
+import PageIntroCard from '@/components/PageIntroCard';
 import VideoCard from '@/components/VideoCard';
 import { type PublicCategory } from '@/services/publicCategories';
 import { listPublicVideos, type PublicVideo } from '@/services/publicVideos';
@@ -8,7 +9,7 @@ import {
 import { AppstoreOutlined, RightOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel } from '@umijs/max';
-import { Alert, Button, Card, Col, Empty, Row, Spin, Typography } from 'antd';
+import { Alert, Button, Col, Empty, Row, Spin, Typography } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import styles from './index.less';
 
@@ -200,22 +201,13 @@ export default function HomePage() {
   return (
     <PageContainer title={false} ghost contentWidth="Fluid">
       <div className={styles.pageShell}>
-        <Card variant="borderless" className={styles.heroCard}>
-          <div className={styles.heroHeader}>
-            <div>
-              <Text className={styles.heroEyebrow}>
-                {intl.formatMessage({ id: 'home.hero.eyebrow' })}
-              </Text>
-              <Title level={2} className={styles.heroTitle}>
-                {intl.formatMessage({ id: 'home.hero.title' })}
-              </Title>
-              <Text className={styles.heroDescription}>
-                {intl.formatMessage({ id: 'home.hero.description' })}
-              </Text>
-            </div>
-          </div>
+        <PageIntroCard
+          eyebrow={intl.formatMessage({ id: 'home.hero.eyebrow' })}
+          title={intl.formatMessage({ id: 'home.hero.title' })}
+          description={intl.formatMessage({ id: 'home.hero.description' })}
+        >
           <TagsBar tags={homepageCategories} intl={intl} />
-        </Card>
+        </PageIntroCard>
 
         {errorMessage ? (
           <Alert
