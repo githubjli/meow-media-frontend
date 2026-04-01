@@ -444,6 +444,10 @@ export default function LiveCreatePage() {
   }, [devicePermissionStatus]);
 
   useEffect(() => {
+    console.log('LIVE_CREATE diagnostic logging patch active');
+  }, []);
+
+  useEffect(() => {
     activePublishStreamIdRef.current = activePublishStreamId || '';
   }, [activePublishStreamId]);
 
