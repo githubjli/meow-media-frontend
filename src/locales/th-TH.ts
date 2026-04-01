@@ -189,6 +189,7 @@ export default {
   'videoCard.time.years': '{count} ปีที่แล้ว',
   'live.status.live': 'LIVE',
   'live.status.starting': 'STARTING',
+  'live.status.unavailable': 'UNAVAILABLE',
   'live.status.notStarted': 'NOT STARTED',
   'live.status.ended': 'ENDED',
   'live.status.onAir': 'กำลังถ่ายทอดสด',
