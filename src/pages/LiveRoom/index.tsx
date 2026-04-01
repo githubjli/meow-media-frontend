@@ -226,12 +226,7 @@ export default function LiveRoomPage() {
     typeof backendStatus?.can_end === 'boolean'
       ? backendStatus.can_end
       : statusPresentation.uiStatus !== 'ended';
-  const showLiveViewerDiagnostics =
-    process.env.NODE_ENV === 'development' &&
-    new URLSearchParams(location.search).get('liveDebug') === '1';
-
-  const canShowChatInput =
-    isLoggedIn && statusPresentation.uiStatus !== 'ended';
+  const canShowChatInput = false;
 
   const loadBroadcast = async (showLoader = false) => {
     if (!id) {
@@ -532,33 +527,6 @@ export default function LiveRoomPage() {
                           id: 'live.room.descriptionFallback',
                         })}
                     </Paragraph>
-                    {showLiveViewerDiagnostics && backendStatus?.message ? (
-                      <Alert
-                        type="info"
-                        showIcon
-                        message={backendStatus.message}
-                      />
-                    ) : null}
-                    {showLiveViewerDiagnostics &&
-                    backendStatus?.status_source ? (
-                      <Text type="secondary">
-                        {intl.formatMessage({ id: 'live.room.statusSource' })}:{' '}
-                        {backendStatus.status_source}
-                      </Text>
-                    ) : null}
-                    {showLiveViewerDiagnostics &&
-                    backendStatus?.sync_ok === false ? (
-                      <Alert
-                        type="warning"
-                        showIcon
-                        message={
-                          backendStatus.sync_error ||
-                          intl.formatMessage({
-                            id: 'live.room.syncOutOfSync',
-                          })
-                        }
-                      />
-                    ) : null}
                     <Space align="center" size={12}>
                       <Avatar
                         icon={<UserOutlined />}
@@ -752,113 +720,6 @@ export default function LiveRoomPage() {
                           </Button>
                         </Space>
                       </Card>
-                      <Card
-                        size="small"
-                        style={{ borderRadius: 12, minHeight: 180 }}
-                        bodyStyle={{ padding: 16 }}
-                      >
-                        <Space
-                          direction="vertical"
-                          size={10}
-                          style={{ width: '100%' }}
-                        >
-                          {!isLoggedIn ? (
-                            <Alert
-                              type="info"
-                              showIcon
-                              message={intl.formatMessage({
-                                id: 'live.room.chatSignedOut',
-                              })}
-                            />
-                          ) : statusPresentation.uiStatus === 'ended' ? (
-                            <Alert
-                              type="warning"
-                              showIcon
-                              message={intl.formatMessage({
-                                id: 'live.room.chatUnavailableEnded',
-                              })}
-                            />
-                          ) : (
-                            <Empty
-                              image={Empty.PRESENTED_IMAGE_SIMPLE}
-                              description={intl.formatMessage({
-                                id: 'live.room.chatEmpty',
-                              })}
-                            />
-                          )}
-                        </Space>
-                      </Card>
-                      <Divider style={{ margin: '4px 0' }} />
-                      <Space
-                        direction="vertical"
-                        size={8}
-                        style={{ width: '100%' }}
-                      >
-                        <Input.TextArea
-                          rows={3}
-                          disabled={!canShowChatInput}
-                          placeholder={intl.formatMessage({
-                            id: 'live.room.chatInputPlaceholder',
-                          })}
-                        />
-                        <Space style={{ width: '100%', justifyContent: 'end' }}>
-                          <Button type="primary" disabled={!canShowChatInput}>
-                            {intl.formatMessage({ id: 'live.room.chatSend' })}
-                          </Button>
-                        </Space>
-                      </Space>
-                    </Space>
-                  </Card>
-                  <Card
-                    variant="borderless"
-                    style={{ borderRadius: 20 }}
-                    title={intl.formatMessage({ id: 'live.room.viewerChat' })}
-                  >
-                    <Space
-                      direction="vertical"
-                      size={12}
-                      style={{ width: '100%' }}
-                    >
-                      <Row gutter={[12, 12]}>
-                        <Col xs={24} sm={12}>
-                          <Card
-                            size="small"
-                            style={{ borderRadius: 12 }}
-                            bodyStyle={{ padding: 12 }}
-                          >
-                            <Statistic
-                              title={intl.formatMessage({
-                                id: 'live.room.currentViewers',
-                              })}
-                              value={viewerCount}
-                            />
-                          </Card>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                          <Card
-                            size="small"
-                            style={{ borderRadius: 12 }}
-                            bodyStyle={{ padding: 12 }}
-                          >
-                            <Text strong>
-                              {intl.formatMessage({
-                                id: 'live.room.chatMessages',
-                              })}
-                            </Text>
-                            <Text
-                              type="secondary"
-                              style={{ display: 'block', marginTop: 4 }}
-                            >
-                              {intl.formatMessage({
-                                id: 'live.room.chatStatusPlaceholder',
-                              })}
-                            </Text>
-                          </Card>
-                        </Col>
-                      </Row>
-                      <Text type="secondary">
-                        {intl.formatMessage({ id: 'live.room.viewerChatHint' })}
-                      </Text>
                       <Card
                         size="small"
                         style={{ borderRadius: 12, minHeight: 180 }}
