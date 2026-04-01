@@ -32,11 +32,11 @@ import {
   getLiveBroadcast,
   getLiveBroadcastStatus,
   getSafeWatchUrl,
-  normalizeLiveStatus,
   startLiveBroadcast,
   type LiveBroadcast,
   type LiveBroadcastStatus,
 } from '@/services/live';
+import { getLiveStatusPresentation } from '@/utils/liveStatusPresentation';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -58,20 +58,6 @@ declare global {
     Hls?: HlsCtor;
   }
 }
-
-const getStatusColor = (status?: string) => {
-  const normalized = normalizeLiveStatus(status);
-  switch (normalized) {
-    case 'live':
-      return 'error';
-    case 'ended':
-      return 'default';
-    case 'ready':
-    case 'waiting_for_signal':
-    default:
-      return 'processing';
-  }
-};
 
 const copyValue = async (value: string, label: string) => {
   if (!value) {
@@ -182,7 +168,10 @@ export default function LiveRoomPage() {
     backendStatus?.django_status ||
     broadcast?.normalized_status ||
     broadcast?.status;
-  const normalizedBusinessStatus = normalizeLiveStatus(effectiveBackendStatus);
+  const statusPresentation = getLiveStatusPresentation(
+    effectiveBackendStatus,
+    intl,
+  );
   const playbackUrl =
     backendStatus?.playback_url || broadcast?.playback_url || '';
   const watchUrl = getSafeWatchUrl({
@@ -203,11 +192,12 @@ export default function LiveRoomPage() {
   const canStartLive =
     typeof backendStatus?.can_start === 'boolean'
       ? backendStatus.can_start
-      : normalizedBusinessStatus !== 'live';
+      : statusPresentation.uiStatus !== 'live';
   const canEndLive =
     typeof backendStatus?.can_end === 'boolean'
       ? backendStatus.can_end
-      : normalizedBusinessStatus !== 'ended';
+      : statusPresentation.uiStatus !== 'ended';
+  const showLiveViewerDiagnostics = process.env.NODE_ENV === 'development';
 
   const detailItems = useMemo(
     () => [
@@ -469,8 +459,8 @@ export default function LiveRoomPage() {
                     style={{ width: '100%' }}
                   >
                     <Space wrap>
-                      <Tag color={getStatusColor(normalizedBusinessStatus)}>
-                        LIVE STATUS: {normalizedBusinessStatus.toUpperCase()}
+                      <Tag color={statusPresentation.color}>
+                        {statusPresentation.label}
                       </Tag>
                       {broadcast.category ? (
                         <Tag>{broadcast.category}</Tag>
@@ -486,19 +476,19 @@ export default function LiveRoomPage() {
                       {broadcast.description ||
                         'Professional live room with Django-managed stream lifecycle and Ant Media playback.'}
                     </Paragraph>
-                    {backendStatus?.message ? (
+                    {showLiveViewerDiagnostics && backendStatus?.message ? (
                       <Alert
                         type="info"
                         showIcon
                         message={backendStatus.message}
                       />
                     ) : null}
-                    {backendStatus?.status_source ? (
+                    {showLiveViewerDiagnostics && backendStatus?.status_source ? (
                       <Text type="secondary">
                         Status source: {backendStatus.status_source}
                       </Text>
                     ) : null}
-                    {backendStatus?.sync_ok === false ? (
+                    {showLiveViewerDiagnostics && backendStatus?.sync_ok === false ? (
                       <Alert
                         type="warning"
                         showIcon

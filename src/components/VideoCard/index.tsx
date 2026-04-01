@@ -128,7 +128,8 @@ export default ({ data }: { data: any }) => {
   const { initialState } = useModel('@@initialState');
   const isDark = Boolean(initialState?.darkTheme);
   const title = data.title || data.name;
-  const description = data.description_preview || data.description;
+  const description =
+    data.status_description || data.description_preview || data.description;
   const normalizedTitle = String(title || '')
     .trim()
     .toLowerCase();
@@ -167,7 +168,9 @@ export default ({ data }: { data: any }) => {
   const isStarting = normalizedStatus === 'waiting_for_signal';
   const isReady = normalizedStatus === 'ready';
 
-  const statusLabel = isLive
+  const statusLabel = data.status_label
+    ? String(data.status_label)
+    : isLive
     ? intl.formatMessage({ id: 'videoCard.live' })
     : isStarting
     ? intl.formatMessage({ id: 'live.status.starting' })
