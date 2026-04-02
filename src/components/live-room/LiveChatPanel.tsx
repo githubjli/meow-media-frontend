@@ -11,6 +11,7 @@ export default function LiveChatPanel({
   errorMessage,
   items,
   canCompose,
+  composeDisabledReason,
   canModerate,
   onSend,
   onPinToggle,
@@ -20,6 +21,7 @@ export default function LiveChatPanel({
   errorMessage: string;
   items: LiveChatMessage[];
   canCompose: boolean;
+  composeDisabledReason?: string;
   canModerate: boolean;
   onSend: (content: string) => Promise<void>;
   onPinToggle: (item: LiveChatMessage) => Promise<void>;
@@ -51,7 +53,14 @@ export default function LiveChatPanel({
             onDelete={onDelete}
           />
         ) : null}
-        <LiveChatComposer disabled={!canCompose} onSubmit={onSend} />
+        {!canCompose && composeDisabledReason ? (
+          <Alert type="info" showIcon message={composeDisabledReason} />
+        ) : null}
+        <LiveChatComposer
+          disabled={!canCompose}
+          disabledReason={composeDisabledReason}
+          onSubmit={onSend}
+        />
       </Space>
     </Card>
   );

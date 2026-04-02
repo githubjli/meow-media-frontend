@@ -22,6 +22,7 @@ export default function LiveInteractionPanel({
   createOrderError,
   latestOrder,
   canCompose,
+  composeDisabledReason,
   canModerate,
   isLoggedIn,
   canMarkOrderPaid,
@@ -46,6 +47,7 @@ export default function LiveInteractionPanel({
   createOrderError: string;
   latestOrder?: PaymentOrder | null;
   canCompose: boolean;
+  composeDisabledReason?: string;
   canModerate: boolean;
   isLoggedIn: boolean;
   canMarkOrderPaid: boolean;
@@ -93,6 +95,7 @@ export default function LiveInteractionPanel({
               errorMessage={chatError}
               items={chatMessages}
               canCompose={canCompose}
+              composeDisabledReason={composeDisabledReason}
               canModerate={canModerate}
               onSend={onSend}
               onPinToggle={onPinToggle}

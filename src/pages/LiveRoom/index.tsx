@@ -184,6 +184,7 @@ export default function LiveRoomPage() {
   const location = useLocation();
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<{ destroy: () => void } | null>(null);
+  const chatAfterIdRef = useRef<number | string | null>(null);
   const [broadcast, setBroadcast] = useState<LiveBroadcast | null>(null);
   const [backendStatus, setBackendStatus] =
     useState<LiveBroadcastStatus | null>(null);
@@ -213,7 +214,6 @@ export default function LiveRoomPage() {
   const [chatMessages, setChatMessages] = useState<LiveChatMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(true);
   const [chatError, setChatError] = useState('');
-  const [chatAfterId, setChatAfterId] = useState<number | string | null>(null);
   const [publicPayments, setPublicPayments] = useState<LivePaymentMethod[]>([]);
   const [publicPaymentsLoading, setPublicPaymentsLoading] = useState(true);
   const [publicPaymentsError, setPublicPaymentsError] = useState('');
@@ -292,6 +292,11 @@ export default function LiveRoomPage() {
       : statusPresentation.uiStatus !== 'ended';
   const canShowChatInput =
     isLoggedIn && statusPresentation.uiStatus !== 'ended';
+  const chatDisabledReason = !isLoggedIn
+    ? intl.formatMessage({ id: 'live.room.chatSignedOut' })
+    : statusPresentation.uiStatus === 'ended'
+    ? intl.formatMessage({ id: 'live.room.chatUnavailableEnded' })
+    : '';
   const canModerateChat = Boolean(
     initialState?.currentUser &&
       (manageEnabled ||
@@ -395,12 +400,12 @@ export default function LiveRoomPage() {
     try {
       const response = await getLiveChatMessages(id, { limit: 50 });
       setChatMessages(response.results || []);
-      setChatAfterId(
+      const nextAfterId =
         response.next_after_id ??
-          (response.results?.length
-            ? response.results[response.results.length - 1]?.id
-            : null),
-      );
+        (response.results?.length
+          ? response.results[response.results.length - 1]?.id
+          : null);
+      chatAfterIdRef.current = nextAfterId;
     } catch (error: any) {
       setChatMessages([]);
       setChatError(
@@ -416,20 +421,27 @@ export default function LiveRoomPage() {
     try {
       const response = await getLiveChatMessages(id, {
         limit: 50,
-        after_id: chatAfterId || undefined,
+        after_id: chatAfterIdRef.current || undefined,
       });
       if (response.results?.length) {
-        setChatMessages((prev) => [...prev, ...response.results]);
+        setChatMessages((prev) => {
+          const seen = new Set(prev.map((item) => String(item.id)));
+          const incoming = response.results.filter(
+            (item) => !seen.has(String(item.id)),
+          );
+          return incoming.length ? [...prev, ...incoming] : prev;
+        });
       }
       if (
         response.next_after_id !== undefined &&
         response.next_after_id !== null
       ) {
-        setChatAfterId(response.next_after_id);
+        chatAfterIdRef.current = response.next_after_id;
       } else if (response.results?.length) {
-        setChatAfterId(
-          response.results[response.results.length - 1]?.id ?? chatAfterId,
-        );
+        const nextAfterId =
+          response.results[response.results.length - 1]?.id ??
+          chatAfterIdRef.current;
+        chatAfterIdRef.current = nextAfterId;
       }
     } catch (error) {
       // silent polling failures
@@ -509,6 +521,17 @@ export default function LiveRoomPage() {
       window.clearInterval(chatInterval);
     };
   }, [id, chatAfterId]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !manageEnabled) {
+      setSellerProducts([]);
+      return;
+    }
+
+    getMyProducts()
+      .then((data) => setSellerProducts(data.results || []))
+      .catch(() => setSellerProducts([]));
+  }, [isLoggedIn, manageEnabled]);
 
   useEffect(() => {
     if (!isLoggedIn || !manageEnabled) {
@@ -718,7 +741,7 @@ export default function LiveRoomPage() {
       });
       setChatMessages((prev) => [...prev, created]);
       if (created?.id !== undefined && created?.id !== null) {
-        setChatAfterId(created.id);
+        chatAfterIdRef.current = created.id;
       }
     } catch (error: any) {
       message.warning(
@@ -1047,6 +1070,7 @@ export default function LiveRoomPage() {
                     createOrderError={paymentOrderError}
                     latestOrder={latestPaymentOrder}
                     canCompose={canShowChatInput}
+                    composeDisabledReason={chatDisabledReason}
                     canModerate={canModerateChat}
                     isLoggedIn={isLoggedIn}
                     canMarkOrderPaid={managePaymentsEnabled}

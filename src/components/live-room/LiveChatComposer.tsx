@@ -4,9 +4,11 @@ import { useState } from 'react';
 
 export default function LiveChatComposer({
   disabled,
+  disabledReason,
   onSubmit,
 }: {
   disabled: boolean;
+  disabledReason?: string;
   onSubmit: (content: string) => Promise<void>;
 }) {
   const intl = useIntl();
@@ -19,7 +21,11 @@ export default function LiveChatComposer({
         disabled={disabled}
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder={intl.formatMessage({ id: 'live.chat.input.placeholder' })}
+        placeholder={
+          disabled && disabledReason
+            ? disabledReason
+            : intl.formatMessage({ id: 'live.chat.input.placeholder' })
+        }
       />
       <Space style={{ width: '100%', justifyContent: 'end' }}>
         <Button
