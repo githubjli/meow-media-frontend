@@ -15,6 +15,7 @@ import {
   CarOutlined,
   CoffeeOutlined,
   CompassOutlined,
+  DollarOutlined,
   GlobalOutlined,
   HomeOutlined,
   LogoutOutlined,
@@ -625,6 +626,12 @@ export const layout: RunTimeLayoutConfig = ({
                   icon: <PlaySquareOutlined />,
                   label: intl.formatMessage({ id: 'nav.myVideos' }),
                   onClick: () => history.push('/videos/mine'),
+                },
+                {
+                  key: 'my-payment-orders',
+                  icon: <DollarOutlined />,
+                  label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
+                  onClick: () => history.push('/account/payment-orders'),
                 },
                 {
                   key: 'upload-video',

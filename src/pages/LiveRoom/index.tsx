@@ -58,6 +58,11 @@ import {
   updateLivePaymentMethod,
 } from '@/services/livePaymentMethods';
 import {
+  createLivePaymentOrder,
+  getLivePaymentOrderDetail,
+  markLivePaymentOrderPaid,
+} from '@/services/livePaymentOrders';
+import {
   createLiveProductBinding,
   deleteLiveProductBinding,
   getManageLiveProducts,
@@ -71,6 +76,7 @@ import type {
   ManageLivePaymentMethod,
 } from '@/types/livePaymentMethod';
 import type { LiveProductBinding } from '@/types/liveProduct';
+import type { PaymentOrder } from '@/types/paymentOrder';
 import type { Product } from '@/types/product';
 import { getLocalizedCategoryLabel } from '@/utils/categoryI18n';
 import { getLiveStatusPresentation } from '@/utils/liveStatusPresentation';
@@ -219,6 +225,10 @@ export default function LiveRoomPage() {
   const [managePaymentsError, setManagePaymentsError] = useState('');
   const [managePaymentsDrawerOpen, setManagePaymentsDrawerOpen] =
     useState(false);
+  const [paymentOrderLoading, setPaymentOrderLoading] = useState(false);
+  const [paymentOrderError, setPaymentOrderError] = useState('');
+  const [latestPaymentOrder, setLatestPaymentOrder] =
+    useState<PaymentOrder | null>(null);
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const isCreator = Boolean(
@@ -809,6 +819,46 @@ export default function LiveRoomPage() {
     }
   };
 
+  const handleCreatePaymentOrder = async (values: any) => {
+    if (!id) return;
+    setPaymentOrderLoading(true);
+    setPaymentOrderError('');
+    try {
+      const created = await createLivePaymentOrder(id, values);
+      const detail = await getLivePaymentOrderDetail(id, created.id);
+      setLatestPaymentOrder(detail);
+      message.success(intl.formatMessage({ id: 'live.orders.created' }));
+    } catch (error: any) {
+      if (error?.status === 401) {
+        navigateToLogin();
+        return;
+      }
+      setPaymentOrderError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.orders.error.create' }),
+      );
+    } finally {
+      setPaymentOrderLoading(false);
+    }
+  };
+
+  const handleMarkPaymentOrderPaid = async () => {
+    if (!id || !latestPaymentOrder?.id) return;
+    setPaymentOrderLoading(true);
+    try {
+      const updated = await markLivePaymentOrderPaid(id, latestPaymentOrder.id);
+      setLatestPaymentOrder(updated);
+      message.success(intl.formatMessage({ id: 'live.orders.markPaid' }));
+    } catch (error: any) {
+      setPaymentOrderError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.orders.error.detail' }),
+      );
+    } finally {
+      setPaymentOrderLoading(false);
+    }
+  };
+
   const startButtonLabel = !isLoggedIn
     ? intl.formatMessage({ id: 'live.control.startCtaLogin' })
     : isCreator
@@ -993,9 +1043,17 @@ export default function LiveRoomPage() {
                     paymentsLoading={publicPaymentsLoading}
                     paymentsError={publicPaymentsError}
                     paymentMethods={publicPayments}
+                    createOrderLoading={paymentOrderLoading}
+                    createOrderError={paymentOrderError}
+                    latestOrder={latestPaymentOrder}
                     canCompose={canShowChatInput}
                     canModerate={canModerateChat}
+                    isLoggedIn={isLoggedIn}
+                    canMarkOrderPaid={managePaymentsEnabled}
+                    onRequireLogin={navigateToLogin}
                     onCopyPaymentValue={copyValue}
+                    onCreateOrder={handleCreatePaymentOrder}
+                    onMarkOrderPaid={handleMarkPaymentOrderPaid}
                     onSend={handleSendChat}
                     onPinToggle={handlePinToggleChat}
                     onDelete={handleDeleteChat}

@@ -50,6 +50,11 @@ export default defineConfig({
     { path: '/register', component: './Register', hideInMenu: true },
     { path: '/videos/upload', component: './Videos/Upload', hideInMenu: true },
     { path: '/videos/mine', component: './Videos/Mine', hideInMenu: true },
+    {
+      path: '/account/payment-orders',
+      component: './Account/PaymentOrders',
+      hideInMenu: true,
+    },
     { path: '/admin/videos', component: './Videos/All', hideInMenu: false },
     { path: '/videos/:id', component: './Videos/Detail', hideInMenu: true },
     { path: '/browse/:id', component: './PublicVideoDetail', hideInMenu: true },

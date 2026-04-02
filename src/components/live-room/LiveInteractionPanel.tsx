@@ -2,6 +2,7 @@ import LiveProductCard from '@/components/live-room/LiveProductCard';
 import type { LiveChatMessage } from '@/types/liveChat';
 import type { LivePaymentMethod } from '@/types/livePaymentMethod';
 import type { LiveProductBinding } from '@/types/liveProduct';
+import type { PaymentOrder } from '@/types/paymentOrder';
 import { useIntl } from '@umijs/max';
 import { Alert, Col, Empty, Row, Skeleton, Tabs } from 'antd';
 import LiveChatPanel from './LiveChatPanel';
@@ -17,9 +18,17 @@ export default function LiveInteractionPanel({
   paymentsLoading,
   paymentsError,
   paymentMethods,
+  createOrderLoading,
+  createOrderError,
+  latestOrder,
   canCompose,
   canModerate,
+  isLoggedIn,
+  canMarkOrderPaid,
+  onRequireLogin,
   onCopyPaymentValue,
+  onCreateOrder,
+  onMarkOrderPaid,
   onSend,
   onPinToggle,
   onDelete,
@@ -33,9 +42,17 @@ export default function LiveInteractionPanel({
   paymentsLoading: boolean;
   paymentsError: string;
   paymentMethods: LivePaymentMethod[];
+  createOrderLoading: boolean;
+  createOrderError: string;
+  latestOrder?: PaymentOrder | null;
   canCompose: boolean;
   canModerate: boolean;
+  isLoggedIn: boolean;
+  canMarkOrderPaid: boolean;
+  onRequireLogin: () => void;
   onCopyPaymentValue: (value: string, label: string) => void;
+  onCreateOrder: (values: any) => Promise<void>;
+  onMarkOrderPaid: () => Promise<void>;
   onSend: (content: string) => Promise<void>;
   onPinToggle: (item: LiveChatMessage) => Promise<void>;
   onDelete: (item: LiveChatMessage) => Promise<void>;
@@ -92,6 +109,15 @@ export default function LiveInteractionPanel({
               errorMessage={paymentsError}
               items={paymentMethods}
               onCopy={onCopyPaymentValue}
+              canCreateOrder={isLoggedIn}
+              createOrderLoading={createOrderLoading}
+              createOrderError={createOrderError}
+              latestOrder={latestOrder}
+              products={products}
+              onRequireLogin={onRequireLogin}
+              onCreateOrder={onCreateOrder}
+              canMarkPaid={canMarkOrderPaid}
+              onMarkPaid={onMarkOrderPaid}
             />
           ),
         },
