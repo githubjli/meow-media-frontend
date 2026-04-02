@@ -520,18 +520,7 @@ export default function LiveRoomPage() {
       window.clearInterval(paymentsInterval);
       window.clearInterval(chatInterval);
     };
-  }, [id, chatAfterId]);
-
-  useEffect(() => {
-    if (!isLoggedIn || !manageEnabled) {
-      setSellerProducts([]);
-      return;
-    }
-
-    getMyProducts()
-      .then((data) => setSellerProducts(data.results || []))
-      .catch(() => setSellerProducts([]));
-  }, [isLoggedIn, manageEnabled]);
+  }, [id]); // chat cursor is tracked via chatAfterIdRef to avoid reinitializing polling
 
   useEffect(() => {
     if (!isLoggedIn || !manageEnabled) {
