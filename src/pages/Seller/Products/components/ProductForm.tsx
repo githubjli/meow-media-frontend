@@ -38,10 +38,13 @@ export default function ProductForm({
   onSubmit: (values: ProductFormValues) => Promise<void>;
 }) {
   const intl = useIntl();
+  const [form] = Form.useForm<ProductFormValues>();
   const [coverFileList, setCoverFileList] = useState<UploadFile[]>([]);
+  const [slugEdited, setSlugEdited] = useState(false);
 
   return (
     <Form<ProductFormValues>
+      form={form}
       layout="vertical"
       initialValues={{
         price_currency: 'USD',
@@ -65,14 +68,29 @@ export default function ProductForm({
         label={intl.formatMessage({ id: 'seller.product.fields.title' })}
         rules={[{ required: true }]}
       >
-        <Input />
+        <Input
+          onChange={(event) => {
+            if (slugEdited) return;
+            const nextSlug = slugify(event.target.value || '');
+            form.setFieldValue('slug', nextSlug);
+          }}
+        />
       </Form.Item>
       <Form.Item
         name="slug"
         label={intl.formatMessage({ id: 'seller.product.fields.slug' })}
-        rules={[{ required: true }]}
+        extra={intl.formatMessage({ id: 'seller.product.fields.slugHint' })}
+        rules={[
+          { required: true },
+          {
+            pattern: /^[a-z0-9_-]+$/,
+            message: intl.formatMessage({
+              id: 'seller.product.fields.slugInvalid',
+            }),
+          },
+        ]}
       >
-        <Input />
+        <Input onChange={() => setSlugEdited(true)} />
       </Form.Item>
       <Form.Item
         name="description"
@@ -161,4 +179,13 @@ export default function ProductForm({
       </Button>
     </Form>
   );
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9_-]/g, '')
+    .replace(/-{2,}/g, '-');
 }

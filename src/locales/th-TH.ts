@@ -495,6 +495,10 @@ export default {
   'seller.product.edit.subtitle': 'Update your product details.',
   'seller.product.fields.title': 'Title',
   'seller.product.fields.slug': 'Slug',
+  'seller.product.fields.slugHint':
+    'ใช้ได้เฉพาะตัวพิมพ์เล็ก ตัวเลข ขีดกลาง หรือขีดล่างเท่านั้น',
+  'seller.product.fields.slugInvalid':
+    'ใช้ได้เฉพาะตัวพิมพ์เล็ก ตัวเลข ขีดกลาง หรือขีดล่างเท่านั้น',
   'seller.product.fields.description': 'Description',
   'seller.product.fields.coverImage': 'Cover image',
   'seller.product.fields.priceAmount': 'Price',

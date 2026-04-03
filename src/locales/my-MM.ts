@@ -515,6 +515,10 @@ export default {
   'seller.product.edit.subtitle': 'Update your product details.',
   'seller.product.fields.title': 'Title',
   'seller.product.fields.slug': 'Slug',
+  'seller.product.fields.slugHint':
+    'စာလုံးအသေး၊ နံပါတ်၊ hyphen သို့မဟုတ် underscore ကိုသာ သုံးပါ။',
+  'seller.product.fields.slugInvalid':
+    'စာလုံးအသေး၊ နံပါတ်၊ hyphen သို့မဟုတ် underscore ကိုသာ သုံးပါ။',
   'seller.product.fields.description': 'Description',
   'seller.product.fields.coverImage': 'Cover image',
   'seller.product.fields.priceAmount': 'Price',

@@ -508,6 +508,10 @@ export default {
   'seller.product.edit.subtitle': 'Update your product details.',
   'seller.product.fields.title': 'Title',
   'seller.product.fields.slug': 'Slug',
+  'seller.product.fields.slugHint':
+    'Use lowercase letters, numbers, hyphens, or underscores only.',
+  'seller.product.fields.slugInvalid':
+    'Use lowercase letters, numbers, hyphens, or underscores only.',
   'seller.product.fields.description': 'Description',
   'seller.product.fields.coverImage': 'Cover image',
   'seller.product.fields.priceAmount': 'Price',

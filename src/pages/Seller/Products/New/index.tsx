@@ -83,8 +83,10 @@ export default function SellerProductCreatePage() {
                     );
                     history.push('/seller/products');
                   } catch (error: any) {
+                    const fieldError = extractFieldErrorMessage(error?.data);
                     message.error(
-                      error?.message ||
+                      fieldError ||
+                        error?.message ||
                         intl.formatMessage({
                           id: 'seller.product.error.create',
                         }),
@@ -100,4 +102,16 @@ export default function SellerProductCreatePage() {
       </div>
     </PageContainer>
   );
+}
+
+function extractFieldErrorMessage(payload: any): string {
+  if (!payload || typeof payload !== 'object') return '';
+  if (Array.isArray(payload?.slug) && payload.slug[0]) return payload.slug[0];
+  const firstArrayEntry = Object.values(payload).find(
+    (value) => Array.isArray(value) && value.length,
+  ) as any;
+  if (Array.isArray(firstArrayEntry) && firstArrayEntry[0]) {
+    return String(firstArrayEntry[0]);
+  }
+  return '';
 }

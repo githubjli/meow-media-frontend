@@ -486,6 +486,8 @@ export default {
   'seller.product.edit.subtitle': 'Update your product details.',
   'seller.product.fields.title': 'Title',
   'seller.product.fields.slug': 'Slug',
+  'seller.product.fields.slugHint': '仅允许小写字母、数字、连字符或下划线。',
+  'seller.product.fields.slugInvalid': '仅允许小写字母、数字、连字符或下划线。',
   'seller.product.fields.description': 'Description',
   'seller.product.fields.coverImage': 'Cover image',
   'seller.product.fields.priceAmount': 'Price',
