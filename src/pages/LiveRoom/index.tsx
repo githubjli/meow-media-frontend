@@ -483,292 +483,6 @@ export default function LiveRoomPage() {
     }
   };
 
-  const loadPublicProducts = async () => {
-    if (!id) return;
-    setPublicProductsLoading(true);
-    setPublicProductsError('');
-    try {
-      const items = await getPublicLiveProducts(id);
-      setPublicProducts(items);
-    } catch (error: any) {
-      setPublicProducts([]);
-      setPublicProductsError(
-        error?.message ||
-          intl.formatMessage({ id: 'live.products.error.load' }),
-      );
-    } finally {
-      setPublicProductsLoading(false);
-    }
-  };
-
-  const loadManageProducts = async () => {
-    if (!id || !isLoggedIn) {
-      setManageEnabled(false);
-      return;
-    }
-
-    try {
-      const items = await getManageLiveProducts(id);
-      setManageBindings(items);
-      setManageEnabled(true);
-      setManageError('');
-    } catch (error: any) {
-      if (error?.status === 403 || error?.status === 404) {
-        setManageEnabled(false);
-        setManageBindings([]);
-        return;
-      }
-
-      setManageEnabled(false);
-      setManageError(
-        error?.message ||
-          intl.formatMessage({ id: 'live.products.error.manage' }),
-      );
-    }
-  };
-
-  const loadPublicPayments = async () => {
-    if (!id) return;
-    setPublicPaymentsLoading(true);
-    setPublicPaymentsError('');
-    try {
-      const items = await getPublicLivePaymentMethods(id);
-      setPublicPayments(items);
-    } catch (error: any) {
-      setPublicPayments([]);
-      setPublicPaymentsError(
-        error?.message ||
-          intl.formatMessage({ id: 'live.payments.error.load' }),
-      );
-    } finally {
-      setPublicPaymentsLoading(false);
-    }
-  };
-
-  const loadManagePayments = async () => {
-    if (!id || !isLoggedIn) {
-      setManagePaymentsEnabled(false);
-      return;
-    }
-
-    try {
-      const items = await getManageLivePaymentMethods(id);
-      setManagePayments(items);
-      setManagePaymentsEnabled(true);
-      setManagePaymentsError('');
-    } catch (error: any) {
-      if (error?.status === 403 || error?.status === 404) {
-        setManagePaymentsEnabled(false);
-        setManagePayments([]);
-        return;
-      }
-
-      setManagePaymentsEnabled(false);
-      setManagePaymentsError(
-        error?.message ||
-          intl.formatMessage({ id: 'live.payments.error.manage' }),
-      );
-    }
-  };
-
-  const loadInitialChat = async () => {
-    if (!id) return;
-    setChatLoading(true);
-    setChatError('');
-    try {
-      const response = await getLiveChatMessages(id, { limit: 50 });
-      setChatMessages(response.results || []);
-      const nextAfterId =
-        response.next_after_id ??
-        (response.results?.length
-          ? response.results[response.results.length - 1]?.id
-          : null);
-      chatAfterIdRef.current = nextAfterId;
-    } catch (error: any) {
-      setChatMessages([]);
-      setChatError(
-        error?.message || intl.formatMessage({ id: 'live.chat.error.load' }),
-      );
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const pollChat = async () => {
-    if (!id) return;
-    try {
-      const response = await getLiveChatMessages(id, {
-        limit: 50,
-        after_id: chatAfterIdRef.current || undefined,
-      });
-      if (response.results?.length) {
-        setChatMessages((prev) => {
-          const seen = new Set(prev.map((item) => String(item.id)));
-          const incoming = response.results.filter(
-            (item) => !seen.has(String(item.id)),
-          );
-          return incoming.length ? [...prev, ...incoming] : prev;
-        });
-      }
-      if (
-        response.next_after_id !== undefined &&
-        response.next_after_id !== null
-      ) {
-        chatAfterIdRef.current = response.next_after_id;
-      } else if (response.results?.length) {
-        const nextAfterId =
-          response.results[response.results.length - 1]?.id ??
-          chatAfterIdRef.current;
-        chatAfterIdRef.current = nextAfterId;
-      }
-    } catch (error) {
-      // silent polling failures
-    }
-  };
-
-  const loadPublicProducts = async () => {
-    if (!id) return;
-    setPublicProductsLoading(true);
-    setPublicProductsError('');
-    try {
-      const items = await getPublicLiveProducts(id);
-      setPublicProducts(items);
-    } catch (error: any) {
-      setPublicProducts([]);
-      setPublicProductsError(
-        error?.message ||
-          intl.formatMessage({ id: 'live.products.error.load' }),
-      );
-    } finally {
-      setPublicProductsLoading(false);
-    }
-  };
-
-  const loadManageProducts = async () => {
-    if (!id || !isLoggedIn) {
-      setManageEnabled(false);
-      return;
-    }
-
-    try {
-      const items = await getManageLiveProducts(id);
-      setManageBindings(items);
-      setManageEnabled(true);
-      setManageError('');
-    } catch (error: any) {
-      if (error?.status === 403 || error?.status === 404) {
-        setManageEnabled(false);
-        setManageBindings([]);
-        return;
-      }
-
-      setManageEnabled(false);
-      setManageError(
-        error?.message ||
-          intl.formatMessage({ id: 'live.products.error.manage' }),
-      );
-    }
-  };
-
-  const loadPublicPayments = async () => {
-    if (!id) return;
-    setPublicPaymentsLoading(true);
-    setPublicPaymentsError('');
-    try {
-      const items = await getPublicLivePaymentMethods(id);
-      setPublicPayments(items);
-    } catch (error: any) {
-      setPublicPayments([]);
-      setPublicPaymentsError(
-        error?.message ||
-          intl.formatMessage({ id: 'live.payments.error.load' }),
-      );
-    } finally {
-      setPublicPaymentsLoading(false);
-    }
-  };
-
-  const loadManagePayments = async () => {
-    if (!id || !isLoggedIn) {
-      setManagePaymentsEnabled(false);
-      return;
-    }
-
-    try {
-      const items = await getManageLivePaymentMethods(id);
-      setManagePayments(items);
-      setManagePaymentsEnabled(true);
-      setManagePaymentsError('');
-    } catch (error: any) {
-      if (error?.status === 403 || error?.status === 404) {
-        setManagePaymentsEnabled(false);
-        setManagePayments([]);
-        return;
-      }
-
-      setManagePaymentsEnabled(false);
-      setManagePaymentsError(
-        error?.message ||
-          intl.formatMessage({ id: 'live.payments.error.manage' }),
-      );
-    }
-  };
-
-  const loadInitialChat = async () => {
-    if (!id) return;
-    setChatLoading(true);
-    setChatError('');
-    try {
-      const response = await getLiveChatMessages(id, { limit: 50 });
-      setChatMessages(response.results || []);
-      const nextAfterId =
-        response.next_after_id ??
-        (response.results?.length
-          ? response.results[response.results.length - 1]?.id
-          : null);
-      chatAfterIdRef.current = nextAfterId;
-    } catch (error: any) {
-      setChatMessages([]);
-      setChatError(
-        error?.message || intl.formatMessage({ id: 'live.chat.error.load' }),
-      );
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const pollChat = async () => {
-    if (!id) return;
-    try {
-      const response = await getLiveChatMessages(id, {
-        limit: 50,
-        after_id: chatAfterIdRef.current || undefined,
-      });
-      if (response.results?.length) {
-        setChatMessages((prev) => {
-          const seen = new Set(prev.map((item) => String(item.id)));
-          const incoming = response.results.filter(
-            (item) => !seen.has(String(item.id)),
-          );
-          return incoming.length ? [...prev, ...incoming] : prev;
-        });
-      }
-      if (
-        response.next_after_id !== undefined &&
-        response.next_after_id !== null
-      ) {
-        chatAfterIdRef.current = response.next_after_id;
-      } else if (response.results?.length) {
-        const nextAfterId =
-          response.results[response.results.length - 1]?.id ??
-          chatAfterIdRef.current;
-        chatAfterIdRef.current = nextAfterId;
-      }
-    } catch (error) {
-      // silent polling failures
-    }
-  };
-
   const loadBroadcast = async (showLoader = false) => {
     if (!id) {
       return;
@@ -1410,9 +1124,10 @@ export default function LiveRoomPage() {
                       </Space>
                       <Space size={0}>
                         <Button
-                          type="link"
+                          type="text"
                           size="small"
                           icon={<CopyOutlined />}
+                          style={{ color: 'rgba(0, 0, 0, 0.65)' }}
                           onClick={() =>
                             copyValue(
                               watchUrl,
@@ -1423,8 +1138,9 @@ export default function LiveRoomPage() {
                           {intl.formatMessage({ id: 'live.room.copy' })}
                         </Button>
                         <Button
-                          type="link"
+                          type="text"
                           size="small"
+                          style={{ color: 'rgba(0, 0, 0, 0.65)' }}
                           icon={
                             <DownOutlined
                               style={{
@@ -1474,9 +1190,10 @@ export default function LiveRoomPage() {
                       </Space>
                       <Space size={0}>
                         <Button
-                          type="link"
+                          type="text"
                           size="small"
                           icon={<CopyOutlined />}
+                          style={{ color: 'rgba(0, 0, 0, 0.65)' }}
                           onClick={() =>
                             copyValue(
                               payQrPayload,
@@ -1486,11 +1203,14 @@ export default function LiveRoomPage() {
                             )
                           }
                         >
-                          {intl.formatMessage({ id: 'live.room.copy' })}
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.copyAddress',
+                          })}
                         </Button>
                         <Button
-                          type="link"
+                          type="text"
                           size="small"
+                          style={{ color: 'rgba(0, 0, 0, 0.65)' }}
                           icon={
                             <DownOutlined
                               style={{
@@ -1527,9 +1247,8 @@ export default function LiveRoomPage() {
 
                   <Card size="small" style={{ borderRadius: 16 }}>
                     <Space
-                      direction="vertical"
-                      size={10}
-                      style={{ width: '100%' }}
+                      align="start"
+                      style={{ width: '100%', justifyContent: 'space-between' }}
                     >
                       <Space size={8}>
                         <MessageOutlined />
@@ -1539,7 +1258,31 @@ export default function LiveRoomPage() {
                           })}
                         </Text>
                       </Space>
-                      {chatLoading ? (
+                      <Button
+                        type="text"
+                        size="small"
+                        style={{ color: 'rgba(0, 0, 0, 0.65)' }}
+                        icon={
+                          <DownOutlined
+                            style={{
+                              transform: expandedSidebarPanels.includes('chat')
+                                ? 'rotate(180deg)'
+                                : undefined,
+                              transition: 'transform 0.2s ease',
+                            }}
+                          />
+                        }
+                        onClick={() =>
+                          setExpandedSidebarPanels((prev) =>
+                            prev.includes('chat')
+                              ? prev.filter((key) => key !== 'chat')
+                              : [...prev, 'chat'],
+                          )
+                        }
+                      />
+                    </Space>
+                    {expandedSidebarPanels.includes('chat') ? (
+                      chatLoading ? (
                         <Skeleton
                           active
                           paragraph={{ rows: 2 }}
@@ -1568,24 +1311,19 @@ export default function LiveRoomPage() {
                           ))}
                         </Space>
                       ) : (
-                        <Text type="secondary">
-                          {isLoggedIn
-                            ? intl.formatMessage({
-                                id: 'live.room.sidebar.chat.noMessages',
-                              })
-                            : intl.formatMessage({
-                                id: 'live.room.sidebar.chat.loginToJoin',
-                              })}
-                        </Text>
-                      )}
-                    </Space>
+                        <Text type="secondary">{sidebarChatSummary}</Text>
+                      )
+                    ) : (
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {sidebarChatSummary}
+                      </Text>
+                    )}
                   </Card>
 
                   <Card size="small" style={{ borderRadius: 16 }}>
                     <Space
-                      direction="vertical"
-                      size={10}
-                      style={{ width: '100%' }}
+                      align="start"
+                      style={{ width: '100%', justifyContent: 'space-between' }}
                     >
                       <Space size={8}>
                         <ShoppingOutlined />
@@ -1595,7 +1333,32 @@ export default function LiveRoomPage() {
                           })}
                         </Text>
                       </Space>
-                      {publicProductsLoading ? (
+                      <Button
+                        type="text"
+                        size="small"
+                        style={{ color: 'rgba(0, 0, 0, 0.65)' }}
+                        icon={
+                          <DownOutlined
+                            style={{
+                              transform:
+                                expandedSidebarPanels.includes('products')
+                                  ? 'rotate(180deg)'
+                                  : undefined,
+                              transition: 'transform 0.2s ease',
+                            }}
+                          />
+                        }
+                        onClick={() =>
+                          setExpandedSidebarPanels((prev) =>
+                            prev.includes('products')
+                              ? prev.filter((key) => key !== 'products')
+                              : [...prev, 'products'],
+                          )
+                        }
+                      />
+                    </Space>
+                    {expandedSidebarPanels.includes('products') ? (
+                      publicProductsLoading ? (
                         <Skeleton
                           active
                           paragraph={{ rows: 2 }}
@@ -1694,17 +1457,20 @@ export default function LiveRoomPage() {
                             </Button>
                           ) : null}
                         </Space>
-                      )}
-                    </Space>
+                      )
+                    ) : (
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {sidebarProductSummary}
+                      </Text>
+                    )}
                   </Card>
 
                   <Card size="small" style={{ borderRadius: 16 }}>
                     <Space
-                      direction="vertical"
-                      size={8}
-                      style={{ width: '100%' }}
+                      align="center"
+                      style={{ width: '100%', justifyContent: 'space-between' }}
                     >
-                      <Space size={8}>
+                      <Space size={8} align="center">
                         <ShopOutlined />
                         <Text strong>
                           {intl.formatMessage({
@@ -1712,44 +1478,22 @@ export default function LiveRoomPage() {
                           })}
                         </Text>
                       </Space>
-                      {sidebarStoreSummary ? (
-                        <Space
-                          style={{
-                            width: '100%',
-                            justifyContent: 'space-between',
-                          }}
-                          align="center"
-                        >
-                          <Space size={8}>
-                            <Avatar shape="square" icon={<ShopOutlined />} />
-                            <Text>{sidebarStoreSummary.name}</Text>
-                          </Space>
-                          {sidebarStoreSummary.slug ? (
-                            <Tooltip
-                              title={intl.formatMessage({
-                                id: 'live.room.sidebar.store.open',
-                              })}
-                            >
-                              <Button
-                                type="text"
-                                size="small"
-                                icon={<GlobalOutlined />}
-                                onClick={() =>
-                                  history.push(
-                                    `/store/${sidebarStoreSummary.slug}`,
-                                  )
-                                }
-                              />
-                            </Tooltip>
-                          ) : null}
-                        </Space>
-                      ) : (
-                        <Text type="secondary">
-                          {intl.formatMessage({
-                            id: 'live.room.sidebar.store.noStore',
+                      {sidebarStoreSummary?.slug ? (
+                        <Tooltip
+                          title={intl.formatMessage({
+                            id: 'live.room.sidebar.store.open',
                           })}
-                        </Text>
-                      )}
+                        >
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<GlobalOutlined />}
+                            onClick={() =>
+                              history.push(`/store/${sidebarStoreSummary.slug}`)
+                            }
+                          />
+                        </Tooltip>
+                      ) : null}
                     </Space>
                   </Card>
 
@@ -1762,44 +1506,64 @@ export default function LiveRoomPage() {
                         <QrcodeOutlined />
                         <Text strong>
                           {intl.formatMessage({
-                            id: 'live.room.sidebar.paidProgrammingQr',
+                            id: 'live.room.sidebar.liveStreamQr',
                           })}
                         </Text>
                       </Space>
-                      <Button
-                        type="link"
-                        size="small"
-                        icon={
-                          <DownOutlined
-                            style={{
-                              transform: expandedSidebarPanels.includes(
-                                'premium',
-                              )
-                                ? 'rotate(180deg)'
-                                : undefined,
-                              transition: 'transform 0.2s ease',
-                            }}
-                          />
-                        }
-                        onClick={() =>
-                          setExpandedSidebarPanels((prev) =>
-                            prev.includes('premium')
-                              ? prev.filter((key) => key !== 'premium')
-                              : [...prev, 'premium'],
-                          )
-                        }
-                      >
-                        {intl.formatMessage({
-                          id: 'live.room.sidebar.qr.short',
-                        })}
-                      </Button>
+                      <Space size={0}>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          style={{ color: 'rgba(0, 0, 0, 0.65)' }}
+                          onClick={() =>
+                            copyValue(
+                              playbackUrl,
+                              intl.formatMessage({
+                                id: 'live.room.liveStreamUrl',
+                              }),
+                            )
+                          }
+                        >
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.copyUrl',
+                          })}
+                        </Button>
+                        <Button
+                          type="text"
+                          size="small"
+                          style={{ color: 'rgba(0, 0, 0, 0.65)' }}
+                          icon={
+                            <DownOutlined
+                              style={{
+                                transform: expandedSidebarPanels.includes(
+                                  'stream',
+                                )
+                                  ? 'rotate(180deg)'
+                                  : undefined,
+                                transition: 'transform 0.2s ease',
+                              }}
+                            />
+                          }
+                          onClick={() =>
+                            setExpandedSidebarPanels((prev) =>
+                              prev.includes('stream')
+                                ? prev.filter((key) => key !== 'stream')
+                                : [...prev, 'stream'],
+                            )
+                          }
+                        >
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.qr.short',
+                          })}
+                        </Button>
+                      </Space>
                     </Space>
-                    {expandedSidebarPanels.includes('premium') ? (
-                      <Alert
-                        type="info"
-                        showIcon
-                        message={intl.formatMessage({
-                          id: 'live.room.sidebar.paidProgrammingQrPlaceholder',
+                    {expandedSidebarPanels.includes('stream') ? (
+                      <QrCodePanel
+                        payload={playbackUrl}
+                        emptyText={intl.formatMessage({
+                          id: 'live.room.playbackUnavailable',
                         })}
                       />
                     ) : null}

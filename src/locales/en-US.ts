@@ -396,6 +396,7 @@ export default {
   'live.room.paymentAddressUnavailable':
     'Payment address is not available yet.',
   'live.room.paymentAddress': 'Payment address',
+  'live.room.liveStreamUrl': 'Live stream URL',
   'live.room.copyAddress': 'Copy address',
   'live.room.watchQr': 'Watch QR',
   'live.room.watchUrl': 'Watch URL',
@@ -476,6 +477,9 @@ export default {
   'live.room.sidebar.sellerStore': 'Seller Store',
   'live.room.sidebar.sellerStorePlaceholder':
     'Seller store module is coming soon.',
+  'live.room.sidebar.liveStreamQr': 'Live Stream QR',
+  'live.room.sidebar.copyAddress': 'Copy Address',
+  'live.room.sidebar.copyUrl': 'Copy URL',
   'live.room.sidebar.paidProgrammingQr': 'Paid Access QR',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     'Paid programming QR module is coming soon.',

@@ -377,6 +377,7 @@ export default {
   'live.room.payQr': '收款二维码',
   'live.room.paymentAddressUnavailable': '收款地址暂不可用。',
   'live.room.paymentAddress': '收款地址',
+  'live.room.liveStreamUrl': '直播流地址',
   'live.room.copyAddress': '复制地址',
   'live.room.watchQr': '观看二维码',
   'live.room.watchUrl': '观看地址',
@@ -452,6 +453,9 @@ export default {
   'live.room.sidebar.productListingsPlaceholder': '商品列表模块即将上线。',
   'live.room.sidebar.sellerStore': '商家店铺',
   'live.room.sidebar.sellerStorePlaceholder': '商家店铺模块即将上线。',
+  'live.room.sidebar.liveStreamQr': '直播流二维码',
+  'live.room.sidebar.copyAddress': '复制地址',
+  'live.room.sidebar.copyUrl': '复制链接',
   'live.room.sidebar.paidProgrammingQr': '付费访问二维码',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     '付费节目二维码模块即将上线。',
