@@ -478,7 +478,6 @@ export default {
   'live.room.sidebar.productListings': 'Product Listings',
   'live.room.sidebar.productListingsPlaceholder':
     'Product listings module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
-  'live.room.sidebar.liveStreamQr': 'Live Stream QR',
   'live.room.sidebar.sellerStore': 'Seller Store',
   'live.room.sidebar.sellerStorePlaceholder':
     'Seller store module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
@@ -492,14 +491,11 @@ export default {
   'live.room.sidebar.chat.loginToJoin': 'Chat ပါဝင်ရန် login ဝင်ပါ။',
   'live.room.sidebar.chat.userFallback': 'User',
   'live.room.sidebar.products.none': 'ပြထားသော product မရှိသေးပါ။',
-  'live.room.sidebar.products.summary': 'Featured product {count} ခု',
   'live.room.sidebar.products.showMore': 'နောက်ထပ် {count} ခု ပြမည်',
   'live.room.sidebar.products.showLess': 'အကျဉ်းချုပ်ပြ',
   'live.room.sidebar.products.priceUnavailable': 'စျေးနှုန်း မရှိသေးပါ',
   'live.room.sidebar.store.noStore': 'Store အချက်အလက် မရရှိသေးပါ။',
   'live.room.sidebar.store.open': 'ဖွင့်မည်',
-  'live.room.sidebar.copyAddress': 'လိပ်စာကူးမည်',
-  'live.room.sidebar.copyUrl': 'URL ကူးမည်',
   'videoCard.live': 'တိုက်ရိုက်',
 
   'menu.seller': 'Seller',

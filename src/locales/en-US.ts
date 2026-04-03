@@ -473,7 +473,6 @@ export default {
   'live.room.sidebar.productListings': 'Product Listings',
   'live.room.sidebar.productListingsPlaceholder':
     'Product listings will appear here soon.',
-  'live.room.sidebar.liveStreamQr': 'Live Stream QR',
   'live.room.sidebar.sellerStore': 'Seller Store',
   'live.room.sidebar.sellerStorePlaceholder':
     'Seller store module is coming soon.',
@@ -487,14 +486,11 @@ export default {
   'live.room.sidebar.chat.loginToJoin': 'Log in to join chat.',
   'live.room.sidebar.chat.userFallback': 'User',
   'live.room.sidebar.products.none': 'No products featured yet.',
-  'live.room.sidebar.products.summary': '{count} featured products',
   'live.room.sidebar.products.showMore': 'Show {count} more',
   'live.room.sidebar.products.showLess': 'Show less',
   'live.room.sidebar.products.priceUnavailable': 'Price unavailable',
   'live.room.sidebar.store.noStore': 'Store details unavailable.',
   'live.room.sidebar.store.open': 'Open',
-  'live.room.sidebar.copyAddress': 'Copy Address',
-  'live.room.sidebar.copyUrl': 'Copy URL',
   'menu.seller': 'Seller',
   'menu.seller.store': 'Store',
   'menu.seller.products': 'Products',
