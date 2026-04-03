@@ -458,6 +458,7 @@ export default {
   'live.room.sidebar.productListings': 'รายการสินค้า',
   'live.room.sidebar.productListingsPlaceholder':
     'โมดูลรายการสินค้าจะพร้อมใช้งานเร็ว ๆ นี้',
+  'live.room.sidebar.liveStreamQr': 'QR สตรีมสด',
   'live.room.sidebar.sellerStore': 'ร้านผู้ขาย',
   'live.room.sidebar.sellerStorePlaceholder':
     'โมดูลร้านผู้ขายจะพร้อมใช้งานเร็ว ๆ นี้',
@@ -471,11 +472,14 @@ export default {
   'live.room.sidebar.chat.loginToJoin': 'เข้าสู่ระบบเพื่อร่วมแชท',
   'live.room.sidebar.chat.userFallback': 'ผู้ใช้',
   'live.room.sidebar.products.none': 'ยังไม่มีสินค้าแนะนำ',
+  'live.room.sidebar.products.summary': 'มีสินค้าแนะนำ {count} รายการ',
   'live.room.sidebar.products.showMore': 'แสดงเพิ่มอีก {count} รายการ',
   'live.room.sidebar.products.showLess': 'แสดงน้อยลง',
   'live.room.sidebar.products.priceUnavailable': 'ยังไม่ระบุราคา',
   'live.room.sidebar.store.noStore': 'ยังไม่มีข้อมูลร้านค้า',
   'live.room.sidebar.store.open': 'เปิด',
+  'live.room.sidebar.copyAddress': 'คัดลอกที่อยู่',
+  'live.room.sidebar.copyUrl': 'คัดลอกลิงก์',
   'videoCard.live': 'สด',
 
   'menu.seller': 'Seller',

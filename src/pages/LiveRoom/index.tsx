@@ -324,6 +324,164 @@ export default function LiveRoomPage() {
         .slice(0, 2),
     [chatMessages],
   );
+  const sidebarChatSummary = chatLoading
+    ? ''
+    : sidebarChatPreview.length > 0
+    ? sidebarChatPreview[0].content || ''
+    : isLoggedIn
+    ? intl.formatMessage({ id: 'live.room.sidebar.chat.noMessages' })
+    : intl.formatMessage({ id: 'live.room.sidebar.chat.loginToJoin' });
+  const sidebarProductSummary = publicProductsLoading
+    ? ''
+    : publicProducts.length > 0
+    ? intl.formatMessage(
+        { id: 'live.room.sidebar.products.summary' },
+        { count: publicProducts.length },
+      )
+    : intl.formatMessage({ id: 'live.room.sidebar.products.none' });
+
+  const loadPublicProducts = async () => {
+    if (!id) return;
+    setPublicProductsLoading(true);
+    setPublicProductsError('');
+    try {
+      const items = await getPublicLiveProducts(id);
+      setPublicProducts(items);
+    } catch (error: any) {
+      setPublicProducts([]);
+      setPublicProductsError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.products.error.load' }),
+      );
+    } finally {
+      setPublicProductsLoading(false);
+    }
+  };
+
+  const loadManageProducts = async () => {
+    if (!id || !isLoggedIn) {
+      setManageEnabled(false);
+      return;
+    }
+
+    try {
+      const items = await getManageLiveProducts(id);
+      setManageBindings(items);
+      setManageEnabled(true);
+      setManageError('');
+    } catch (error: any) {
+      if (error?.status === 403 || error?.status === 404) {
+        setManageEnabled(false);
+        setManageBindings([]);
+        return;
+      }
+
+      setManageEnabled(false);
+      setManageError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.products.error.manage' }),
+      );
+    }
+  };
+
+  const loadPublicPayments = async () => {
+    if (!id) return;
+    setPublicPaymentsLoading(true);
+    setPublicPaymentsError('');
+    try {
+      const items = await getPublicLivePaymentMethods(id);
+      setPublicPayments(items);
+    } catch (error: any) {
+      setPublicPayments([]);
+      setPublicPaymentsError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.payments.error.load' }),
+      );
+    } finally {
+      setPublicPaymentsLoading(false);
+    }
+  };
+
+  const loadManagePayments = async () => {
+    if (!id || !isLoggedIn) {
+      setManagePaymentsEnabled(false);
+      return;
+    }
+
+    try {
+      const items = await getManageLivePaymentMethods(id);
+      setManagePayments(items);
+      setManagePaymentsEnabled(true);
+      setManagePaymentsError('');
+    } catch (error: any) {
+      if (error?.status === 403 || error?.status === 404) {
+        setManagePaymentsEnabled(false);
+        setManagePayments([]);
+        return;
+      }
+
+      setManagePaymentsEnabled(false);
+      setManagePaymentsError(
+        error?.message ||
+          intl.formatMessage({ id: 'live.payments.error.manage' }),
+      );
+    }
+  };
+
+  const loadInitialChat = async () => {
+    if (!id) return;
+    setChatLoading(true);
+    setChatError('');
+    try {
+      const response = await getLiveChatMessages(id, { limit: 50 });
+      setChatMessages(response.results || []);
+      const nextAfterId =
+        response.next_after_id ??
+        (response.results?.length
+          ? response.results[response.results.length - 1]?.id
+          : null);
+      chatAfterIdRef.current = nextAfterId;
+    } catch (error: any) {
+      setChatMessages([]);
+      setChatError(
+        error?.message || intl.formatMessage({ id: 'live.chat.error.load' }),
+      );
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const pollChat = async () => {
+    if (!id) return;
+    try {
+      const response = await getLiveChatMessages(id, {
+        limit: 50,
+        after_id: chatAfterIdRef.current || undefined,
+      });
+      if (response.results?.length) {
+        setChatMessages((prev) => {
+          const seen = new Set(prev.map((item) => String(item.id)));
+          const incoming = response.results.filter(
+            (item) => !seen.has(String(item.id)),
+          );
+          return incoming.length ? [...prev, ...incoming] : prev;
+        });
+      }
+      if (
+        response.next_after_id !== undefined &&
+        response.next_after_id !== null
+      ) {
+        chatAfterIdRef.current = response.next_after_id;
+      } else if (response.results?.length) {
+        const nextAfterId =
+          response.results[response.results.length - 1]?.id ??
+          chatAfterIdRef.current;
+        chatAfterIdRef.current = nextAfterId;
+      }
+    } catch (error) {
+      // silent polling failures
+    }
+  };
 
   const loadPublicProducts = async () => {
     if (!id) return;
@@ -1109,9 +1267,10 @@ export default function LiveRoomPage() {
                       </Space>
                       <Space size={0}>
                         <Button
-                          type="link"
+                          type="text"
                           size="small"
                           icon={<CopyOutlined />}
+                          style={{ color: 'rgba(0,0,0,0.68)', fontSize: 12 }}
                           onClick={() =>
                             copyValue(
                               watchUrl,
@@ -1119,10 +1278,12 @@ export default function LiveRoomPage() {
                             )
                           }
                         >
-                          {intl.formatMessage({ id: 'live.room.copy' })}
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.copyUrl',
+                          })}
                         </Button>
                         <Button
-                          type="link"
+                          type="text"
                           size="small"
                           icon={
                             <DownOutlined
@@ -1136,6 +1297,7 @@ export default function LiveRoomPage() {
                               }}
                             />
                           }
+                          style={{ color: 'rgba(0,0,0,0.68)', fontSize: 12 }}
                           onClick={() =>
                             setExpandedSidebarPanels((prev) =>
                               prev.includes('watch')
@@ -1173,9 +1335,10 @@ export default function LiveRoomPage() {
                       </Space>
                       <Space size={0}>
                         <Button
-                          type="link"
+                          type="text"
                           size="small"
                           icon={<CopyOutlined />}
+                          style={{ color: 'rgba(0,0,0,0.68)', fontSize: 12 }}
                           onClick={() =>
                             copyValue(
                               payQrPayload,
@@ -1185,10 +1348,12 @@ export default function LiveRoomPage() {
                             )
                           }
                         >
-                          {intl.formatMessage({ id: 'live.room.copy' })}
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.copyAddress',
+                          })}
                         </Button>
                         <Button
-                          type="link"
+                          type="text"
                           size="small"
                           icon={
                             <DownOutlined
@@ -1200,6 +1365,7 @@ export default function LiveRoomPage() {
                               }}
                             />
                           }
+                          style={{ color: 'rgba(0,0,0,0.68)', fontSize: 12 }}
                           onClick={() =>
                             setExpandedSidebarPanels((prev) =>
                               prev.includes('pay')
@@ -1226,9 +1392,8 @@ export default function LiveRoomPage() {
 
                   <Card size="small" style={{ borderRadius: 16 }}>
                     <Space
-                      direction="vertical"
-                      size={10}
-                      style={{ width: '100%' }}
+                      align="start"
+                      style={{ width: '100%', justifyContent: 'space-between' }}
                     >
                       <Space size={8}>
                         <MessageOutlined />
@@ -1238,19 +1403,47 @@ export default function LiveRoomPage() {
                           })}
                         </Text>
                       </Space>
-                      {chatLoading ? (
-                        <Skeleton
-                          active
-                          paragraph={{ rows: 2 }}
-                          title={false}
-                        />
-                      ) : sidebarChatPreview.length > 0 ? (
-                        <Space
-                          direction="vertical"
-                          size={6}
-                          style={{ width: '100%' }}
-                        >
-                          {sidebarChatPreview.map((item) => (
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={
+                          <DownOutlined
+                            style={{
+                              transform: expandedSidebarPanels.includes('chat')
+                                ? 'rotate(180deg)'
+                                : undefined,
+                              transition: 'transform 0.2s ease',
+                            }}
+                          />
+                        }
+                        style={{ color: 'rgba(0,0,0,0.68)', fontSize: 12 }}
+                        onClick={() =>
+                          setExpandedSidebarPanels((prev) =>
+                            prev.includes('chat')
+                              ? prev.filter((key) => key !== 'chat')
+                              : [...prev, 'chat'],
+                          )
+                        }
+                      />
+                    </Space>
+                    {!expandedSidebarPanels.includes('chat') ? (
+                      <Text
+                        type="secondary"
+                        style={{ fontSize: 12 }}
+                        ellipsis={{ tooltip: sidebarChatSummary }}
+                      >
+                        {sidebarChatSummary}
+                      </Text>
+                    ) : chatLoading ? (
+                      <Skeleton active paragraph={{ rows: 2 }} title={false} />
+                    ) : (
+                      <Space
+                        direction="vertical"
+                        size={6}
+                        style={{ width: '100%' }}
+                      >
+                        {sidebarChatPreview.length > 0 ? (
+                          sidebarChatPreview.map((item) => (
                             <Text
                               key={String(item.id)}
                               type="secondary"
@@ -1264,27 +1457,20 @@ export default function LiveRoomPage() {
                                 ': ' +
                                 (item.content || '')}
                             </Text>
-                          ))}
-                        </Space>
-                      ) : (
-                        <Text type="secondary">
-                          {isLoggedIn
-                            ? intl.formatMessage({
-                                id: 'live.room.sidebar.chat.noMessages',
-                              })
-                            : intl.formatMessage({
-                                id: 'live.room.sidebar.chat.loginToJoin',
-                              })}
-                        </Text>
-                      )}
-                    </Space>
+                          ))
+                        ) : (
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            {sidebarChatSummary}
+                          </Text>
+                        )}
+                      </Space>
+                    )}
                   </Card>
 
                   <Card size="small" style={{ borderRadius: 16 }}>
                     <Space
-                      direction="vertical"
-                      size={10}
-                      style={{ width: '100%' }}
+                      align="start"
+                      style={{ width: '100%', justifyContent: 'space-between' }}
                     >
                       <Space size={8}>
                         <ShoppingOutlined />
@@ -1294,114 +1480,134 @@ export default function LiveRoomPage() {
                           })}
                         </Text>
                       </Space>
-                      {publicProductsLoading ? (
-                        <Skeleton
-                          active
-                          paragraph={{ rows: 2 }}
-                          title={false}
-                        />
-                      ) : publicProductsError ? (
-                        <Alert
-                          type="warning"
-                          showIcon
-                          message={publicProductsError}
-                        />
-                      ) : previewProducts.length === 0 ? (
-                        <Text type="secondary">
-                          {intl.formatMessage({
-                            id: 'live.room.sidebar.products.none',
-                          })}
-                        </Text>
-                      ) : (
-                        <Space
-                          direction="vertical"
-                          size={8}
-                          style={{ width: '100%' }}
-                        >
-                          {previewProducts.map((binding) => (
-                            <Space
-                              key={String(binding.binding_id)}
-                              size={10}
-                              align="start"
-                              style={{ width: '100%' }}
-                            >
-                              <Avatar
-                                shape="square"
-                                size={44}
-                                src={
-                                  binding.product.cover_image_url || undefined
-                                }
-                                icon={<ShoppingOutlined />}
-                              />
-                              <Space
-                                direction="vertical"
-                                size={0}
-                                style={{ flex: 1 }}
-                              >
-                                <Text
-                                  strong
-                                  ellipsis={{ tooltip: binding.product.title }}
-                                >
-                                  {binding.product.title}
-                                </Text>
-                                <Text type="secondary" style={{ fontSize: 12 }}>
-                                  {(binding.product.price_amount &&
-                                    binding.product.price_currency &&
-                                    `${binding.product.price_amount} ${binding.product.price_currency}`) ||
-                                    intl.formatMessage({
-                                      id: 'live.room.sidebar.products.priceUnavailable',
-                                    })}
-                                </Text>
-                                {binding.product.description ? (
-                                  <Text
-                                    type="secondary"
-                                    style={{ fontSize: 12 }}
-                                    ellipsis={{
-                                      tooltip: binding.product.description,
-                                    }}
-                                  >
-                                    {binding.product.description}
-                                  </Text>
-                                ) : null}
-                              </Space>
-                            </Space>
-                          ))}
-                          {publicProducts.length > 1 ? (
-                            <Button
-                              type="link"
-                              size="small"
-                              style={{
-                                paddingInline: 0,
-                                alignSelf: 'flex-start',
-                              }}
-                              onClick={() =>
-                                setShowAllPreviewProducts(
-                                  (previous) => !previous,
-                                )
-                              }
-                            >
-                              {showAllPreviewProducts
-                                ? intl.formatMessage({
-                                    id: 'live.room.sidebar.products.showLess',
-                                  })
-                                : intl.formatMessage(
-                                    {
-                                      id: 'live.room.sidebar.products.showMore',
-                                    },
-                                    { count: publicProducts.length - 1 },
-                                  )}
-                            </Button>
-                          ) : null}
-                        </Space>
-                      )}
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={
+                          <DownOutlined
+                            style={{
+                              transform: expandedSidebarPanels.includes(
+                                'products',
+                              )
+                                ? 'rotate(180deg)'
+                                : undefined,
+                              transition: 'transform 0.2s ease',
+                            }}
+                          />
+                        }
+                        style={{ color: 'rgba(0,0,0,0.68)', fontSize: 12 }}
+                        onClick={() =>
+                          setExpandedSidebarPanels((prev) =>
+                            prev.includes('products')
+                              ? prev.filter((key) => key !== 'products')
+                              : [...prev, 'products'],
+                          )
+                        }
+                      />
                     </Space>
+                    {!expandedSidebarPanels.includes('products') ? (
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {sidebarProductSummary}
+                      </Text>
+                    ) : publicProductsLoading ? (
+                      <Skeleton active paragraph={{ rows: 2 }} title={false} />
+                    ) : publicProductsError ? (
+                      <Alert
+                        type="warning"
+                        showIcon
+                        message={publicProductsError}
+                      />
+                    ) : previewProducts.length === 0 ? (
+                      <Text type="secondary">
+                        {intl.formatMessage({
+                          id: 'live.room.sidebar.products.none',
+                        })}
+                      </Text>
+                    ) : (
+                      <Space
+                        direction="vertical"
+                        size={8}
+                        style={{ width: '100%' }}
+                      >
+                        {previewProducts.map((binding) => (
+                          <Space
+                            key={String(binding.binding_id)}
+                            size={10}
+                            align="start"
+                            style={{ width: '100%' }}
+                          >
+                            <Avatar
+                              shape="square"
+                              size={44}
+                              src={binding.product.cover_image_url || undefined}
+                              icon={<ShoppingOutlined />}
+                            />
+                            <Space
+                              direction="vertical"
+                              size={0}
+                              style={{ flex: 1 }}
+                            >
+                              <Text
+                                strong
+                                ellipsis={{ tooltip: binding.product.title }}
+                              >
+                                {binding.product.title}
+                              </Text>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {(binding.product.price_amount &&
+                                  binding.product.price_currency &&
+                                  `${binding.product.price_amount} ${binding.product.price_currency}`) ||
+                                  intl.formatMessage({
+                                    id: 'live.room.sidebar.products.priceUnavailable',
+                                  })}
+                              </Text>
+                              {binding.product.description ? (
+                                <Text
+                                  type="secondary"
+                                  style={{ fontSize: 12 }}
+                                  ellipsis={{
+                                    tooltip: binding.product.description,
+                                  }}
+                                >
+                                  {binding.product.description}
+                                </Text>
+                              ) : null}
+                            </Space>
+                          </Space>
+                        ))}
+                        {publicProducts.length > 1 ? (
+                          <Button
+                            type="text"
+                            size="small"
+                            style={{
+                              paddingInline: 0,
+                              alignSelf: 'flex-start',
+                              color: 'rgba(0,0,0,0.68)',
+                            }}
+                            onClick={() =>
+                              setShowAllPreviewProducts((previous) => !previous)
+                            }
+                          >
+                            {showAllPreviewProducts
+                              ? intl.formatMessage({
+                                  id: 'live.room.sidebar.products.showLess',
+                                })
+                              : intl.formatMessage(
+                                  {
+                                    id: 'live.room.sidebar.products.showMore',
+                                  },
+                                  { count: publicProducts.length - 1 },
+                                )}
+                          </Button>
+                        ) : null}
+                      </Space>
+                    )}
                   </Card>
 
                   <Card size="small" style={{ borderRadius: 16 }}>
                     <Space
-                      direction="vertical"
-                      size={8}
-                      style={{ width: '100%' }}
+                      align="center"
+                      style={{ width: '100%', justifyContent: 'space-between' }}
                     >
                       <Space size={8}>
                         <ShopOutlined />
@@ -1411,44 +1617,23 @@ export default function LiveRoomPage() {
                           })}
                         </Text>
                       </Space>
-                      {sidebarStoreSummary ? (
-                        <Space
-                          style={{
-                            width: '100%',
-                            justifyContent: 'space-between',
-                          }}
-                          align="center"
-                        >
-                          <Space size={8}>
-                            <Avatar shape="square" icon={<ShopOutlined />} />
-                            <Text>{sidebarStoreSummary.name}</Text>
-                          </Space>
-                          {sidebarStoreSummary.slug ? (
-                            <Tooltip
-                              title={intl.formatMessage({
-                                id: 'live.room.sidebar.store.open',
-                              })}
-                            >
-                              <Button
-                                type="text"
-                                size="small"
-                                icon={<GlobalOutlined />}
-                                onClick={() =>
-                                  history.push(
-                                    `/store/${sidebarStoreSummary.slug}`,
-                                  )
-                                }
-                              />
-                            </Tooltip>
-                          ) : null}
-                        </Space>
-                      ) : (
-                        <Text type="secondary">
-                          {intl.formatMessage({
-                            id: 'live.room.sidebar.store.noStore',
+                      {sidebarStoreSummary?.slug ? (
+                        <Tooltip
+                          title={intl.formatMessage({
+                            id: 'live.room.sidebar.store.open',
                           })}
-                        </Text>
-                      )}
+                        >
+                          <Button
+                            type="text"
+                            size="small"
+                            style={{ color: 'rgba(0,0,0,0.68)' }}
+                            icon={<GlobalOutlined />}
+                            onClick={() =>
+                              history.push(`/store/${sidebarStoreSummary.slug}`)
+                            }
+                          />
+                        </Tooltip>
+                      ) : null}
                     </Space>
                   </Card>
 
@@ -1461,18 +1646,34 @@ export default function LiveRoomPage() {
                         <QrcodeOutlined />
                         <Text strong>
                           {intl.formatMessage({
-                            id: 'live.room.sidebar.paidProgrammingQr',
+                            id: 'live.room.sidebar.liveStreamQr',
                           })}
                         </Text>
                       </Space>
                       <Button
-                        type="link"
+                        type="text"
+                        size="small"
+                        style={{ color: 'rgba(0,0,0,0.68)', fontSize: 12 }}
+                        icon={<CopyOutlined />}
+                        onClick={() =>
+                          copyValue(
+                            watchUrl,
+                            intl.formatMessage({ id: 'live.room.watchUrl' }),
+                          )
+                        }
+                      >
+                        {intl.formatMessage({
+                          id: 'live.room.sidebar.copyUrl',
+                        })}
+                      </Button>
+                      <Button
+                        type="text"
                         size="small"
                         icon={
                           <DownOutlined
                             style={{
                               transform: expandedSidebarPanels.includes(
-                                'premium',
+                                'stream',
                               )
                                 ? 'rotate(180deg)'
                                 : undefined,
@@ -1480,11 +1681,12 @@ export default function LiveRoomPage() {
                             }}
                           />
                         }
+                        style={{ color: 'rgba(0,0,0,0.68)', fontSize: 12 }}
                         onClick={() =>
                           setExpandedSidebarPanels((prev) =>
-                            prev.includes('premium')
-                              ? prev.filter((key) => key !== 'premium')
-                              : [...prev, 'premium'],
+                            prev.includes('stream')
+                              ? prev.filter((key) => key !== 'stream')
+                              : [...prev, 'stream'],
                           )
                         }
                       >
@@ -1493,12 +1695,11 @@ export default function LiveRoomPage() {
                         })}
                       </Button>
                     </Space>
-                    {expandedSidebarPanels.includes('premium') ? (
-                      <Alert
-                        type="info"
-                        showIcon
-                        message={intl.formatMessage({
-                          id: 'live.room.sidebar.paidProgrammingQrPlaceholder',
+                    {expandedSidebarPanels.includes('stream') ? (
+                      <QrCodePanel
+                        payload={watchUrl}
+                        emptyText={intl.formatMessage({
+                          id: 'live.room.watchUrlUnavailable',
                         })}
                       />
                     ) : null}
