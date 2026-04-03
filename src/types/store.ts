@@ -4,8 +4,8 @@ export type SellerStore = {
   name: string;
   slug: string;
   description?: string;
-  logo?: string | null;
-  banner?: string | null;
+  logo?: string | File | null;
+  banner?: string | File | null;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;

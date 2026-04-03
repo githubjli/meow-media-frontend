@@ -7,13 +7,16 @@ import {
   Button,
   Card,
   Form,
+  Image,
   Input,
   Skeleton,
   Space,
   Switch,
   Typography,
+  Upload,
   message,
 } from 'antd';
+import type { UploadFile } from 'antd/es/upload/interface';
 import { useEffect, useState } from 'react';
 
 const { Text, Title } = Typography;
@@ -27,6 +30,8 @@ export default function SellerStorePage() {
   const [store, setStore] = useState<SellerStore | null>(null);
   const [storeMissing, setStoreMissing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [logoFileList, setLogoFileList] = useState<UploadFile[]>([]);
+  const [bannerFileList, setBannerFileList] = useState<UploadFile[]>([]);
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
 
@@ -73,9 +78,24 @@ export default function SellerStorePage() {
     setSaving(true);
     setErrorMessage('');
     try {
+      const payload: Partial<SellerStore> = {
+        name: values.name,
+        slug: values.slug,
+        description: values.description,
+        is_active: values.is_active,
+      };
+      const logoFile = logoFileList[0]?.originFileObj;
+      const bannerFile = bannerFileList[0]?.originFileObj;
+      if (logoFile) {
+        payload.logo = logoFile as File;
+      }
+      if (bannerFile) {
+        payload.banner = bannerFile as File;
+      }
+
       const next = storeMissing
-        ? await createMyStore(values)
-        : await updateMyStore(values);
+        ? await createMyStore(payload)
+        : await updateMyStore(payload);
       setStore(next);
       setStoreMissing(false);
       setInitialState((prev: any) => ({ ...prev, sellerHasStore: true }));
@@ -85,8 +105,11 @@ export default function SellerStorePage() {
         }),
       );
     } catch (error: any) {
+      const fieldError = extractFieldErrorMessage(error?.data);
       setErrorMessage(
-        error?.message || intl.formatMessage({ id: 'seller.store.error.save' }),
+        fieldError ||
+          error?.message ||
+          intl.formatMessage({ id: 'seller.store.error.save' }),
       );
     } finally {
       setSaving(false);
@@ -124,8 +147,6 @@ export default function SellerStorePage() {
                   name: store?.name,
                   slug: store?.slug,
                   description: store?.description,
-                  logo: store?.logo || '',
-                  banner: store?.banner || '',
                   is_active: store?.is_active ?? true,
                 }}
                 onFinish={onSubmit}
@@ -153,18 +174,52 @@ export default function SellerStorePage() {
                   <Input.TextArea rows={4} />
                 </Form.Item>
                 <Form.Item
-                  name="logo"
                   label={intl.formatMessage({ id: 'seller.store.fields.logo' })}
                 >
-                  <Input />
+                  {typeof store?.logo === 'string' && store.logo ? (
+                    <Image
+                      src={store.logo}
+                      alt="store-logo"
+                      width={96}
+                      style={{ borderRadius: 8, marginBottom: 8 }}
+                    />
+                  ) : null}
+                  <Upload
+                    maxCount={1}
+                    beforeUpload={() => false}
+                    fileList={logoFileList}
+                    onChange={({ fileList }) => setLogoFileList(fileList)}
+                    accept="image/*"
+                  >
+                    <Button>
+                      {intl.formatMessage({ id: 'common.upload' })}
+                    </Button>
+                  </Upload>
                 </Form.Item>
                 <Form.Item
-                  name="banner"
                   label={intl.formatMessage({
                     id: 'seller.store.fields.banner',
                   })}
                 >
-                  <Input />
+                  {typeof store?.banner === 'string' && store.banner ? (
+                    <Image
+                      src={store.banner}
+                      alt="store-banner"
+                      width={180}
+                      style={{ borderRadius: 8, marginBottom: 8 }}
+                    />
+                  ) : null}
+                  <Upload
+                    maxCount={1}
+                    beforeUpload={() => false}
+                    fileList={bannerFileList}
+                    onChange={({ fileList }) => setBannerFileList(fileList)}
+                    accept="image/*"
+                  >
+                    <Button>
+                      {intl.formatMessage({ id: 'common.upload' })}
+                    </Button>
+                  </Upload>
                 </Form.Item>
                 <Form.Item
                   name="is_active"
@@ -189,4 +244,17 @@ export default function SellerStorePage() {
       </div>
     </PageContainer>
   );
+}
+
+function extractFieldErrorMessage(payload: any): string {
+  if (!payload || typeof payload !== 'object') return '';
+  const firstArrayEntry = Object.values(payload).find(
+    (value) => Array.isArray(value) && value.length,
+  ) as any;
+  if (Array.isArray(firstArrayEntry) && firstArrayEntry[0]) {
+    return String(firstArrayEntry[0]);
+  }
+  if (payload.detail) return String(payload.detail);
+  if (payload.message) return String(payload.message);
+  return '';
 }
