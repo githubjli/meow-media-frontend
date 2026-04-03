@@ -26,6 +26,7 @@ import {
   Skeleton,
   Space,
   Tag,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
@@ -1106,7 +1107,7 @@ export default function LiveRoomPage() {
                           {intl.formatMessage({ id: 'live.room.watchQr' })}
                         </Text>
                       </Space>
-                      <Space size={4}>
+                      <Space size={0}>
                         <Button
                           type="link"
                           size="small"
@@ -1123,6 +1124,18 @@ export default function LiveRoomPage() {
                         <Button
                           type="link"
                           size="small"
+                          icon={
+                            <DownOutlined
+                              style={{
+                                transform: expandedSidebarPanels.includes(
+                                  'watch',
+                                )
+                                  ? 'rotate(180deg)'
+                                  : undefined,
+                                transition: 'transform 0.2s ease',
+                              }}
+                            />
+                          }
                           onClick={() =>
                             setExpandedSidebarPanels((prev) =>
                               prev.includes('watch')
@@ -1131,13 +1144,9 @@ export default function LiveRoomPage() {
                             )
                           }
                         >
-                          {expandedSidebarPanels.includes('watch')
-                            ? intl.formatMessage({
-                                id: 'live.room.sidebar.qr.hide',
-                              })
-                            : intl.formatMessage({
-                                id: 'live.room.sidebar.qr.show',
-                              })}
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.qr.short',
+                          })}
                         </Button>
                       </Space>
                     </Space>
@@ -1162,7 +1171,7 @@ export default function LiveRoomPage() {
                           {intl.formatMessage({ id: 'live.room.payQr' })}
                         </Text>
                       </Space>
-                      <Space size={4}>
+                      <Space size={0}>
                         <Button
                           type="link"
                           size="small"
@@ -1181,6 +1190,16 @@ export default function LiveRoomPage() {
                         <Button
                           type="link"
                           size="small"
+                          icon={
+                            <DownOutlined
+                              style={{
+                                transform: expandedSidebarPanels.includes('pay')
+                                  ? 'rotate(180deg)'
+                                  : undefined,
+                                transition: 'transform 0.2s ease',
+                              }}
+                            />
+                          }
                           onClick={() =>
                             setExpandedSidebarPanels((prev) =>
                               prev.includes('pay')
@@ -1189,13 +1208,9 @@ export default function LiveRoomPage() {
                             )
                           }
                         >
-                          {expandedSidebarPanels.includes('pay')
-                            ? intl.formatMessage({
-                                id: 'live.room.sidebar.qr.hide',
-                              })
-                            : intl.formatMessage({
-                                id: 'live.room.sidebar.qr.show',
-                              })}
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.qr.short',
+                          })}
                         </Button>
                       </Space>
                     </Space>
@@ -1409,20 +1424,22 @@ export default function LiveRoomPage() {
                             <Text>{sidebarStoreSummary.name}</Text>
                           </Space>
                           {sidebarStoreSummary.slug ? (
-                            <Button
-                              type="link"
-                              size="small"
-                              icon={<GlobalOutlined />}
-                              onClick={() =>
-                                history.push(
-                                  `/store/${sidebarStoreSummary.slug}`,
-                                )
-                              }
-                            >
-                              {intl.formatMessage({
+                            <Tooltip
+                              title={intl.formatMessage({
                                 id: 'live.room.sidebar.store.open',
                               })}
-                            </Button>
+                            >
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={<GlobalOutlined />}
+                                onClick={() =>
+                                  history.push(
+                                    `/store/${sidebarStoreSummary.slug}`,
+                                  )
+                                }
+                              />
+                            </Tooltip>
                           ) : null}
                         </Space>
                       ) : (
@@ -1451,6 +1468,18 @@ export default function LiveRoomPage() {
                       <Button
                         type="link"
                         size="small"
+                        icon={
+                          <DownOutlined
+                            style={{
+                              transform: expandedSidebarPanels.includes(
+                                'premium',
+                              )
+                                ? 'rotate(180deg)'
+                                : undefined,
+                              transition: 'transform 0.2s ease',
+                            }}
+                          />
+                        }
                         onClick={() =>
                           setExpandedSidebarPanels((prev) =>
                             prev.includes('premium')
@@ -1459,13 +1488,9 @@ export default function LiveRoomPage() {
                           )
                         }
                       >
-                        {expandedSidebarPanels.includes('premium')
-                          ? intl.formatMessage({
-                              id: 'live.room.sidebar.qr.hide',
-                            })
-                          : intl.formatMessage({
-                              id: 'live.room.sidebar.qr.show',
-                            })}
+                        {intl.formatMessage({
+                          id: 'live.room.sidebar.qr.short',
+                        })}
                       </Button>
                     </Space>
                     {expandedSidebarPanels.includes('premium') ? (

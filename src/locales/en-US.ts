@@ -479,6 +479,7 @@ export default {
   'live.room.sidebar.paidProgrammingQr': 'Paid Access QR',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     'Paid programming QR module is coming soon.',
+  'live.room.sidebar.qr.short': 'QR',
   'live.room.sidebar.qr.show': 'Show QR',
   'live.room.sidebar.qr.hide': 'Hide QR',
   'live.room.sidebar.chat.noMessages': 'No messages yet.',

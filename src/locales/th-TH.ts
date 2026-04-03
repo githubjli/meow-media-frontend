@@ -464,6 +464,7 @@ export default {
   'live.room.sidebar.paidProgrammingQr': 'คิวอาร์การเข้าถึงแบบชำระเงิน',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     'โมดูลคิวอาร์รายการแบบชำระเงินจะพร้อมใช้งานเร็ว ๆ นี้',
+  'live.room.sidebar.qr.short': 'QR',
   'live.room.sidebar.qr.show': 'แสดง QR',
   'live.room.sidebar.qr.hide': 'ซ่อน QR',
   'live.room.sidebar.chat.noMessages': 'ยังไม่มีข้อความ',

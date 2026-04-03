@@ -455,6 +455,7 @@ export default {
   'live.room.sidebar.paidProgrammingQr': '付费访问二维码',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     '付费节目二维码模块即将上线。',
+  'live.room.sidebar.qr.short': '二维码',
   'live.room.sidebar.qr.show': '显示二维码',
   'live.room.sidebar.qr.hide': '收起二维码',
   'live.room.sidebar.chat.noMessages': '暂时还没有消息。',

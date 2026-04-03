@@ -484,6 +484,7 @@ export default {
   'live.room.sidebar.paidProgrammingQr': 'Paid Access QR',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     'Paid programming QR module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
+  'live.room.sidebar.qr.short': 'QR',
   'live.room.sidebar.qr.show': 'QR ပြ',
   'live.room.sidebar.qr.hide': 'QR ဖျောက်',
   'live.room.sidebar.chat.noMessages': 'Message မရှိသေးပါ။',
