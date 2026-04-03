@@ -19,9 +19,7 @@ import {
   Button,
   Card,
   Col,
-  Collapse,
   Empty,
-  Input,
   Row,
   Skeleton,
   Space,
@@ -1119,72 +1117,6 @@ export default function LiveRoomPage() {
                       <Space size={8}>
                         <QrcodeOutlined />
                         <Text strong>
-                          {intl.formatMessage({ id: 'live.room.watchQr' })}
-                        </Text>
-                      </Space>
-                      <Space size={0}>
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<CopyOutlined />}
-                          style={{ color: 'rgba(0, 0, 0, 0.65)' }}
-                          onClick={() =>
-                            copyValue(
-                              watchUrl,
-                              intl.formatMessage({ id: 'live.room.watchUrl' }),
-                            )
-                          }
-                        >
-                          {intl.formatMessage({ id: 'live.room.copy' })}
-                        </Button>
-                        <Button
-                          type="text"
-                          size="small"
-                          style={{ color: 'rgba(0, 0, 0, 0.65)' }}
-                          icon={
-                            <DownOutlined
-                              style={{
-                                transform: expandedSidebarPanels.includes(
-                                  'watch',
-                                )
-                                  ? 'rotate(180deg)'
-                                  : undefined,
-                                transition: 'transform 0.2s ease',
-                              }}
-                            />
-                          }
-                          onClick={() =>
-                            setExpandedSidebarPanels((prev) =>
-                              prev.includes('watch')
-                                ? prev.filter((key) => key !== 'watch')
-                                : [...prev, 'watch'],
-                            )
-                          }
-                        >
-                          {intl.formatMessage({
-                            id: 'live.room.sidebar.qr.short',
-                          })}
-                        </Button>
-                      </Space>
-                    </Space>
-                    {expandedSidebarPanels.includes('watch') ? (
-                      <QrCodePanel
-                        payload={watchUrl}
-                        emptyText={intl.formatMessage({
-                          id: 'live.room.watchUrlUnavailable',
-                        })}
-                      />
-                    ) : null}
-                  </Card>
-
-                  <Card size="small" style={{ borderRadius: 16 }}>
-                    <Space
-                      align="start"
-                      style={{ width: '100%', justifyContent: 'space-between' }}
-                    >
-                      <Space size={8}>
-                        <QrcodeOutlined />
-                        <Text strong>
                           {intl.formatMessage({ id: 'live.room.payQr' })}
                         </Text>
                       </Space>
@@ -1340,10 +1272,11 @@ export default function LiveRoomPage() {
                         icon={
                           <DownOutlined
                             style={{
-                              transform:
-                                expandedSidebarPanels.includes('products')
-                                  ? 'rotate(180deg)'
-                                  : undefined,
+                              transform: expandedSidebarPanels.includes(
+                                'products',
+                              )
+                                ? 'rotate(180deg)'
+                                : undefined,
                               transition: 'transform 0.2s ease',
                             }}
                           />
@@ -1518,9 +1451,9 @@ export default function LiveRoomPage() {
                           style={{ color: 'rgba(0, 0, 0, 0.65)' }}
                           onClick={() =>
                             copyValue(
-                              playbackUrl,
+                              watchUrl,
                               intl.formatMessage({
-                                id: 'live.room.liveStreamUrl',
+                                id: 'live.room.watchUrl',
                               }),
                             )
                           }
@@ -1561,9 +1494,9 @@ export default function LiveRoomPage() {
                     </Space>
                     {expandedSidebarPanels.includes('stream') ? (
                       <QrCodePanel
-                        payload={playbackUrl}
+                        payload={watchUrl}
                         emptyText={intl.formatMessage({
-                          id: 'live.room.playbackUnavailable',
+                          id: 'live.room.watchUrlUnavailable',
                         })}
                       />
                     ) : null}
