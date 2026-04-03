@@ -400,6 +400,7 @@ export default {
   'live.room.payQr': 'ငွေလက်ခံ QR',
   'live.room.paymentAddressUnavailable': 'Payment address မရရှိသေးပါ။',
   'live.room.paymentAddress': 'Payment address',
+  'live.room.liveStreamUrl': 'Live stream URL',
   'live.room.copyAddress': 'Copy address',
   'live.room.watchQr': 'ကြည့်ရှုရန် QR',
   'live.room.watchUrl': 'ကြည့်ရှုရန် URL',
@@ -481,6 +482,9 @@ export default {
   'live.room.sidebar.sellerStore': 'Seller Store',
   'live.room.sidebar.sellerStorePlaceholder':
     'Seller store module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
+  'live.room.sidebar.liveStreamQr': 'Live Stream QR',
+  'live.room.sidebar.copyAddress': 'Copy Address',
+  'live.room.sidebar.copyUrl': 'Copy URL',
   'live.room.sidebar.paidProgrammingQr': 'Paid Access QR',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     'Paid programming QR module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
