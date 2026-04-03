@@ -1,12 +1,23 @@
 import type { Product, ProductStatus } from '@/types/product';
 import { useIntl } from '@umijs/max';
-import { Button, Form, Input, InputNumber, Select, Space } from 'antd';
+import {
+  Button,
+  Form,
+  Image,
+  Input,
+  InputNumber,
+  Select,
+  Space,
+  Upload,
+} from 'antd';
+import type { UploadFile } from 'antd/es/upload/interface';
+import { useState } from 'react';
 
 type ProductFormValues = {
   title: string;
   slug: string;
   description?: string;
-  cover_image?: string;
+  cover_image?: string | File;
   price_amount: string;
   price_currency: string;
   stock_quantity: number;
@@ -27,6 +38,7 @@ export default function ProductForm({
   onSubmit: (values: ProductFormValues) => Promise<void>;
 }) {
   const intl = useIntl();
+  const [coverFileList, setCoverFileList] = useState<UploadFile[]>([]);
 
   return (
     <Form<ProductFormValues>
@@ -37,7 +49,16 @@ export default function ProductForm({
         status: 'draft',
         ...initialValues,
       }}
-      onFinish={onSubmit}
+      onFinish={async (values) => {
+        const payload = { ...values } as ProductFormValues;
+        const coverFile = coverFileList[0]?.originFileObj;
+        if (coverFile) {
+          payload.cover_image = coverFile as File;
+        } else {
+          delete payload.cover_image;
+        }
+        await onSubmit(payload);
+      }}
     >
       <Form.Item
         name="title"
@@ -60,10 +81,28 @@ export default function ProductForm({
         <Input.TextArea rows={4} />
       </Form.Item>
       <Form.Item
-        name="cover_image"
         label={intl.formatMessage({ id: 'seller.product.fields.coverImage' })}
       >
-        <Input />
+        <Space direction="vertical" size={8} style={{ width: '100%' }}>
+          {typeof initialValues?.cover_image === 'string' &&
+          initialValues.cover_image ? (
+            <Image
+              src={initialValues.cover_image}
+              alt="product-cover"
+              width={120}
+              style={{ borderRadius: 8 }}
+            />
+          ) : null}
+          <Upload
+            maxCount={1}
+            beforeUpload={() => false}
+            fileList={coverFileList}
+            onChange={({ fileList }) => setCoverFileList(fileList)}
+            accept="image/*"
+          >
+            <Button>{intl.formatMessage({ id: 'common.upload' })}</Button>
+          </Upload>
+        </Space>
       </Form.Item>
       <Space size={12} style={{ width: '100%' }} align="start" wrap>
         <Form.Item

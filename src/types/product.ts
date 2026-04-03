@@ -6,7 +6,7 @@ export type Product = {
   title: string;
   slug: string;
   description?: string;
-  cover_image?: string | null;
+  cover_image?: string | File | null;
   price_amount: string;
   price_currency: string;
   stock_quantity: number;

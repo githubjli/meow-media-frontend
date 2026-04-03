@@ -487,7 +487,7 @@ export default {
   'seller.product.fields.title': 'Title',
   'seller.product.fields.slug': 'Slug',
   'seller.product.fields.description': 'Description',
-  'seller.product.fields.coverImage': 'Cover image URL',
+  'seller.product.fields.coverImage': 'Cover image',
   'seller.product.fields.priceAmount': 'Price',
   'seller.product.fields.currency': 'Currency',
   'seller.product.fields.stock': 'Stock',
