@@ -461,9 +461,20 @@ export default {
   'live.room.sidebar.sellerStore': 'ร้านผู้ขาย',
   'live.room.sidebar.sellerStorePlaceholder':
     'โมดูลร้านผู้ขายจะพร้อมใช้งานเร็ว ๆ นี้',
-  'live.room.sidebar.paidProgrammingQr': 'คิวอาร์รายการแบบชำระเงิน',
+  'live.room.sidebar.paidProgrammingQr': 'คิวอาร์การเข้าถึงแบบชำระเงิน',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     'โมดูลคิวอาร์รายการแบบชำระเงินจะพร้อมใช้งานเร็ว ๆ นี้',
+  'live.room.sidebar.qr.show': 'แสดง QR',
+  'live.room.sidebar.qr.hide': 'ซ่อน QR',
+  'live.room.sidebar.chat.noMessages': 'ยังไม่มีข้อความ',
+  'live.room.sidebar.chat.loginToJoin': 'เข้าสู่ระบบเพื่อร่วมแชท',
+  'live.room.sidebar.chat.userFallback': 'ผู้ใช้',
+  'live.room.sidebar.products.none': 'ยังไม่มีสินค้าแนะนำ',
+  'live.room.sidebar.products.showMore': 'แสดงเพิ่มอีก {count} รายการ',
+  'live.room.sidebar.products.showLess': 'แสดงน้อยลง',
+  'live.room.sidebar.products.priceUnavailable': 'ยังไม่ระบุราคา',
+  'live.room.sidebar.store.noStore': 'ยังไม่มีข้อมูลร้านค้า',
+  'live.room.sidebar.store.open': 'เปิด',
   'videoCard.live': 'สด',
 
   'menu.seller': 'Seller',

@@ -2,6 +2,7 @@ import {
   CopyOutlined,
   DownOutlined,
   EyeOutlined,
+  GlobalOutlined,
   MessageOutlined,
   PlayCircleOutlined,
   PoweroffOutlined,
@@ -229,6 +230,10 @@ export default function LiveRoomPage() {
   const [paymentOrderError, setPaymentOrderError] = useState('');
   const [latestPaymentOrder, setLatestPaymentOrder] =
     useState<PaymentOrder | null>(null);
+  const [expandedSidebarPanels, setExpandedSidebarPanels] = useState<string[]>(
+    [],
+  );
+  const [showAllPreviewProducts, setShowAllPreviewProducts] = useState(false);
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const isCreator = Boolean(
@@ -303,6 +308,20 @@ export default function LiveRoomPage() {
         initialState.currentUser.is_admin ||
         initialState.currentUser.is_staff ||
         initialState.currentUser.is_superuser),
+  );
+  const previewProducts = showAllPreviewProducts
+    ? publicProducts.slice(0, 3)
+    : publicProducts.slice(0, 1);
+  const sidebarStoreSummary = useMemo(() => {
+    const withStore = publicProducts.find((item) => item?.product?.store);
+    return withStore?.product?.store || null;
+  }, [publicProducts]);
+  const sidebarChatPreview = useMemo(
+    () =>
+      chatMessages
+        .filter((item) => !item.is_deleted && item.content)
+        .slice(0, 2),
+    [chatMessages],
   );
 
   const loadPublicProducts = async () => {
@@ -1075,190 +1094,390 @@ export default function LiveRoomPage() {
               </Col>
 
               <Col xs={24} md={8} xl={8}>
-                <Space direction="vertical" size={20} style={{ width: '100%' }}>
-                  <Collapse
-                    bordered={false}
-                    defaultActiveKey={[]}
-                    expandIconPosition="end"
-                    expandIcon={({ isActive }) => (
-                      <DownOutlined
-                        style={{
-                          transform: isActive
-                            ? 'rotate(180deg)'
-                            : 'rotate(0deg)',
-                          transition: 'transform 0.2s ease',
-                        }}
+                <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                  <Card size="small" style={{ borderRadius: 16 }}>
+                    <Space
+                      align="start"
+                      style={{ width: '100%', justifyContent: 'space-between' }}
+                    >
+                      <Space size={8}>
+                        <QrcodeOutlined />
+                        <Text strong>
+                          {intl.formatMessage({ id: 'live.room.watchQr' })}
+                        </Text>
+                      </Space>
+                      <Space size={4}>
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() =>
+                            copyValue(
+                              watchUrl,
+                              intl.formatMessage({ id: 'live.room.watchUrl' }),
+                            )
+                          }
+                        >
+                          {intl.formatMessage({ id: 'live.room.copy' })}
+                        </Button>
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={() =>
+                            setExpandedSidebarPanels((prev) =>
+                              prev.includes('watch')
+                                ? prev.filter((key) => key !== 'watch')
+                                : [...prev, 'watch'],
+                            )
+                          }
+                        >
+                          {expandedSidebarPanels.includes('watch')
+                            ? intl.formatMessage({
+                                id: 'live.room.sidebar.qr.hide',
+                              })
+                            : intl.formatMessage({
+                                id: 'live.room.sidebar.qr.show',
+                              })}
+                        </Button>
+                      </Space>
+                    </Space>
+                    {expandedSidebarPanels.includes('watch') ? (
+                      <QrCodePanel
+                        payload={watchUrl}
+                        emptyText={intl.formatMessage({
+                          id: 'live.room.watchUrlUnavailable',
+                        })}
                       />
-                    )}
-                    items={[
-                      {
-                        key: 'sidebar-watch-qr',
-                        label: (
-                          <Space size={8}>
-                            <QrcodeOutlined />
-                            <span>
-                              {intl.formatMessage({ id: 'live.room.watchQr' })}
-                            </span>
-                          </Space>
-                        ),
-                        extra: (
-                          <Button
-                            type="link"
-                            size="small"
-                            icon={<CopyOutlined />}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              copyValue(
-                                watchUrl,
+                    ) : null}
+                  </Card>
+
+                  <Card size="small" style={{ borderRadius: 16 }}>
+                    <Space
+                      align="start"
+                      style={{ width: '100%', justifyContent: 'space-between' }}
+                    >
+                      <Space size={8}>
+                        <QrcodeOutlined />
+                        <Text strong>
+                          {intl.formatMessage({ id: 'live.room.payQr' })}
+                        </Text>
+                      </Space>
+                      <Space size={4}>
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() =>
+                            copyValue(
+                              payQrPayload,
+                              intl.formatMessage({
+                                id: 'live.room.paymentAddress',
+                              }),
+                            )
+                          }
+                        >
+                          {intl.formatMessage({ id: 'live.room.copy' })}
+                        </Button>
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={() =>
+                            setExpandedSidebarPanels((prev) =>
+                              prev.includes('pay')
+                                ? prev.filter((key) => key !== 'pay')
+                                : [...prev, 'pay'],
+                            )
+                          }
+                        >
+                          {expandedSidebarPanels.includes('pay')
+                            ? intl.formatMessage({
+                                id: 'live.room.sidebar.qr.hide',
+                              })
+                            : intl.formatMessage({
+                                id: 'live.room.sidebar.qr.show',
+                              })}
+                        </Button>
+                      </Space>
+                    </Space>
+                    {expandedSidebarPanels.includes('pay') ? (
+                      <QrCodePanel
+                        payload={payQrPayload}
+                        emptyText={intl.formatMessage({
+                          id: 'live.room.paymentAddressUnavailable',
+                        })}
+                      />
+                    ) : null}
+                  </Card>
+
+                  <Card size="small" style={{ borderRadius: 16 }}>
+                    <Space
+                      direction="vertical"
+                      size={10}
+                      style={{ width: '100%' }}
+                    >
+                      <Space size={8}>
+                        <MessageOutlined />
+                        <Text strong>
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.liveChat',
+                          })}
+                        </Text>
+                      </Space>
+                      {chatLoading ? (
+                        <Skeleton
+                          active
+                          paragraph={{ rows: 2 }}
+                          title={false}
+                        />
+                      ) : sidebarChatPreview.length > 0 ? (
+                        <Space
+                          direction="vertical"
+                          size={6}
+                          style={{ width: '100%' }}
+                        >
+                          {sidebarChatPreview.map((item) => (
+                            <Text
+                              key={String(item.id)}
+                              type="secondary"
+                              ellipsis={{ tooltip: item.content }}
+                            >
+                              {(item.user?.name ||
+                                item.user?.username ||
                                 intl.formatMessage({
-                                  id: 'live.room.watchUrl',
-                                }),
-                              );
-                            }}
-                          >
-                            {intl.formatMessage({
-                              id: 'live.room.copy',
-                            })}
-                          </Button>
-                        ),
-                        children: (
-                          <QrCodePanel
-                            payload={watchUrl}
-                            emptyText={intl.formatMessage({
-                              id: 'live.room.watchUrlUnavailable',
-                            })}
-                          />
-                        ),
-                      },
-                      {
-                        key: 'sidebar-pay-qr',
-                        label: (
-                          <Space size={8}>
-                            <QrcodeOutlined />
-                            <span>
-                              {intl.formatMessage({ id: 'live.room.payQr' })}
-                            </span>
-                          </Space>
-                        ),
-                        extra: (
-                          <Button
-                            type="link"
-                            size="small"
-                            icon={<CopyOutlined />}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              copyValue(
-                                payQrPayload,
-                                intl.formatMessage({
-                                  id: 'live.room.paymentAddress',
-                                }),
-                              );
-                            }}
-                          >
-                            {intl.formatMessage({
-                              id: 'live.room.copy',
-                            })}
-                          </Button>
-                        ),
-                        children: (
-                          <QrCodePanel
-                            payload={payQrPayload}
-                            emptyText={intl.formatMessage({
-                              id: 'live.room.paymentAddressUnavailable',
-                            })}
-                          />
-                        ),
-                      },
-                      {
-                        key: 'sidebar-live-chat',
-                        label: (
-                          <Space size={8}>
-                            <MessageOutlined />
-                            <span>
-                              {intl.formatMessage({
-                                id: 'live.room.sidebar.liveChat',
+                                  id: 'live.room.sidebar.chat.userFallback',
+                                })) +
+                                ': ' +
+                                (item.content || '')}
+                            </Text>
+                          ))}
+                        </Space>
+                      ) : (
+                        <Text type="secondary">
+                          {isLoggedIn
+                            ? intl.formatMessage({
+                                id: 'live.room.sidebar.chat.noMessages',
+                              })
+                            : intl.formatMessage({
+                                id: 'live.room.sidebar.chat.loginToJoin',
                               })}
-                            </span>
-                          </Space>
-                        ),
-                        children: (
-                          <Alert
-                            type="info"
-                            showIcon
-                            message={intl.formatMessage({
-                              id: 'live.room.sidebar.liveChatPlaceholder',
-                            })}
-                          />
-                        ),
-                      },
-                      {
-                        key: 'sidebar-product-listings',
-                        label: (
+                        </Text>
+                      )}
+                    </Space>
+                  </Card>
+
+                  <Card size="small" style={{ borderRadius: 16 }}>
+                    <Space
+                      direction="vertical"
+                      size={10}
+                      style={{ width: '100%' }}
+                    >
+                      <Space size={8}>
+                        <ShoppingOutlined />
+                        <Text strong>
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.productListings',
+                          })}
+                        </Text>
+                      </Space>
+                      {publicProductsLoading ? (
+                        <Skeleton
+                          active
+                          paragraph={{ rows: 2 }}
+                          title={false}
+                        />
+                      ) : publicProductsError ? (
+                        <Alert
+                          type="warning"
+                          showIcon
+                          message={publicProductsError}
+                        />
+                      ) : previewProducts.length === 0 ? (
+                        <Text type="secondary">
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.products.none',
+                          })}
+                        </Text>
+                      ) : (
+                        <Space
+                          direction="vertical"
+                          size={8}
+                          style={{ width: '100%' }}
+                        >
+                          {previewProducts.map((binding) => (
+                            <Space
+                              key={String(binding.binding_id)}
+                              size={10}
+                              align="start"
+                              style={{ width: '100%' }}
+                            >
+                              <Avatar
+                                shape="square"
+                                size={44}
+                                src={
+                                  binding.product.cover_image_url || undefined
+                                }
+                                icon={<ShoppingOutlined />}
+                              />
+                              <Space
+                                direction="vertical"
+                                size={0}
+                                style={{ flex: 1 }}
+                              >
+                                <Text
+                                  strong
+                                  ellipsis={{ tooltip: binding.product.title }}
+                                >
+                                  {binding.product.title}
+                                </Text>
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                  {(binding.product.price_amount &&
+                                    binding.product.price_currency &&
+                                    `${binding.product.price_amount} ${binding.product.price_currency}`) ||
+                                    intl.formatMessage({
+                                      id: 'live.room.sidebar.products.priceUnavailable',
+                                    })}
+                                </Text>
+                                {binding.product.description ? (
+                                  <Text
+                                    type="secondary"
+                                    style={{ fontSize: 12 }}
+                                    ellipsis={{
+                                      tooltip: binding.product.description,
+                                    }}
+                                  >
+                                    {binding.product.description}
+                                  </Text>
+                                ) : null}
+                              </Space>
+                            </Space>
+                          ))}
+                          {publicProducts.length > 1 ? (
+                            <Button
+                              type="link"
+                              size="small"
+                              style={{
+                                paddingInline: 0,
+                                alignSelf: 'flex-start',
+                              }}
+                              onClick={() =>
+                                setShowAllPreviewProducts(
+                                  (previous) => !previous,
+                                )
+                              }
+                            >
+                              {showAllPreviewProducts
+                                ? intl.formatMessage({
+                                    id: 'live.room.sidebar.products.showLess',
+                                  })
+                                : intl.formatMessage(
+                                    {
+                                      id: 'live.room.sidebar.products.showMore',
+                                    },
+                                    { count: publicProducts.length - 1 },
+                                  )}
+                            </Button>
+                          ) : null}
+                        </Space>
+                      )}
+                    </Space>
+                  </Card>
+
+                  <Card size="small" style={{ borderRadius: 16 }}>
+                    <Space
+                      direction="vertical"
+                      size={8}
+                      style={{ width: '100%' }}
+                    >
+                      <Space size={8}>
+                        <ShopOutlined />
+                        <Text strong>
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.sellerStore',
+                          })}
+                        </Text>
+                      </Space>
+                      {sidebarStoreSummary ? (
+                        <Space
+                          style={{
+                            width: '100%',
+                            justifyContent: 'space-between',
+                          }}
+                          align="center"
+                        >
                           <Space size={8}>
-                            <ShoppingOutlined />
-                            <span>
-                              {intl.formatMessage({
-                                id: 'live.room.sidebar.productListings',
-                              })}
-                            </span>
+                            <Avatar shape="square" icon={<ShopOutlined />} />
+                            <Text>{sidebarStoreSummary.name}</Text>
                           </Space>
-                        ),
-                        children: (
-                          <Alert
-                            type="info"
-                            showIcon
-                            message={intl.formatMessage({
-                              id: 'live.room.sidebar.productListingsPlaceholder',
-                            })}
-                          />
-                        ),
-                      },
-                      {
-                        key: 'sidebar-seller-store',
-                        label: (
-                          <Space size={8}>
-                            <ShopOutlined />
-                            <span>
+                          {sidebarStoreSummary.slug ? (
+                            <Button
+                              type="link"
+                              size="small"
+                              icon={<GlobalOutlined />}
+                              onClick={() =>
+                                history.push(
+                                  `/store/${sidebarStoreSummary.slug}`,
+                                )
+                              }
+                            >
                               {intl.formatMessage({
-                                id: 'live.room.sidebar.sellerStore',
+                                id: 'live.room.sidebar.store.open',
                               })}
-                            </span>
-                          </Space>
-                        ),
-                        children: (
-                          <Alert
-                            type="info"
-                            showIcon
-                            message={intl.formatMessage({
-                              id: 'live.room.sidebar.sellerStorePlaceholder',
+                            </Button>
+                          ) : null}
+                        </Space>
+                      ) : (
+                        <Text type="secondary">
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.store.noStore',
+                          })}
+                        </Text>
+                      )}
+                    </Space>
+                  </Card>
+
+                  <Card size="small" style={{ borderRadius: 16 }}>
+                    <Space
+                      align="start"
+                      style={{ width: '100%', justifyContent: 'space-between' }}
+                    >
+                      <Space size={8}>
+                        <QrcodeOutlined />
+                        <Text strong>
+                          {intl.formatMessage({
+                            id: 'live.room.sidebar.paidProgrammingQr',
+                          })}
+                        </Text>
+                      </Space>
+                      <Button
+                        type="link"
+                        size="small"
+                        onClick={() =>
+                          setExpandedSidebarPanels((prev) =>
+                            prev.includes('premium')
+                              ? prev.filter((key) => key !== 'premium')
+                              : [...prev, 'premium'],
+                          )
+                        }
+                      >
+                        {expandedSidebarPanels.includes('premium')
+                          ? intl.formatMessage({
+                              id: 'live.room.sidebar.qr.hide',
+                            })
+                          : intl.formatMessage({
+                              id: 'live.room.sidebar.qr.show',
                             })}
-                          />
-                        ),
-                      },
-                      {
-                        key: 'sidebar-paid-programming-qr',
-                        label: (
-                          <Space size={8}>
-                            <QrcodeOutlined />
-                            <span>
-                              {intl.formatMessage({
-                                id: 'live.room.sidebar.paidProgrammingQr',
-                              })}
-                            </span>
-                          </Space>
-                        ),
-                        children: (
-                          <Alert
-                            type="info"
-                            showIcon
-                            message={intl.formatMessage({
-                              id: 'live.room.sidebar.paidProgrammingQrPlaceholder',
-                            })}
-                          />
-                        ),
-                      },
-                    ]}
-                  />
+                      </Button>
+                    </Space>
+                    {expandedSidebarPanels.includes('premium') ? (
+                      <Alert
+                        type="info"
+                        showIcon
+                        message={intl.formatMessage({
+                          id: 'live.room.sidebar.paidProgrammingQrPlaceholder',
+                        })}
+                      />
+                    ) : null}
+                  </Card>
                 </Space>
               </Col>
             </Row>

@@ -481,9 +481,20 @@ export default {
   'live.room.sidebar.sellerStore': 'Seller Store',
   'live.room.sidebar.sellerStorePlaceholder':
     'Seller store module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
-  'live.room.sidebar.paidProgrammingQr': 'Paid Programming QR',
+  'live.room.sidebar.paidProgrammingQr': 'Paid Access QR',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     'Paid programming QR module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
+  'live.room.sidebar.qr.show': 'QR ပြ',
+  'live.room.sidebar.qr.hide': 'QR ဖျောက်',
+  'live.room.sidebar.chat.noMessages': 'Message မရှိသေးပါ။',
+  'live.room.sidebar.chat.loginToJoin': 'Chat ပါဝင်ရန် login ဝင်ပါ။',
+  'live.room.sidebar.chat.userFallback': 'User',
+  'live.room.sidebar.products.none': 'ပြထားသော product မရှိသေးပါ။',
+  'live.room.sidebar.products.showMore': 'နောက်ထပ် {count} ခု ပြမည်',
+  'live.room.sidebar.products.showLess': 'အကျဉ်းချုပ်ပြ',
+  'live.room.sidebar.products.priceUnavailable': 'စျေးနှုန်း မရှိသေးပါ',
+  'live.room.sidebar.store.noStore': 'Store အချက်အလက် မရရှိသေးပါ။',
+  'live.room.sidebar.store.open': 'ဖွင့်မည်',
   'videoCard.live': 'တိုက်ရိုက်',
 
   'menu.seller': 'Seller',
