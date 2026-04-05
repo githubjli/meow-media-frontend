@@ -322,22 +322,6 @@ export default function LiveRoomPage() {
         .slice(0, 2),
     [chatMessages],
   );
-  const sidebarChatSummary = chatLoading
-    ? ''
-    : sidebarChatPreview.length > 0
-    ? sidebarChatPreview[0].content || ''
-    : isLoggedIn
-    ? intl.formatMessage({ id: 'live.room.sidebar.chat.noMessages' })
-    : intl.formatMessage({ id: 'live.room.sidebar.chat.loginToJoin' });
-  const sidebarProductSummary = publicProductsLoading
-    ? ''
-    : publicProducts.length > 0
-    ? intl.formatMessage(
-        { id: 'live.room.sidebar.products.summary' },
-        { count: publicProducts.length },
-      )
-    : intl.formatMessage({ id: 'live.room.sidebar.products.none' });
-
   const loadPublicProducts = async () => {
     if (!id) return;
     setPublicProductsLoading(true);
@@ -1243,13 +1227,17 @@ export default function LiveRoomPage() {
                           ))}
                         </Space>
                       ) : (
-                        <Text type="secondary">{sidebarChatSummary}</Text>
+                        <Text type="secondary">
+                          {isLoggedIn
+                            ? intl.formatMessage({
+                                id: 'live.room.sidebar.chat.noMessages',
+                              })
+                            : intl.formatMessage({
+                                id: 'live.room.sidebar.chat.loginToJoin',
+                              })}
+                        </Text>
                       )
-                    ) : (
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        {sidebarChatSummary}
-                      </Text>
-                    )}
+                    ) : null}
                   </Card>
 
                   <Card size="small" style={{ borderRadius: 16 }}>
@@ -1391,11 +1379,7 @@ export default function LiveRoomPage() {
                           ) : null}
                         </Space>
                       )
-                    ) : (
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        {sidebarProductSummary}
-                      </Text>
-                    )}
+                    ) : null}
                   </Card>
 
                   <Card size="small" style={{ borderRadius: 16 }}>
