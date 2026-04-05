@@ -396,6 +396,7 @@ export default {
   'live.room.paymentAddressUnavailable':
     'Payment address is not available yet.',
   'live.room.paymentAddress': 'Payment address',
+  'live.room.liveStreamUrl': 'Live stream URL',
   'live.room.copyAddress': 'Copy address',
   'live.room.watchQr': 'Watch QR',
   'live.room.watchUrl': 'Watch URL',
@@ -444,6 +445,9 @@ export default {
   'live.payments.manage.create': 'Add payment method',
   'live.payments.manage.update': 'Update payment method',
   'live.payments.manage.empty': 'No payment methods configured yet.',
+  'live.reviews.title': 'Seller Reviews',
+  'live.reviews.placeholder.comingSoon': 'Seller reviews are coming soon.',
+  'live.reviews.placeholder.willAppear': 'Reviews will appear here later.',
   'live.orders.loginRequired': 'Log in to create a payment order.',
   'live.orders.create': 'Create Order',
   'live.orders.created': 'Order created successfully.',
@@ -476,6 +480,9 @@ export default {
   'live.room.sidebar.sellerStore': 'Seller Store',
   'live.room.sidebar.sellerStorePlaceholder':
     'Seller store module is coming soon.',
+  'live.room.sidebar.liveStreamQr': 'Live Stream QR',
+  'live.room.sidebar.copyAddress': 'Copy Address',
+  'live.room.sidebar.copyUrl': 'Copy URL',
   'live.room.sidebar.paidProgrammingQr': 'Paid Access QR',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     'Paid programming QR module is coming soon.',

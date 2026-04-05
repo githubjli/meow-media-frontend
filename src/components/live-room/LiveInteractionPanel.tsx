@@ -4,9 +4,10 @@ import type { LivePaymentMethod } from '@/types/livePaymentMethod';
 import type { LiveProductBinding } from '@/types/liveProduct';
 import type { PaymentOrder } from '@/types/paymentOrder';
 import { useIntl } from '@umijs/max';
-import { Alert, Col, Empty, Row, Skeleton, Tabs } from 'antd';
+import { Alert, Col, Empty, Row, Skeleton, Tabs, Typography } from 'antd';
 import LiveChatPanel from './LiveChatPanel';
-import LivePaymentsPanel from './LivePaymentsPanel';
+
+const { Text } = Typography;
 
 export default function LiveInteractionPanel({
   productsLoading,
@@ -105,23 +106,23 @@ export default function LiveInteractionPanel({
         },
         {
           key: 'payments',
-          label: intl.formatMessage({ id: 'live.payments.title' }),
+          label: intl.formatMessage({ id: 'live.reviews.title' }),
           children: (
-            <LivePaymentsPanel
-              loading={paymentsLoading}
-              errorMessage={paymentsError}
-              items={paymentMethods}
-              onCopy={onCopyPaymentValue}
-              canCreateOrder={isLoggedIn}
-              createOrderLoading={createOrderLoading}
-              createOrderError={createOrderError}
-              latestOrder={latestOrder}
-              products={products}
-              onRequireLogin={onRequireLogin}
-              onCreateOrder={onCreateOrder}
-              canMarkPaid={canMarkOrderPaid}
-              onMarkPaid={onMarkOrderPaid}
-            />
+            <div>
+              <Empty
+                description={intl.formatMessage({
+                  id: 'live.reviews.placeholder.comingSoon',
+                })}
+              />
+              <Text
+                type="secondary"
+                style={{ display: 'block', textAlign: 'center' }}
+              >
+                {intl.formatMessage({
+                  id: 'live.reviews.placeholder.willAppear',
+                })}
+              </Text>
+            </div>
           ),
         },
       ]}
