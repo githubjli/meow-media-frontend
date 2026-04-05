@@ -400,6 +400,7 @@ export default {
   'live.room.payQr': 'ငွေလက်ခံ QR',
   'live.room.paymentAddressUnavailable': 'Payment address မရရှိသေးပါ။',
   'live.room.paymentAddress': 'Payment address',
+  'live.room.liveStreamUrl': 'Live stream URL',
   'live.room.copyAddress': 'Copy address',
   'live.room.watchQr': 'ကြည့်ရှုရန် QR',
   'live.room.watchUrl': 'ကြည့်ရှုရန် URL',
@@ -448,6 +449,9 @@ export default {
   'live.payments.manage.create': 'နည်းလမ်းအသစ်ထည့်မည်',
   'live.payments.manage.update': 'နည်းလမ်းပြင်မည်',
   'live.payments.manage.empty': 'ငွေပေးချေမှုနည်းလမ်း မသတ်မှတ်ရသေးပါ။',
+  'live.reviews.title': 'Seller Reviews',
+  'live.reviews.placeholder.comingSoon': 'Seller reviews are coming soon.',
+  'live.reviews.placeholder.willAppear': 'Reviews will appear here later.',
   'live.orders.loginRequired': 'ငွေပေးချေမှုအော်ဒါဖန်တီးရန် login ဝင်ပါ။',
   'live.orders.create': 'အော်ဒါဖန်တီးမည်',
   'live.orders.created': 'အော်ဒါဖန်တီးပြီးပါပြီ။',
@@ -481,6 +485,9 @@ export default {
   'live.room.sidebar.sellerStore': 'Seller Store',
   'live.room.sidebar.sellerStorePlaceholder':
     'Seller store module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',
+  'live.room.sidebar.liveStreamQr': 'Live Stream QR',
+  'live.room.sidebar.copyAddress': 'Copy Address',
+  'live.room.sidebar.copyUrl': 'Copy URL',
   'live.room.sidebar.paidProgrammingQr': 'Paid Access QR',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     'Paid programming QR module ကို မကြာမီ ရရှိနိုင်မည်ဖြစ်သည်။',

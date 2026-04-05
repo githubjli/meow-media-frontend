@@ -384,6 +384,7 @@ export default {
   'live.room.payQr': 'คิวอาร์รับเงิน',
   'live.room.paymentAddressUnavailable': 'ยังไม่มีที่อยู่รับเงิน',
   'live.room.paymentAddress': 'ที่อยู่รับเงิน',
+  'live.room.liveStreamUrl': 'ลิงก์สตรีมสด',
   'live.room.copyAddress': 'คัดลอกที่อยู่',
   'live.room.watchQr': 'คิวอาร์รับชม',
   'live.room.watchUrl': 'ลิงก์รับชม',
@@ -430,6 +431,9 @@ export default {
   'live.payments.manage.create': 'เพิ่มวิธีชำระเงิน',
   'live.payments.manage.update': 'อัปเดตวิธีชำระเงิน',
   'live.payments.manage.empty': 'ยังไม่ได้ตั้งค่าวิธีชำระเงิน',
+  'live.reviews.title': 'รีวิวผู้ขาย',
+  'live.reviews.placeholder.comingSoon': 'รีวิวผู้ขายกำลังจะมาเร็ว ๆ นี้',
+  'live.reviews.placeholder.willAppear': 'รีวิวจะแสดงที่นี่ในภายหลัง',
   'live.orders.loginRequired': 'กรุณาเข้าสู่ระบบเพื่อสร้างคำสั่งชำระเงิน',
   'live.orders.create': 'สร้างคำสั่งซื้อ',
   'live.orders.created': 'สร้างคำสั่งซื้อเรียบร้อยแล้ว',
@@ -461,6 +465,9 @@ export default {
   'live.room.sidebar.sellerStore': 'ร้านผู้ขาย',
   'live.room.sidebar.sellerStorePlaceholder':
     'โมดูลร้านผู้ขายจะพร้อมใช้งานเร็ว ๆ นี้',
+  'live.room.sidebar.liveStreamQr': 'คิวอาร์สตรีมสด',
+  'live.room.sidebar.copyAddress': 'คัดลอกที่อยู่',
+  'live.room.sidebar.copyUrl': 'คัดลอกลิงก์',
   'live.room.sidebar.paidProgrammingQr': 'คิวอาร์การเข้าถึงแบบชำระเงิน',
   'live.room.sidebar.paidProgrammingQrPlaceholder':
     'โมดูลคิวอาร์รายการแบบชำระเงินจะพร้อมใช้งานเร็ว ๆ นี้',
