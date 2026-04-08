@@ -362,6 +362,12 @@ export const layout: RunTimeLayoutConfig = ({
       onClick: () => setLocale('my-MM', true),
     },
   ] as const;
+  const currentLocale =
+    (intl as any)?.locale ||
+    (typeof window !== 'undefined' ? localStorage.getItem('umi_locale') : '') ||
+    'en-US';
+  const currentLocaleLabel =
+    LANGUAGE_SHORT_LABELS[currentLocale] || LANGUAGE_SHORT_LABELS['en-US'];
   initializeLocaleOnce();
 
   const handleGoLiveClick = () => {
