@@ -477,6 +477,8 @@ export default {
   'account.profile.edit.title': '编辑资料',
   'account.profile.edit.username': '用户名',
   'account.profile.edit.username.placeholder': '请输入用户名',
+  'account.profile.edit.displayName': '显示名称',
+  'account.profile.edit.displayName.placeholder': '请输入显示名称',
   'account.profile.edit.bio': '个人简介',
   'account.profile.edit.bio.placeholder': '填写一句简介',
   'account.profile.edit.save': '保存',

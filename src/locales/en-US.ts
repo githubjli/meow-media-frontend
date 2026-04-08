@@ -499,6 +499,8 @@ export default {
   'account.profile.edit.title': 'Edit Profile',
   'account.profile.edit.username': 'Username',
   'account.profile.edit.username.placeholder': 'Enter username',
+  'account.profile.edit.displayName': 'Display Name',
+  'account.profile.edit.displayName.placeholder': 'Enter display name',
   'account.profile.edit.bio': 'Bio',
   'account.profile.edit.bio.placeholder': 'Add a short bio',
   'account.profile.edit.save': 'Save',

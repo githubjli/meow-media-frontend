@@ -7,10 +7,9 @@ const withAuth = async () => ({
 export async function changeAccountPassword(payload: {
   current_password: string;
   new_password: string;
-  confirm_password: string;
 }) {
   return requestJson<{ detail?: string; message?: string }>(
-    '/api/account/password/change',
+    '/api/account/change-password/',
     {
       method: 'POST',
       headers: await withAuth(),

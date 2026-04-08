@@ -504,6 +504,8 @@ export default {
   'account.profile.edit.title': 'Profile ပြင်ဆင်ရန်',
   'account.profile.edit.username': 'Username',
   'account.profile.edit.username.placeholder': 'Username ထည့်ပါ',
+  'account.profile.edit.displayName': 'Display Name',
+  'account.profile.edit.displayName.placeholder': 'Display Name ထည့်ပါ',
   'account.profile.edit.bio': 'Bio',
   'account.profile.edit.bio.placeholder': 'Bio အတို ထည့်ပါ',
   'account.profile.edit.save': 'Save',

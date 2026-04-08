@@ -71,7 +71,7 @@ export default function AccountProfilePage() {
       .then((data) => {
         setProfile(data || null);
         form.setFieldsValue({
-          username: data?.username || '',
+          display_name: data?.display_name || '',
           bio: data?.bio || '',
         });
       })
@@ -179,19 +179,20 @@ export default function AccountProfilePage() {
   ];
 
   const handleSaveProfile = async (values: {
-    username?: string;
+    display_name?: string;
     bio?: string;
   }) => {
     setSaving(true);
     try {
       const updated = await updateAccountProfile({
-        username: values.username || '',
+        display_name: values.display_name || '',
         bio: values.bio || '',
         avatar: avatarRemoved ? null : selectedAvatarFile,
+        avatar_clear: avatarRemoved,
       });
       setProfile(updated);
       form.setFieldsValue({
-        username: updated?.username || '',
+        display_name: updated?.display_name || '',
         bio: updated?.bio || '',
       });
       setSelectedAvatarFile(null);
@@ -311,7 +312,7 @@ export default function AccountProfilePage() {
                 form={form}
                 onFinish={handleSaveProfile}
                 initialValues={{
-                  username: profile?.username || '',
+                  display_name: profile?.display_name || '',
                   bio: profile?.bio || '',
                 }}
               >
@@ -353,14 +354,14 @@ export default function AccountProfilePage() {
                   </Space>
 
                   <Form.Item
-                    name="username"
+                    name="display_name"
                     label={intl.formatMessage({
-                      id: 'account.profile.edit.username',
+                      id: 'account.profile.edit.displayName',
                     })}
                   >
                     <Input
                       placeholder={intl.formatMessage({
-                        id: 'account.profile.edit.username.placeholder',
+                        id: 'account.profile.edit.displayName.placeholder',
                       })}
                     />
                   </Form.Item>
@@ -389,7 +390,7 @@ export default function AccountProfilePage() {
                     <Button
                       onClick={() => {
                         form.setFieldsValue({
-                          username: profile?.username || '',
+                          display_name: profile?.display_name || '',
                           bio: profile?.bio || '',
                         });
                         setSelectedAvatarFile(null);

@@ -44,9 +44,10 @@ export async function getAccountProfile() {
 }
 
 export type UpdateAccountProfilePayload = {
-  username?: string;
+  display_name?: string;
   bio?: string;
   avatar?: File | null;
+  avatar_clear?: boolean;
 };
 
 export async function updateAccountProfile(
@@ -57,8 +58,8 @@ export async function updateAccountProfile(
 
   if (hasAvatarFile) {
     const formData = new FormData();
-    if (typeof payload.username === 'string') {
-      formData.append('username', payload.username);
+    if (typeof payload.display_name === 'string') {
+      formData.append('display_name', payload.display_name);
     }
     if (typeof payload.bio === 'string') {
       formData.append('bio', payload.bio);
@@ -73,14 +74,14 @@ export async function updateAccountProfile(
   }
 
   const jsonPayload: Record<string, any> = {};
-  if (typeof payload.username === 'string') {
-    jsonPayload.username = payload.username;
+  if (typeof payload.display_name === 'string') {
+    jsonPayload.display_name = payload.display_name;
   }
   if (typeof payload.bio === 'string') {
     jsonPayload.bio = payload.bio;
   }
-  if (payload.avatar === null) {
-    jsonPayload.avatar = null;
+  if (payload.avatar_clear === true || payload.avatar === null) {
+    jsonPayload.avatar_clear = true;
   }
 
   return requestJson<AccountProfileResponse>('/api/account/profile', {

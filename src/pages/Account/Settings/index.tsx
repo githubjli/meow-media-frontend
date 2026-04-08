@@ -58,7 +58,10 @@ export default function AccountSettingsPage() {
   }) => {
     setSaving(true);
     try {
-      await changeAccountPassword(values);
+      await changeAccountPassword({
+        current_password: values.current_password,
+        new_password: values.new_password,
+      });
       message.success(
         intl.formatMessage({ id: 'account.settings.password.success' }),
       );

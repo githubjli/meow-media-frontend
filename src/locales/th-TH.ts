@@ -485,6 +485,8 @@ export default {
   'account.profile.edit.title': 'แก้ไขโปรไฟล์',
   'account.profile.edit.username': 'ชื่อผู้ใช้',
   'account.profile.edit.username.placeholder': 'กรอกชื่อผู้ใช้',
+  'account.profile.edit.displayName': 'ชื่อที่แสดง',
+  'account.profile.edit.displayName.placeholder': 'กรอกชื่อที่แสดง',
   'account.profile.edit.bio': 'ประวัติย่อ',
   'account.profile.edit.bio.placeholder': 'เพิ่มคำอธิบายสั้น ๆ',
   'account.profile.edit.save': 'บันทึก',
