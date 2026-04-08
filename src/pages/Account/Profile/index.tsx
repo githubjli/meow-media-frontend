@@ -41,7 +41,7 @@ const toNumber = (value: any) => {
 
 export default function AccountProfilePage() {
   const intl = useIntl();
-  const { initialState } = useModel('@@initialState');
+  const { initialState, setInitialState } = useModel('@@initialState');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -191,6 +191,16 @@ export default function AccountProfilePage() {
         avatar_clear: avatarRemoved,
       });
       setProfile(updated);
+      await setInitialState((prev) => ({
+        ...prev,
+        currentUser: {
+          ...(prev?.currentUser || {}),
+          display_name: updated?.display_name,
+          username: updated?.username,
+          bio: updated?.bio,
+          avatar_url: updated?.avatar_url || updated?.avatar || undefined,
+        },
+      }));
       form.setFieldsValue({
         display_name: updated?.display_name || '',
         bio: updated?.bio || '',
@@ -248,12 +258,14 @@ export default function AccountProfilePage() {
                   {secondaryIdentity ? (
                     <Text type="secondary">{secondaryIdentity}</Text>
                   ) : null}
-                  <Text type="secondary">
-                    {intl.formatMessage({
-                      id: 'account.profile.identity.email',
-                    })}
-                    : {profile.email || '-'}
-                  </Text>
+                  {profile.email && profile.email !== displayName ? (
+                    <Text type="secondary">
+                      {intl.formatMessage({
+                        id: 'account.profile.identity.email',
+                      })}
+                      : {profile.email}
+                    </Text>
+                  ) : null}
                   {profile.bio ? (
                     <Paragraph type="secondary" style={{ marginBottom: 0 }}>
                       {profile.bio}

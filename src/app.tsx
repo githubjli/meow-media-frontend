@@ -250,12 +250,16 @@ export const layout: RunTimeLayoutConfig = ({
   const sellerHasStore = Boolean(initialState?.sellerHasStore);
   const canUseGoLive = !isLoggedIn || isCreator;
   const displayName =
-    currentUser?.name || currentUser?.username || currentUser?.email || '';
+    currentUser?.display_name ||
+    currentUser?.name ||
+    currentUser?.username ||
+    currentUser?.email ||
+    '';
   const secondaryIdentity =
-    currentUser?.email && currentUser.email !== displayName
-      ? currentUser.email
-      : currentUser?.username && currentUser.username !== displayName
+    currentUser?.username && currentUser.username !== displayName
       ? currentUser.username
+      : currentUser?.email && currentUser.email !== displayName
+      ? currentUser.email
       : '';
   const profileHints = [
     isCreator
@@ -637,7 +641,11 @@ export const layout: RunTimeLayoutConfig = ({
                   disabled: true,
                   label: (
                     <Space size={10} style={{ width: '100%' }}>
-                      <Avatar size={30} icon={<UserOutlined />} />
+                      <Avatar
+                        size={30}
+                        src={currentUser?.avatar_url || undefined}
+                        icon={<UserOutlined />}
+                      />
                       <Space
                         direction="vertical"
                         size={1}
@@ -800,7 +808,11 @@ export const layout: RunTimeLayoutConfig = ({
             }}
           >
             <Space size={8} style={{ marginLeft: 6, cursor: 'pointer' }}>
-              <Avatar size={32} icon={<UserOutlined />} />
+              <Avatar
+                size={32}
+                src={currentUser?.avatar_url || undefined}
+                icon={<UserOutlined />}
+              />
               <Tag
                 bordered={false}
                 style={{
@@ -811,7 +823,7 @@ export const layout: RunTimeLayoutConfig = ({
                 }}
               >
                 <Text style={{ fontWeight: 600, maxWidth: 150 }} ellipsis>
-                  {currentUser?.email}
+                  {displayName}
                 </Text>
               </Tag>
             </Space>
