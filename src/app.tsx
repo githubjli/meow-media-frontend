@@ -482,7 +482,7 @@ export const layout: RunTimeLayoutConfig = ({
           return {
             name,
             path: `/categories/${slug}`,
-            icon: getCategoryIcon(slug),
+            icon: getCategoryIcon(),
             className: 'sidebar-menu-item sidebar-menu-item-category',
           };
         },
