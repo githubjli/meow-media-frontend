@@ -733,6 +733,12 @@ export const layout: RunTimeLayoutConfig = ({
                   type: 'divider',
                 },
                 {
+                  key: 'language',
+                  icon: <CompassOutlined />,
+                  label: intl.formatMessage({ id: 'nav.language' }),
+                  children: languageMenuItems as any,
+                },
+                {
                   key: 'theme-menu',
                   icon: <BgColorsOutlined />,
                   label: intl.formatMessage({ id: 'nav.theme' }),
