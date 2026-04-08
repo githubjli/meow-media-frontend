@@ -57,6 +57,12 @@ const LANGUAGE_LABELS: Record<string, string> = {
   'th-TH': 'ไทย',
   'my-MM': 'မြန်မာ',
 };
+const LANGUAGE_SHORT_LABELS: Record<string, string> = {
+  'en-US': 'EN',
+  'zh-CN': '中',
+  'th-TH': 'TH',
+  'my-MM': 'MM',
+};
 const SUPPORTED_LOCALES = new Set(Object.keys(LANGUAGE_LABELS));
 
 const resolveSupportedLocale = (value?: string | null) => {
@@ -303,6 +309,12 @@ export const layout: RunTimeLayoutConfig = ({
       onClick: () => setLocale('my-MM', true),
     },
   ] as const;
+  const currentLocale =
+    (intl as any)?.locale ||
+    (typeof window !== 'undefined' ? localStorage.getItem('umi_locale') : '') ||
+    'en-US';
+  const currentLocaleLabel =
+    LANGUAGE_SHORT_LABELS[currentLocale] || LANGUAGE_SHORT_LABELS['en-US'];
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -621,6 +633,25 @@ export const layout: RunTimeLayoutConfig = ({
           }}
           onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
         />
+        <Dropdown
+          trigger={['click']}
+          menu={{ items: languageMenuItems as any }}
+        >
+          <Button
+            type="text"
+            icon={<GlobalOutlined />}
+            style={{
+              ...utilityButtonStyle,
+              width: 'auto',
+              minWidth: 58,
+              paddingInline: 10,
+              fontSize: 14,
+              color: isDark ? '#EFBC5C' : '#4b5563',
+            }}
+          >
+            {currentLocaleLabel}
+          </Button>
+        </Dropdown>
         {isLoggedIn ? (
           <Dropdown
             trigger={['click']}
