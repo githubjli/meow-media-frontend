@@ -571,6 +571,20 @@ export const layout: RunTimeLayoutConfig = ({
         size={6}
         style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
       >
+        <Dropdown
+          trigger={['click']}
+          menu={{ items: languageMenuItems as any }}
+        >
+          <Button
+            type="text"
+            icon={<GlobalOutlined />}
+            style={{
+              ...utilityButtonStyle,
+              fontSize: 18,
+              color: isDark ? '#EFBC5C' : '#4b5563',
+            }}
+          />
+        </Dropdown>
         <Tooltip
           title={
             canUseGoLive
