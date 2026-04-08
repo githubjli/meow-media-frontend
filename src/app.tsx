@@ -628,12 +628,23 @@ export const layout: RunTimeLayoutConfig = ({
         />
       </div>
     ),
-    rightContentRender: () => (
-      <Space
-        size={6}
-        align="center"
-        style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
-      >
+    rightContentRender: () => {
+      const utilityButtonStyle = {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: isDark ? '#E4D5C5' : '#4b5563',
+      } as const;
+
+      return (
+        <Space
+          size={6}
+          align="center"
+          style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
+        >
         <Tooltip
           title={
             canUseGoLive
@@ -915,8 +926,9 @@ export const layout: RunTimeLayoutConfig = ({
             </Button>
           </Space>
         )}
-      </Space>
-    ),
+        </Space>
+      );
+    },
     menuProps: {
       selectedKeys: [
         resolveMenuSelectedPath(
