@@ -340,15 +340,6 @@ export const layout: RunTimeLayoutConfig = ({
       ? { key: 'profile-hint-admin', label: 'nav.profile.role.admin' }
       : null,
   ].filter(Boolean) as Array<{ key: string; label: string }>;
-  const utilityButtonStyle = {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: isDark ? '#E4D5C5' : '#4b5563',
-  } as const;
   const languageMenuItems = [
     {
       key: 'lang-en-us',
