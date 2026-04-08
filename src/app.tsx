@@ -34,7 +34,7 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { history, setLocale, useIntl } from '@umijs/max';
+import { getIntl, history, setLocale } from '@umijs/max';
 import {
   Avatar,
   Button,
@@ -48,7 +48,7 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import { useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 const { Text } = Typography;
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -56,12 +56,6 @@ const LANGUAGE_LABELS: Record<string, string> = {
   'zh-CN': '中文',
   'th-TH': 'ไทย',
   'my-MM': 'မြန်မာ',
-};
-const LANGUAGE_SHORT_LABELS: Record<string, string> = {
-  'en-US': 'EN',
-  'zh-CN': '中',
-  'th-TH': 'TH',
-  'my-MM': 'MM',
 };
 const SUPPORTED_LOCALES = new Set(Object.keys(LANGUAGE_LABELS));
 
@@ -83,8 +77,76 @@ const resolveSystemDarkTheme = () => {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 };
 
-const getCategoryIcon = (slug?: string) => {
+const getCategoryIcon = () => {
   return <ReadOutlined />;
+};
+
+let hasInitializedLocale = false;
+
+const initializeLocaleOnce = () => {
+  if (hasInitializedLocale || typeof window === 'undefined') return;
+  hasInitializedLocale = true;
+
+  const storedLocale = localStorage.getItem('umi_locale');
+  if (storedLocale && SUPPORTED_LOCALES.has(storedLocale)) return;
+
+  const browserLocale =
+    (navigator.languages && navigator.languages[0]) || navigator.language;
+  const nextLocale = resolveSupportedLocale(browserLocale);
+  setLocale(nextLocale, true);
+};
+
+const LayoutChildrenWrapper = ({
+  children,
+  isDark,
+}: {
+  children: ReactNode;
+  isDark?: boolean;
+}) => {
+  useEffect(() => {
+    const favicon = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+    const iconPath = '/favicon.ico';
+    if (favicon) {
+      favicon.href = iconPath;
+    }
+    document.body.dataset.theme = isDark ? 'dark' : 'light';
+  }, [isDark]);
+
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#B8872E',
+          borderRadius: 12,
+          ...(isDark
+            ? {
+                colorBgBase: '#1F1A16',
+                colorBgContainer: '#2A241F',
+                colorText: '#F5F1EA',
+                colorTextSecondary: '#CBBBAA',
+                colorBorder: 'rgba(255,255,255,0.08)',
+                colorFillSecondary: 'rgba(255,255,255,0.08)',
+                colorFillTertiary: 'rgba(255,255,255,0.06)',
+              }
+            : {}),
+        },
+        components: {
+          Input: {
+            borderRadiusLG: 12,
+            colorBgContainer: isDark ? 'rgba(255,255,255,0.04)' : undefined,
+            colorText: isDark ? '#F5F1EA' : undefined,
+            colorBorder: isDark ? 'rgba(255,255,255,0.12)' : undefined,
+          },
+          Button: {
+            borderRadius: 9,
+          },
+        },
+      }}
+    >
+      {children}
+    </ConfigProvider>
+  );
 };
 
 const getCommerceIcon = (slug?: string) => {
@@ -247,7 +309,7 @@ export const layout: RunTimeLayoutConfig = ({
   initialState,
   setInitialState,
 }) => {
-  const intl = useIntl();
+  const intl = getIntl();
   const isDark = initialState?.darkTheme;
   const currentUser = initialState?.currentUser;
   const isLoggedIn = Boolean(currentUser?.email);
@@ -278,15 +340,6 @@ export const layout: RunTimeLayoutConfig = ({
       ? { key: 'profile-hint-admin', label: 'nav.profile.role.admin' }
       : null,
   ].filter(Boolean) as Array<{ key: string; label: string }>;
-  const utilityButtonStyle = {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: isDark ? '#E4D5C5' : '#4b5563',
-  } as const;
   const languageMenuItems = [
     {
       key: 'lang-en-us',
@@ -309,26 +362,7 @@ export const layout: RunTimeLayoutConfig = ({
       onClick: () => setLocale('my-MM', true),
     },
   ] as const;
-  const currentLocale =
-    (intl as any)?.locale ||
-    (typeof window !== 'undefined' ? localStorage.getItem('umi_locale') : '') ||
-    'en-US';
-  const currentLocaleLabel =
-    LANGUAGE_SHORT_LABELS[currentLocale] || LANGUAGE_SHORT_LABELS['en-US'];
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const storedLocale = localStorage.getItem('umi_locale');
-    if (storedLocale && SUPPORTED_LOCALES.has(storedLocale)) {
-      return;
-    }
-
-    const browserLocale =
-      (navigator.languages && navigator.languages[0]) || navigator.language;
-    const nextLocale = resolveSupportedLocale(browserLocale);
-    setLocale(nextLocale, true);
-  }, []);
+  initializeLocaleOnce();
 
   const handleGoLiveClick = () => {
     if (isLoggedIn && !isCreator) {
@@ -375,11 +409,11 @@ export const layout: RunTimeLayoutConfig = ({
     menuHeaderRender: false,
     menuDataRender: (menuData) => {
       const stableItemMap = new Map<string, any>([
-        ['/home', <VideoCameraOutlined />],
-        ['/browse', <CompassOutlined />],
-        ['/news', <NotificationOutlined />],
-        ['/live', <ThunderboltOutlined />],
-        ['/admin/videos', <SettingOutlined />],
+        ['/home', <VideoCameraOutlined key="icon-home" />],
+        ['/browse', <CompassOutlined key="icon-browse" />],
+        ['/news', <NotificationOutlined key="icon-news" />],
+        ['/live', <ThunderboltOutlined key="icon-live" />],
+        ['/admin/videos', <SettingOutlined key="icon-admin-videos" />],
       ]);
       const stableItems = menuData.filter(
         (item) => item.path && stableItemMap.has(item.path),
@@ -436,7 +470,7 @@ export const layout: RunTimeLayoutConfig = ({
           return {
             name,
             path: `/categories/${slug}`,
-            icon: getCategoryIcon(slug),
+            icon: getCategoryIcon(),
             className: 'sidebar-menu-item sidebar-menu-item-category',
           };
         },
@@ -582,12 +616,23 @@ export const layout: RunTimeLayoutConfig = ({
         />
       </div>
     ),
-    rightContentRender: () => (
-      <Space
-        size={6}
-        align="center"
-        style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
-      >
+    rightContentRender: () => {
+      const utilityButtonStyle = {
+        width: 30,
+        height: 30,
+        borderRadius: 10,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: isDark ? '#E4D5C5' : '#4b5563',
+      } as const;
+
+      return (
+        <Space
+          size={6}
+          align="center"
+          style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
+        >
         <Tooltip
           title={
             canUseGoLive
@@ -600,7 +645,7 @@ export const layout: RunTimeLayoutConfig = ({
             icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
             style={{
               borderRadius: 10,
-              height: 40,
+              height: 30,
               display: 'inline-flex',
               alignItems: 'center',
               fontWeight: 700,
@@ -623,7 +668,7 @@ export const layout: RunTimeLayoutConfig = ({
             isDark ? (
               <SunOutlined style={{ color: '#faad14' }} />
             ) : (
-              <MoonOutlined />
+              <MoonOutlined style={{ fontSize: 16 }} />
             )
           }
           style={{
@@ -639,18 +684,12 @@ export const layout: RunTimeLayoutConfig = ({
         >
           <Button
             type="text"
-            icon={<GlobalOutlined />}
+            icon={<GlobalOutlined style={{ fontSize: 16 }} />}
             style={{
               ...utilityButtonStyle,
-              width: 'auto',
-              minWidth: 58,
-              paddingInline: 10,
-              fontSize: 14,
               color: isDark ? '#EFBC5C' : '#4b5563',
             }}
-          >
-            {currentLocaleLabel}
-          </Button>
+          />
         </Dropdown>
         {isLoggedIn ? (
           <Dropdown
@@ -869,8 +908,9 @@ export const layout: RunTimeLayoutConfig = ({
             </Button>
           </Space>
         )}
-      </Space>
-    ),
+        </Space>
+      );
+    },
     menuProps: {
       selectedKeys: [
         resolveMenuSelectedPath(
@@ -891,52 +931,7 @@ export const layout: RunTimeLayoutConfig = ({
       },
     },
     childrenRender: (children) => {
-      useEffect(() => {
-        const favicon = document.querySelector(
-          "link[rel*='icon']",
-        ) as HTMLLinkElement;
-        const iconPath = '/favicon.ico';
-        if (favicon) {
-          favicon.href = iconPath;
-        }
-        document.body.dataset.theme = isDark ? 'dark' : 'light';
-      }, [isDark]);
-
-      return (
-        <ConfigProvider
-          theme={{
-            algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-            token: {
-              colorPrimary: '#B8872E',
-              borderRadius: 12,
-              ...(isDark
-                ? {
-                    colorBgBase: '#1F1A16',
-                    colorBgContainer: '#2A241F',
-                    colorText: '#F5F1EA',
-                    colorTextSecondary: '#CBBBAA',
-                    colorBorder: 'rgba(255,255,255,0.08)',
-                    colorFillSecondary: 'rgba(255,255,255,0.08)',
-                    colorFillTertiary: 'rgba(255,255,255,0.06)',
-                  }
-                : {}),
-            },
-            components: {
-              Input: {
-                borderRadiusLG: 12,
-                colorBgContainer: isDark ? 'rgba(255,255,255,0.04)' : undefined,
-                colorText: isDark ? '#F5F1EA' : undefined,
-                colorBorder: isDark ? 'rgba(255,255,255,0.12)' : undefined,
-              },
-              Button: {
-                borderRadius: 9,
-              },
-            },
-          }}
-        >
-          {children}
-        </ConfigProvider>
-      );
+      return <LayoutChildrenWrapper isDark={isDark}>{children}</LayoutChildrenWrapper>;
     },
   };
 };
