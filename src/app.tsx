@@ -362,18 +362,6 @@ export const layout: RunTimeLayoutConfig = ({
       onClick: () => setLocale('my-MM', true),
     },
   ] as const;
-  const localeShortLabels: Record<string, string> = {
-    'en-US': 'EN',
-    'zh-CN': '中',
-    'th-TH': 'TH',
-    'my-MM': 'MM',
-  };
-  const currentLocale =
-    (intl as any)?.locale ||
-    (typeof window !== 'undefined' ? localStorage.getItem('umi_locale') : '') ||
-    'en-US';
-  const currentLocaleLabel =
-    localeShortLabels[currentLocale] || localeShortLabels['en-US'];
   initializeLocaleOnce();
 
   const handleGoLiveClick = () => {
@@ -630,8 +618,8 @@ export const layout: RunTimeLayoutConfig = ({
     ),
     rightContentRender: () => {
       const utilityButtonStyle = {
-        width: 40,
-        height: 40,
+        width: 30,
+        height: 30,
         borderRadius: 10,
         display: 'inline-flex',
         alignItems: 'center',
@@ -657,7 +645,7 @@ export const layout: RunTimeLayoutConfig = ({
             icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
             style={{
               borderRadius: 10,
-              height: 40,
+              height: 30,
               display: 'inline-flex',
               alignItems: 'center',
               fontWeight: 700,
@@ -699,15 +687,9 @@ export const layout: RunTimeLayoutConfig = ({
             icon={<GlobalOutlined />}
             style={{
               ...utilityButtonStyle,
-              width: 'auto',
-              minWidth: 58,
-              paddingInline: 10,
-              fontSize: 14,
               color: isDark ? '#EFBC5C' : '#4b5563',
             }}
-          >
-            {currentLocaleLabel}
-          </Button>
+          />
         </Dropdown>
         {isLoggedIn ? (
           <Dropdown
