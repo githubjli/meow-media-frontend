@@ -45,6 +45,7 @@ import {
   Space,
   Tag,
   theme,
+  Tooltip,
   Typography,
 } from 'antd';
 import { useEffect } from 'react';
@@ -247,6 +248,30 @@ export const layout: RunTimeLayoutConfig = ({
   const isAdmin = isAdminUser(currentUser);
   const isCreator = isCreatorUser(currentUser);
   const sellerHasStore = Boolean(initialState?.sellerHasStore);
+  const canUseGoLive = !isLoggedIn || isCreator;
+  const displayName =
+    currentUser?.display_name ||
+    currentUser?.name ||
+    currentUser?.username ||
+    currentUser?.email ||
+    '';
+  const secondaryIdentity =
+    currentUser?.username && currentUser.username !== displayName
+      ? currentUser.username
+      : currentUser?.email && currentUser.email !== displayName
+      ? currentUser.email
+      : '';
+  const profileHints = [
+    isCreator
+      ? { key: 'profile-hint-creator', label: 'nav.profile.role.creator' }
+      : null,
+    sellerHasStore
+      ? { key: 'profile-hint-seller', label: 'nav.profile.role.seller' }
+      : null,
+    isAdmin
+      ? { key: 'profile-hint-admin', label: 'nav.profile.role.admin' }
+      : null,
+  ].filter(Boolean) as Array<{ key: string; label: string }>;
   const utilityButtonStyle = {
     width: 40,
     height: 40,
@@ -550,7 +575,13 @@ export const layout: RunTimeLayoutConfig = ({
         size={6}
         style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
       >
-        {!isLoggedIn || isCreator ? (
+        <Tooltip
+          title={
+            canUseGoLive
+              ? undefined
+              : intl.formatMessage({ id: 'nav.goLive.disabledHint' })
+          }
+        >
           <Button
             type="primary"
             icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
@@ -565,10 +596,11 @@ export const layout: RunTimeLayoutConfig = ({
                 : '0 8px 18px rgba(184, 135, 46, 0.2)',
             }}
             onClick={handleGoLiveClick}
+            disabled={!canUseGoLive}
           >
             {intl.formatMessage({ id: 'nav.goLive' })}
           </Button>
-        ) : null}
+        </Tooltip>
         <Button
           type="text"
           icon={
@@ -609,17 +641,67 @@ export const layout: RunTimeLayoutConfig = ({
                   disabled: true,
                   label: (
                     <Space size={10} style={{ width: '100%' }}>
-                      <Avatar size={30} icon={<UserOutlined />} />
-                      <Text style={{ fontWeight: 600, maxWidth: 180 }} ellipsis>
-                        {currentUser?.name ||
-                          currentUser?.username ||
-                          currentUser?.email}
-                      </Text>
+                      <Avatar
+                        size={30}
+                        src={
+                          currentUser?.avatar_url ||
+                          currentUser?.avatar ||
+                          undefined
+                        }
+                        icon={<UserOutlined />}
+                      />
+                      <Space
+                        direction="vertical"
+                        size={1}
+                        style={{ minWidth: 0, lineHeight: 1.2 }}
+                      >
+                        <Text
+                          style={{ fontWeight: 600, maxWidth: 180 }}
+                          ellipsis
+                        >
+                          {displayName}
+                        </Text>
+                        {secondaryIdentity ? (
+                          <Text
+                            type="secondary"
+                            style={{ fontSize: 12, maxWidth: 180 }}
+                            ellipsis
+                          >
+                            {secondaryIdentity}
+                          </Text>
+                        ) : null}
+                        {profileHints.length > 0 ? (
+                          <Space size={4} wrap>
+                            {profileHints.map((hint) => (
+                              <Tag
+                                key={hint.key}
+                                bordered={false}
+                                color="gold"
+                                style={{
+                                  borderRadius: 999,
+                                  marginInlineEnd: 0,
+                                  paddingInline: 6,
+                                  fontSize: 11,
+                                  lineHeight: '18px',
+                                }}
+                              >
+                                {intl.formatMessage({ id: hint.label })}
+                              </Tag>
+                            ))}
+                          </Space>
+                        ) : null}
+                      </Space>
                     </Space>
                   ),
                 },
                 {
                   type: 'divider',
+                },
+                {
+                  key: 'profile-dashboard',
+                  icon: <UserOutlined />,
+                  label: intl.formatMessage({ id: 'nav.profile' }),
+                  onClick: () => history.push('/profile'),
                 },
                 {
                   key: 'my-videos',
@@ -628,44 +710,36 @@ export const layout: RunTimeLayoutConfig = ({
                   onClick: () => history.push('/videos/mine'),
                 },
                 {
-                  key: 'my-payment-orders',
-                  icon: <DollarOutlined />,
-                  label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
-                  onClick: () => history.push('/account/payment-orders'),
-                },
-                {
                   key: 'upload-video',
                   icon: <UploadOutlined />,
                   label: intl.formatMessage({ id: 'nav.uploadVideo' }),
                   onClick: () => history.push('/videos/upload'),
                 },
-                ...(isCreator
+                {
+                  key: 'go-live',
+                  icon: <VideoCameraOutlined />,
+                  label: intl.formatMessage({ id: 'nav.goLive' }),
+                  onClick: handleGoLiveClick,
+                  disabled: !isCreator,
+                },
+                {
+                  type: 'divider',
+                },
+                ...(sellerHasStore
                   ? [
                       {
-                        key: 'go-live',
-                        icon: <VideoCameraOutlined />,
-                        label: intl.formatMessage({ id: 'nav.goLive' }),
-                        onClick: handleGoLiveClick,
-                      } as const,
-                    ]
-                  : []),
-                ...(isAdmin
-                  ? [
-                      {
-                        key: 'all-videos',
-                        icon: <SettingOutlined />,
-                        label: intl.formatMessage({ id: 'nav.allVideos' }),
-                        onClick: () => history.push('/admin/videos'),
+                        key: 'seller-center',
+                        icon: <ShopOutlined />,
+                        label: intl.formatMessage({ id: 'nav.myStore' }),
+                        onClick: () => history.push('/seller/store'),
                       } as const,
                     ]
                   : []),
                 {
-                  key: 'seller-center',
-                  icon: <ShopOutlined />,
-                  label: intl.formatMessage({
-                    id: sellerHasStore ? 'nav.myStore' : 'nav.openStore',
-                  }),
-                  onClick: () => history.push('/seller/store'),
+                  key: 'my-payment-orders',
+                  icon: <DollarOutlined />,
+                  label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
+                  onClick: () => history.push('/account/payment-orders'),
                 },
                 {
                   type: 'divider',
@@ -699,12 +773,26 @@ export const layout: RunTimeLayoutConfig = ({
                   key: 'settings',
                   icon: <SettingOutlined />,
                   label: intl.formatMessage({ id: 'nav.settings' }),
+                  onClick: () => history.push('/settings'),
                 },
                 {
                   key: 'help',
                   icon: <QuestionCircleOutlined />,
                   label: intl.formatMessage({ id: 'nav.help' }),
                 },
+                ...(isAdmin
+                  ? ([
+                      {
+                        type: 'divider',
+                      },
+                      {
+                        key: 'all-videos',
+                        icon: <SettingOutlined />,
+                        label: intl.formatMessage({ id: 'nav.allVideos' }),
+                        onClick: () => history.push('/admin/videos'),
+                      },
+                    ] as const)
+                  : []),
                 {
                   type: 'divider',
                 },
@@ -718,20 +806,13 @@ export const layout: RunTimeLayoutConfig = ({
             }}
           >
             <Space size={8} style={{ marginLeft: 6, cursor: 'pointer' }}>
-              <Avatar size={32} icon={<UserOutlined />} />
-              <Tag
-                bordered={false}
-                style={{
-                  marginInlineEnd: 0,
-                  borderRadius: 999,
-                  paddingInline: 10,
-                  maxWidth: 180,
-                }}
-              >
-                <Text style={{ fontWeight: 600, maxWidth: 150 }} ellipsis>
-                  {currentUser?.email}
-                </Text>
-              </Tag>
+              <Avatar
+                size={32}
+                src={
+                  currentUser?.avatar_url || currentUser?.avatar || undefined
+                }
+                icon={<UserOutlined />}
+              />
             </Space>
           </Dropdown>
         ) : (
