@@ -686,6 +686,12 @@ export const layout: RunTimeLayoutConfig = ({
                   type: 'divider',
                 },
                 {
+                  key: 'profile-dashboard',
+                  icon: <UserOutlined />,
+                  label: intl.formatMessage({ id: 'nav.profile' }),
+                  onClick: () => history.push('/profile'),
+                },
+                {
                   key: 'my-videos',
                   icon: <PlaySquareOutlined />,
                   label: intl.formatMessage({ id: 'nav.myVideos' }),
