@@ -617,20 +617,6 @@ export const layout: RunTimeLayoutConfig = ({
           }}
           onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
         />
-        <Dropdown
-          trigger={['click']}
-          menu={{ items: languageMenuItems as any }}
-        >
-          <Button
-            type="text"
-            icon={<GlobalOutlined />}
-            style={{
-              ...utilityButtonStyle,
-              fontSize: 18,
-              color: isDark ? '#EFBC5C' : '#4b5563',
-            }}
-          />
-        </Dropdown>
         {isLoggedIn ? (
           <Dropdown
             trigger={['click']}
@@ -743,6 +729,12 @@ export const layout: RunTimeLayoutConfig = ({
                 },
                 {
                   type: 'divider',
+                },
+                {
+                  key: 'language',
+                  icon: <CompassOutlined />,
+                  label: intl.formatMessage({ id: 'nav.language' }),
+                  children: languageMenuItems as any,
                 },
                 {
                   key: 'theme-menu',
