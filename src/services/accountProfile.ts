@@ -4,6 +4,7 @@ export type AccountProfileResponse = {
   id: number | string;
   email: string;
   display_name?: string | null;
+  username?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   avatar?: string | null;
@@ -39,5 +40,52 @@ export async function getAccountProfile() {
   return requestJson<AccountProfileResponse>('/api/account/profile', {
     method: 'GET',
     headers: await withAuth(),
+  });
+}
+
+export type UpdateAccountProfilePayload = {
+  username?: string;
+  bio?: string;
+  avatar?: File | null;
+};
+
+export async function updateAccountProfile(
+  payload: UpdateAccountProfilePayload,
+) {
+  const headers = await withAuth();
+  const hasAvatarFile = payload.avatar instanceof File;
+
+  if (hasAvatarFile) {
+    const formData = new FormData();
+    if (typeof payload.username === 'string') {
+      formData.append('username', payload.username);
+    }
+    if (typeof payload.bio === 'string') {
+      formData.append('bio', payload.bio);
+    }
+    formData.append('avatar', payload.avatar as File);
+
+    return requestJson<AccountProfileResponse>('/api/account/profile', {
+      method: 'PATCH',
+      headers,
+      body: formData,
+    });
+  }
+
+  const jsonPayload: Record<string, any> = {};
+  if (typeof payload.username === 'string') {
+    jsonPayload.username = payload.username;
+  }
+  if (typeof payload.bio === 'string') {
+    jsonPayload.bio = payload.bio;
+  }
+  if (payload.avatar === null) {
+    jsonPayload.avatar = null;
+  }
+
+  return requestJson<AccountProfileResponse>('/api/account/profile', {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify(jsonPayload),
   });
 }

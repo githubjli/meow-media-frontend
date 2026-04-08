@@ -1,9 +1,12 @@
 import PageIntroCard from '@/components/PageIntroCard';
 import {
   getAccountProfile,
+  updateAccountProfile,
   type AccountProfileResponse,
 } from '@/services/accountProfile';
 import {
+  DeleteOutlined,
+  SaveOutlined,
   ShopOutlined,
   UserOutlined,
   VideoCameraOutlined,
@@ -17,11 +20,15 @@ import {
   Card,
   Col,
   Empty,
+  Form,
+  Input,
   Row,
   Skeleton,
   Space,
   Tag,
   Typography,
+  Upload,
+  message,
 } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -36,8 +43,14 @@ export default function AccountProfilePage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [profile, setProfile] = useState<AccountProfileResponse | null>(null);
+  const [form] = Form.useForm();
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(
+    null,
+  );
+  const [avatarRemoved, setAvatarRemoved] = useState(false);
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
 
@@ -55,7 +68,13 @@ export default function AccountProfilePage() {
     setErrorMessage('');
 
     getAccountProfile()
-      .then((data) => setProfile(data || null))
+      .then((data) => {
+        setProfile(data || null);
+        form.setFieldsValue({
+          username: data?.username || '',
+          bio: data?.bio || '',
+        });
+      })
       .catch((error: any) =>
         setErrorMessage(
           error?.message ||
@@ -63,18 +82,31 @@ export default function AccountProfilePage() {
         ),
       )
       .finally(() => setLoading(false));
-  }, [initialState?.authLoading, intl, isLoggedIn]);
+  }, [form, initialState?.authLoading, intl, isLoggedIn]);
 
   const displayName =
     profile?.display_name ||
-    [profile?.first_name, profile?.last_name]
-      .filter(Boolean)
-      .join(' ')
-      .trim() ||
+    profile?.username ||
     profile?.email ||
     intl.formatMessage({ id: 'account.profile.identity.fallbackName' });
   const secondaryIdentity =
     profile?.email && profile.email !== displayName ? profile.email : '';
+  const avatarPreview = useMemo(() => {
+    if (!selectedAvatarFile) {
+      return avatarRemoved
+        ? undefined
+        : profile?.avatar_url || profile?.avatar || undefined;
+    }
+    return URL.createObjectURL(selectedAvatarFile);
+  }, [avatarRemoved, profile?.avatar, profile?.avatar_url, selectedAvatarFile]);
+
+  useEffect(() => {
+    return () => {
+      if (selectedAvatarFile && avatarPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview, selectedAvatarFile]);
 
   const isAdmin = Boolean(profile?.is_admin);
   const isCreator = Boolean(profile?.is_creator);
@@ -146,6 +178,37 @@ export default function AccountProfilePage() {
     },
   ];
 
+  const handleSaveProfile = async (values: {
+    username?: string;
+    bio?: string;
+  }) => {
+    setSaving(true);
+    try {
+      const updated = await updateAccountProfile({
+        username: values.username || '',
+        bio: values.bio || '',
+        avatar: avatarRemoved ? null : selectedAvatarFile,
+      });
+      setProfile(updated);
+      form.setFieldsValue({
+        username: updated?.username || '',
+        bio: updated?.bio || '',
+      });
+      setSelectedAvatarFile(null);
+      setAvatarRemoved(false);
+      message.success(
+        intl.formatMessage({ id: 'account.profile.edit.success' }),
+      );
+    } catch (error: any) {
+      message.error(
+        error?.message ||
+          intl.formatMessage({ id: 'account.profile.edit.error' }),
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <PageContainer title={false}>
       <Space direction="vertical" size={16} style={{ width: '100%' }}>
@@ -184,6 +247,12 @@ export default function AccountProfilePage() {
                   {secondaryIdentity ? (
                     <Text type="secondary">{secondaryIdentity}</Text>
                   ) : null}
+                  <Text type="secondary">
+                    {intl.formatMessage({
+                      id: 'account.profile.identity.email',
+                    })}
+                    : {profile.email || '-'}
+                  </Text>
                   {profile.bio ? (
                     <Paragraph type="secondary" style={{ marginBottom: 0 }}>
                       {profile.bio}
@@ -231,6 +300,110 @@ export default function AccountProfilePage() {
                 </Space>
               </Card>
             ) : null}
+
+            <Card
+              title={intl.formatMessage({ id: 'account.profile.edit.title' })}
+              variant="borderless"
+              style={{ borderRadius: 20 }}
+            >
+              <Form
+                layout="vertical"
+                form={form}
+                onFinish={handleSaveProfile}
+                initialValues={{
+                  username: profile?.username || '',
+                  bio: profile?.bio || '',
+                }}
+              >
+                <Space direction="vertical" size={14} style={{ width: '100%' }}>
+                  <Space align="center" size={16}>
+                    <Avatar
+                      size={56}
+                      src={avatarPreview}
+                      icon={<UserOutlined />}
+                    />
+                    <Space wrap>
+                      <Upload
+                        showUploadList={false}
+                        accept="image/*"
+                        beforeUpload={(file) => {
+                          setSelectedAvatarFile(file);
+                          setAvatarRemoved(false);
+                          return false;
+                        }}
+                      >
+                        <Button>
+                          {intl.formatMessage({
+                            id: 'account.profile.avatar.change',
+                          })}
+                        </Button>
+                      </Upload>
+                      <Button
+                        icon={<DeleteOutlined />}
+                        onClick={() => {
+                          setSelectedAvatarFile(null);
+                          setAvatarRemoved(true);
+                        }}
+                      >
+                        {intl.formatMessage({
+                          id: 'account.profile.avatar.remove',
+                        })}
+                      </Button>
+                    </Space>
+                  </Space>
+
+                  <Form.Item
+                    name="username"
+                    label={intl.formatMessage({
+                      id: 'account.profile.edit.username',
+                    })}
+                  >
+                    <Input
+                      placeholder={intl.formatMessage({
+                        id: 'account.profile.edit.username.placeholder',
+                      })}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name="bio"
+                    label={intl.formatMessage({
+                      id: 'account.profile.edit.bio',
+                    })}
+                  >
+                    <Input.TextArea
+                      rows={3}
+                      placeholder={intl.formatMessage({
+                        id: 'account.profile.edit.bio.placeholder',
+                      })}
+                    />
+                  </Form.Item>
+                  <Space>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      icon={<SaveOutlined />}
+                      loading={saving}
+                    >
+                      {intl.formatMessage({ id: 'account.profile.edit.save' })}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        form.setFieldsValue({
+                          username: profile?.username || '',
+                          bio: profile?.bio || '',
+                        });
+                        setSelectedAvatarFile(null);
+                        setAvatarRemoved(false);
+                      }}
+                    >
+                      {intl.formatMessage({
+                        id: 'account.profile.edit.cancel',
+                      })}
+                    </Button>
+                  </Space>
+                </Space>
+              </Form>
+            </Card>
 
             <Card
               title={intl.formatMessage({ id: 'account.profile.counts.title' })}

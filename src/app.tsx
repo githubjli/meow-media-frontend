@@ -767,6 +767,7 @@ export const layout: RunTimeLayoutConfig = ({
                   key: 'settings',
                   icon: <SettingOutlined />,
                   label: intl.formatMessage({ id: 'nav.settings' }),
+                  onClick: () => history.push('/settings'),
                 },
                 {
                   key: 'help',
