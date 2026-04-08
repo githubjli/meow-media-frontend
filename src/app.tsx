@@ -34,7 +34,7 @@ import {
   VideoCameraOutlined,
 } from '@ant-design/icons';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { history, setLocale, useIntl } from '@umijs/max';
+import { getIntl, history, setLocale } from '@umijs/max';
 import {
   Avatar,
   Button,
@@ -48,7 +48,7 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import { useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 const { Text } = Typography;
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -83,8 +83,76 @@ const resolveSystemDarkTheme = () => {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 };
 
-const getCategoryIcon = (slug?: string) => {
+const getCategoryIcon = () => {
   return <ReadOutlined />;
+};
+
+let hasInitializedLocale = false;
+
+const initializeLocaleOnce = () => {
+  if (hasInitializedLocale || typeof window === 'undefined') return;
+  hasInitializedLocale = true;
+
+  const storedLocale = localStorage.getItem('umi_locale');
+  if (storedLocale && SUPPORTED_LOCALES.has(storedLocale)) return;
+
+  const browserLocale =
+    (navigator.languages && navigator.languages[0]) || navigator.language;
+  const nextLocale = resolveSupportedLocale(browserLocale);
+  setLocale(nextLocale, true);
+};
+
+const LayoutChildrenWrapper = ({
+  children,
+  isDark,
+}: {
+  children: ReactNode;
+  isDark?: boolean;
+}) => {
+  useEffect(() => {
+    const favicon = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+    const iconPath = '/favicon.ico';
+    if (favicon) {
+      favicon.href = iconPath;
+    }
+    document.body.dataset.theme = isDark ? 'dark' : 'light';
+  }, [isDark]);
+
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#B8872E',
+          borderRadius: 12,
+          ...(isDark
+            ? {
+                colorBgBase: '#1F1A16',
+                colorBgContainer: '#2A241F',
+                colorText: '#F5F1EA',
+                colorTextSecondary: '#CBBBAA',
+                colorBorder: 'rgba(255,255,255,0.08)',
+                colorFillSecondary: 'rgba(255,255,255,0.08)',
+                colorFillTertiary: 'rgba(255,255,255,0.06)',
+              }
+            : {}),
+        },
+        components: {
+          Input: {
+            borderRadiusLG: 12,
+            colorBgContainer: isDark ? 'rgba(255,255,255,0.04)' : undefined,
+            colorText: isDark ? '#F5F1EA' : undefined,
+            colorBorder: isDark ? 'rgba(255,255,255,0.12)' : undefined,
+          },
+          Button: {
+            borderRadius: 9,
+          },
+        },
+      }}
+    >
+      {children}
+    </ConfigProvider>
+  );
 };
 
 const getCommerceIcon = (slug?: string) => {
@@ -247,7 +315,7 @@ export const layout: RunTimeLayoutConfig = ({
   initialState,
   setInitialState,
 }) => {
-  const intl = useIntl();
+  const intl = getIntl();
   const isDark = initialState?.darkTheme;
   const currentUser = initialState?.currentUser;
   const isLoggedIn = Boolean(currentUser?.email);
@@ -315,20 +383,7 @@ export const layout: RunTimeLayoutConfig = ({
     'en-US';
   const currentLocaleLabel =
     LANGUAGE_SHORT_LABELS[currentLocale] || LANGUAGE_SHORT_LABELS['en-US'];
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const storedLocale = localStorage.getItem('umi_locale');
-    if (storedLocale && SUPPORTED_LOCALES.has(storedLocale)) {
-      return;
-    }
-
-    const browserLocale =
-      (navigator.languages && navigator.languages[0]) || navigator.language;
-    const nextLocale = resolveSupportedLocale(browserLocale);
-    setLocale(nextLocale, true);
-  }, []);
+  initializeLocaleOnce();
 
   const handleGoLiveClick = () => {
     if (isLoggedIn && !isCreator) {
@@ -375,11 +430,11 @@ export const layout: RunTimeLayoutConfig = ({
     menuHeaderRender: false,
     menuDataRender: (menuData) => {
       const stableItemMap = new Map<string, any>([
-        ['/home', <VideoCameraOutlined />],
-        ['/browse', <CompassOutlined />],
-        ['/news', <NotificationOutlined />],
-        ['/live', <ThunderboltOutlined />],
-        ['/admin/videos', <SettingOutlined />],
+        ['/home', <VideoCameraOutlined key="icon-home" />],
+        ['/browse', <CompassOutlined key="icon-browse" />],
+        ['/news', <NotificationOutlined key="icon-news" />],
+        ['/live', <ThunderboltOutlined key="icon-live" />],
+        ['/admin/videos', <SettingOutlined key="icon-admin-videos" />],
       ]);
       const stableItems = menuData.filter(
         (item) => item.path && stableItemMap.has(item.path),
@@ -891,52 +946,7 @@ export const layout: RunTimeLayoutConfig = ({
       },
     },
     childrenRender: (children) => {
-      useEffect(() => {
-        const favicon = document.querySelector(
-          "link[rel*='icon']",
-        ) as HTMLLinkElement;
-        const iconPath = '/favicon.ico';
-        if (favicon) {
-          favicon.href = iconPath;
-        }
-        document.body.dataset.theme = isDark ? 'dark' : 'light';
-      }, [isDark]);
-
-      return (
-        <ConfigProvider
-          theme={{
-            algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-            token: {
-              colorPrimary: '#B8872E',
-              borderRadius: 12,
-              ...(isDark
-                ? {
-                    colorBgBase: '#1F1A16',
-                    colorBgContainer: '#2A241F',
-                    colorText: '#F5F1EA',
-                    colorTextSecondary: '#CBBBAA',
-                    colorBorder: 'rgba(255,255,255,0.08)',
-                    colorFillSecondary: 'rgba(255,255,255,0.08)',
-                    colorFillTertiary: 'rgba(255,255,255,0.06)',
-                  }
-                : {}),
-            },
-            components: {
-              Input: {
-                borderRadiusLG: 12,
-                colorBgContainer: isDark ? 'rgba(255,255,255,0.04)' : undefined,
-                colorText: isDark ? '#F5F1EA' : undefined,
-                colorBorder: isDark ? 'rgba(255,255,255,0.12)' : undefined,
-              },
-              Button: {
-                borderRadius: 9,
-              },
-            },
-          }}
-        >
-          {children}
-        </ConfigProvider>
-      );
+      return <LayoutChildrenWrapper isDark={isDark}>{children}</LayoutChildrenWrapper>;
     },
   };
 };
