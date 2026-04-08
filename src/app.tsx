@@ -573,8 +573,23 @@ export const layout: RunTimeLayoutConfig = ({
     rightContentRender: () => (
       <Space
         size={6}
+        align="center"
         style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
       >
+        <Dropdown
+          trigger={['click']}
+          menu={{ items: languageMenuItems as any }}
+        >
+          <Button
+            type="text"
+            icon={<GlobalOutlined />}
+            style={{
+              ...utilityButtonStyle,
+              fontSize: 18,
+              color: isDark ? '#EFBC5C' : '#4b5563',
+            }}
+          />
+        </Dropdown>
         <Tooltip
           title={
             canUseGoLive
@@ -587,6 +602,9 @@ export const layout: RunTimeLayoutConfig = ({
             icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
             style={{
               borderRadius: 10,
+              height: 40,
+              display: 'inline-flex',
+              alignItems: 'center',
               fontWeight: 700,
               color: '#2C2C2C',
               backgroundColor: '#EFBC5C',
@@ -626,7 +644,7 @@ export const layout: RunTimeLayoutConfig = ({
                   key: 'profile-header',
                   disabled: true,
                   label: (
-                    <Space size={10} style={{ width: '100%' }}>
+                    <Space size={10} align="start" style={{ width: '100%' }}>
                       <Avatar
                         size={30}
                         src={
