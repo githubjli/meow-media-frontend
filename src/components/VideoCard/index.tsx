@@ -152,6 +152,14 @@ export default ({ data }: { data: any }) => {
   const metaLine = [uploaderLabel, publishedLabel, viewsLabel]
     .filter(Boolean)
     .join(' • ');
+  const uploaderAvatarSrc =
+    data.owner_avatar_url ||
+    data.creator_avatar_url ||
+    data.author_avatar_url ||
+    data.avatar_url ||
+    data.owner?.avatar_url ||
+    data.creator?.avatar_url ||
+    `https://api.dicebear.com/7.x/identicon/svg?seed=${uploaderLabel}`;
   const cardBackground = isDark ? '#302A24' : '#fffaf2';
   const cardBorder = isDark
     ? '1px solid rgba(255,255,255,0.06)'
@@ -335,7 +343,7 @@ export default ({ data }: { data: any }) => {
             }}
           >
             <Avatar
-              src={`https://api.dicebear.com/7.x/identicon/svg?seed=${uploaderLabel}`}
+              src={uploaderAvatarSrc}
               size={28}
               style={{ flexShrink: 0 }}
             />

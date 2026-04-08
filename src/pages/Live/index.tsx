@@ -49,6 +49,8 @@ const toLiveVideoCardData = (item: LiveBroadcast, intl: any) => {
     name: item.title || item.name || `Stream ${item.id}`,
     author: creatorName,
     owner_name: creatorName,
+    owner_avatar_url: item.creator?.avatar_url || '',
+    creator_avatar_url: item.creator?.avatar_url || '',
     created_at: item.started_at || item.created_at,
     date: item.started_at || item.created_at,
     thumbnail_url: shouldUseFallbackCover ? LIVE_FALLBACK_COVER : posterUrl,
