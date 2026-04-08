@@ -67,29 +67,27 @@ export default function AccountProfilePage() {
 
   const displayName =
     profile?.display_name ||
-    profile?.full_name ||
-    profile?.name ||
-    profile?.username ||
+    [profile?.first_name, profile?.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim() ||
     profile?.email ||
     intl.formatMessage({ id: 'account.profile.identity.fallbackName' });
   const secondaryIdentity =
-    profile?.username && profile.username !== displayName
-      ? profile.username
-      : profile?.email && profile.email !== displayName
-      ? profile.email
-      : profile?.email || profile?.username || '';
+    profile?.email && profile.email !== displayName ? profile.email : '';
 
-  const isAdmin = Boolean(
-    profile?.is_admin || profile?.is_staff || profile?.is_superuser,
+  const isAdmin = Boolean(profile?.is_admin);
+  const isCreator = Boolean(profile?.is_creator);
+  const isSeller = Boolean(profile?.is_seller);
+  const canCreateLive = Boolean(
+    profile?.can_create_live || profile?.is_creator,
   );
-  const isCreator = Boolean(profile?.is_creator || profile?.role === 'creator');
-  const hasStore = Boolean(
-    profile?.has_store || profile?.seller?.has_store || profile?.store,
+  const canManageStore = Boolean(
+    profile?.can_manage_store || profile?.seller_store,
   );
-  const sellerStore =
-    profile?.seller?.store ||
-    profile?.store ||
-    (profile?.seller?.has_store ? {} : null);
+  const canAcceptPayments = Boolean(profile?.can_accept_payments);
+  const hasStore = Boolean(profile?.seller_store);
+  const sellerStore = profile?.seller_store || null;
 
   const profileTags = useMemo(() => {
     const tags = [];
@@ -99,7 +97,7 @@ export default function AccountProfilePage() {
         label: intl.formatMessage({ id: 'account.profile.role.creator' }),
       });
     }
-    if (hasStore) {
+    if (isSeller || hasStore || canManageStore) {
       tags.push({
         key: 'seller',
         label: intl.formatMessage({ id: 'account.profile.role.seller' }),
@@ -118,7 +116,7 @@ export default function AccountProfilePage() {
       });
     }
     return tags;
-  }, [hasStore, intl, isAdmin, isCreator]);
+  }, [canManageStore, hasStore, intl, isAdmin, isCreator, isSeller]);
 
   const countCards = [
     {
@@ -129,17 +127,22 @@ export default function AccountProfilePage() {
     {
       key: 'liveSessions',
       label: intl.formatMessage({ id: 'account.profile.count.liveSessions' }),
-      value: toNumber(profile?.counts?.live_sessions),
+      value: toNumber(profile?.counts?.live_streams),
     },
     {
-      key: 'paymentOrders',
-      label: intl.formatMessage({ id: 'account.profile.count.paymentOrders' }),
-      value: toNumber(profile?.counts?.payment_orders),
+      key: 'products',
+      label: intl.formatMessage({ id: 'account.profile.count.products' }),
+      value: toNumber(profile?.counts?.products),
     },
     {
-      key: 'followers',
-      label: intl.formatMessage({ id: 'account.profile.count.followers' }),
-      value: toNumber(profile?.counts?.followers),
+      key: 'paymentMethods',
+      label: intl.formatMessage({ id: 'account.profile.count.paymentMethods' }),
+      value: toNumber(profile?.counts?.payment_methods),
+    },
+    {
+      key: 'orders',
+      label: intl.formatMessage({ id: 'account.profile.count.orders' }),
+      value: toNumber(profile?.counts?.orders),
     },
   ];
 
@@ -171,7 +174,7 @@ export default function AccountProfilePage() {
               <Space size={14} align="start">
                 <Avatar
                   size={64}
-                  src={profile.avatar_url}
+                  src={profile.avatar_url || profile.avatar || undefined}
                   icon={<UserOutlined />}
                 />
                 <Space direction="vertical" size={5}>
@@ -214,7 +217,6 @@ export default function AccountProfilePage() {
                 <Space direction="vertical" size={4}>
                   <Text strong>
                     {sellerStore?.name ||
-                      sellerStore?.title ||
                       intl.formatMessage({
                         id: 'account.profile.seller.fallbackName',
                       })}
@@ -266,7 +268,7 @@ export default function AccountProfilePage() {
                 <Button
                   type="primary"
                   icon={<VideoCameraOutlined />}
-                  disabled={!isCreator}
+                  disabled={!canCreateLive}
                   onClick={() =>
                     history.push(
                       isLoggedIn
@@ -279,7 +281,7 @@ export default function AccountProfilePage() {
                 >
                   {intl.formatMessage({ id: 'nav.goLive' })}
                 </Button>
-                {hasStore ? (
+                {canManageStore ? (
                   <Button
                     icon={<ShopOutlined />}
                     onClick={() => history.push('/seller/store')}
@@ -287,9 +289,13 @@ export default function AccountProfilePage() {
                     {intl.formatMessage({ id: 'nav.myStore' })}
                   </Button>
                 ) : null}
-                <Button onClick={() => history.push('/account/payment-orders')}>
-                  {intl.formatMessage({ id: 'nav.myPaymentOrders' })}
-                </Button>
+                {canAcceptPayments ? (
+                  <Button
+                    onClick={() => history.push('/account/payment-orders')}
+                  >
+                    {intl.formatMessage({ id: 'nav.myPaymentOrders' })}
+                  </Button>
+                ) : null}
               </Space>
             </Card>
           </Space>

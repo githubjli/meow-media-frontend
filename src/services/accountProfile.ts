@@ -1,41 +1,32 @@
 import { getValidAccessToken, requestJson } from '@/services/auth';
 
 export type AccountProfileResponse = {
-  id?: number | string;
-  email?: string;
-  username?: string;
-  name?: string;
-  display_name?: string;
-  full_name?: string;
-  avatar_url?: string;
-  bio?: string;
-  role?: string;
-  is_admin?: boolean;
-  is_staff?: boolean;
-  is_superuser?: boolean;
+  id: number | string;
+  email: string;
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  avatar?: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
   is_creator?: boolean;
-  has_store?: boolean;
-  seller?: {
-    has_store?: boolean;
-    store?: {
-      id?: number | string;
-      slug?: string;
-      name?: string;
-      title?: string;
-    } | null;
-  } | null;
-  store?: {
+  is_seller?: boolean;
+  is_admin?: boolean;
+  can_create_live?: boolean;
+  can_manage_store?: boolean;
+  can_accept_payments?: boolean;
+  seller_store?: {
     id?: number | string;
+    name?: string | null;
     slug?: string;
-    name?: string;
-    title?: string;
+    is_active?: boolean;
   } | null;
   counts?: {
     videos?: number;
-    live_sessions?: number;
-    followers?: number;
-    following?: number;
-    payment_orders?: number;
+    live_streams?: number;
+    products?: number;
+    payment_methods?: number;
+    orders?: number;
   } | null;
   [key: string]: any;
 };
