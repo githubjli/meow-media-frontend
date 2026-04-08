@@ -57,12 +57,6 @@ const LANGUAGE_LABELS: Record<string, string> = {
   'th-TH': 'ไทย',
   'my-MM': 'မြန်မာ',
 };
-const LANGUAGE_SHORT_LABELS: Record<string, string> = {
-  'en-US': 'EN',
-  'zh-CN': '中',
-  'th-TH': 'TH',
-  'my-MM': 'MM',
-};
 const SUPPORTED_LOCALES = new Set(Object.keys(LANGUAGE_LABELS));
 
 const resolveSupportedLocale = (value?: string | null) => {
@@ -346,15 +340,6 @@ export const layout: RunTimeLayoutConfig = ({
       ? { key: 'profile-hint-admin', label: 'nav.profile.role.admin' }
       : null,
   ].filter(Boolean) as Array<{ key: string; label: string }>;
-  const utilityButtonStyle = {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: isDark ? '#E4D5C5' : '#4b5563',
-  } as const;
   const languageMenuItems = [
     {
       key: 'lang-en-us',
