@@ -45,6 +45,7 @@ import {
   Space,
   Tag,
   theme,
+  Tooltip,
   Typography,
 } from 'antd';
 import { useEffect } from 'react';
@@ -247,6 +248,26 @@ export const layout: RunTimeLayoutConfig = ({
   const isAdmin = isAdminUser(currentUser);
   const isCreator = isCreatorUser(currentUser);
   const sellerHasStore = Boolean(initialState?.sellerHasStore);
+  const canUseGoLive = !isLoggedIn || isCreator;
+  const displayName =
+    currentUser?.name || currentUser?.username || currentUser?.email || '';
+  const secondaryIdentity =
+    currentUser?.email && currentUser.email !== displayName
+      ? currentUser.email
+      : currentUser?.username && currentUser.username !== displayName
+      ? currentUser.username
+      : '';
+  const profileHints = [
+    isCreator
+      ? { key: 'profile-hint-creator', label: 'nav.profile.role.creator' }
+      : null,
+    sellerHasStore
+      ? { key: 'profile-hint-seller', label: 'nav.profile.role.seller' }
+      : null,
+    isAdmin
+      ? { key: 'profile-hint-admin', label: 'nav.profile.role.admin' }
+      : null,
+  ].filter(Boolean) as Array<{ key: string; label: string }>;
   const utilityButtonStyle = {
     width: 40,
     height: 40,
@@ -550,7 +571,13 @@ export const layout: RunTimeLayoutConfig = ({
         size={6}
         style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
       >
-        {!isLoggedIn || isCreator ? (
+        <Tooltip
+          title={
+            canUseGoLive
+              ? undefined
+              : intl.formatMessage({ id: 'nav.goLive.disabledHint' })
+          }
+        >
           <Button
             type="primary"
             icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
@@ -565,10 +592,11 @@ export const layout: RunTimeLayoutConfig = ({
                 : '0 8px 18px rgba(184, 135, 46, 0.2)',
             }}
             onClick={handleGoLiveClick}
+            disabled={!canUseGoLive}
           >
             {intl.formatMessage({ id: 'nav.goLive' })}
           </Button>
-        ) : null}
+        </Tooltip>
         <Button
           type="text"
           icon={
@@ -585,20 +613,6 @@ export const layout: RunTimeLayoutConfig = ({
           }}
           onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
         />
-        <Dropdown
-          trigger={['click']}
-          menu={{ items: languageMenuItems as any }}
-        >
-          <Button
-            type="text"
-            icon={<GlobalOutlined />}
-            style={{
-              ...utilityButtonStyle,
-              fontSize: 18,
-              color: isDark ? '#EFBC5C' : '#4b5563',
-            }}
-          />
-        </Dropdown>
         {isLoggedIn ? (
           <Dropdown
             trigger={['click']}
@@ -610,11 +624,47 @@ export const layout: RunTimeLayoutConfig = ({
                   label: (
                     <Space size={10} style={{ width: '100%' }}>
                       <Avatar size={30} icon={<UserOutlined />} />
-                      <Text style={{ fontWeight: 600, maxWidth: 180 }} ellipsis>
-                        {currentUser?.name ||
-                          currentUser?.username ||
-                          currentUser?.email}
-                      </Text>
+                      <Space
+                        direction="vertical"
+                        size={1}
+                        style={{ minWidth: 0, lineHeight: 1.2 }}
+                      >
+                        <Text
+                          style={{ fontWeight: 600, maxWidth: 180 }}
+                          ellipsis
+                        >
+                          {displayName}
+                        </Text>
+                        {secondaryIdentity ? (
+                          <Text
+                            type="secondary"
+                            style={{ fontSize: 12, maxWidth: 180 }}
+                            ellipsis
+                          >
+                            {secondaryIdentity}
+                          </Text>
+                        ) : null}
+                        {profileHints.length > 0 ? (
+                          <Space size={4} wrap>
+                            {profileHints.map((hint) => (
+                              <Tag
+                                key={hint.key}
+                                bordered={false}
+                                color="gold"
+                                style={{
+                                  borderRadius: 999,
+                                  marginInlineEnd: 0,
+                                  paddingInline: 6,
+                                  fontSize: 11,
+                                  lineHeight: '18px',
+                                }}
+                              >
+                                {intl.formatMessage({ id: hint.label })}
+                              </Tag>
+                            ))}
+                          </Space>
+                        ) : null}
+                      </Space>
                     </Space>
                   ),
                 },
@@ -628,47 +678,45 @@ export const layout: RunTimeLayoutConfig = ({
                   onClick: () => history.push('/videos/mine'),
                 },
                 {
+                  key: 'upload-video',
+                  icon: <UploadOutlined />,
+                  label: intl.formatMessage({ id: 'nav.uploadVideo' }),
+                  onClick: () => history.push('/videos/upload'),
+                },
+                {
+                  key: 'go-live',
+                  icon: <VideoCameraOutlined />,
+                  label: intl.formatMessage({ id: 'nav.goLive' }),
+                  onClick: handleGoLiveClick,
+                  disabled: !isCreator,
+                },
+                {
+                  type: 'divider',
+                },
+                ...(sellerHasStore
+                  ? [
+                      {
+                        key: 'seller-center',
+                        icon: <ShopOutlined />,
+                        label: intl.formatMessage({ id: 'nav.myStore' }),
+                        onClick: () => history.push('/seller/store'),
+                      } as const,
+                    ]
+                  : []),
+                {
                   key: 'my-payment-orders',
                   icon: <DollarOutlined />,
                   label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
                   onClick: () => history.push('/account/payment-orders'),
                 },
                 {
-                  key: 'upload-video',
-                  icon: <UploadOutlined />,
-                  label: intl.formatMessage({ id: 'nav.uploadVideo' }),
-                  onClick: () => history.push('/videos/upload'),
-                },
-                ...(isCreator
-                  ? [
-                      {
-                        key: 'go-live',
-                        icon: <VideoCameraOutlined />,
-                        label: intl.formatMessage({ id: 'nav.goLive' }),
-                        onClick: handleGoLiveClick,
-                      } as const,
-                    ]
-                  : []),
-                ...(isAdmin
-                  ? [
-                      {
-                        key: 'all-videos',
-                        icon: <SettingOutlined />,
-                        label: intl.formatMessage({ id: 'nav.allVideos' }),
-                        onClick: () => history.push('/admin/videos'),
-                      } as const,
-                    ]
-                  : []),
-                {
-                  key: 'seller-center',
-                  icon: <ShopOutlined />,
-                  label: intl.formatMessage({
-                    id: sellerHasStore ? 'nav.myStore' : 'nav.openStore',
-                  }),
-                  onClick: () => history.push('/seller/store'),
-                },
-                {
                   type: 'divider',
+                },
+                {
+                  key: 'language',
+                  icon: <CompassOutlined />,
+                  label: intl.formatMessage({ id: 'nav.language' }),
+                  children: languageMenuItems as any,
                 },
                 {
                   key: 'theme-menu',
@@ -705,6 +753,19 @@ export const layout: RunTimeLayoutConfig = ({
                   icon: <QuestionCircleOutlined />,
                   label: intl.formatMessage({ id: 'nav.help' }),
                 },
+                ...(isAdmin
+                  ? ([
+                      {
+                        type: 'divider',
+                      },
+                      {
+                        key: 'all-videos',
+                        icon: <SettingOutlined />,
+                        label: intl.formatMessage({ id: 'nav.allVideos' }),
+                        onClick: () => history.push('/admin/videos'),
+                      },
+                    ] as const)
+                  : []),
                 {
                   type: 'divider',
                 },
