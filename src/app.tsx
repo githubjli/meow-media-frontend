@@ -629,7 +629,11 @@ export const layout: RunTimeLayoutConfig = ({
                     <Space size={10} style={{ width: '100%' }}>
                       <Avatar
                         size={30}
-                        src={currentUser?.avatar_url || undefined}
+                        src={
+                          currentUser?.avatar_url ||
+                          currentUser?.avatar ||
+                          undefined
+                        }
                         icon={<UserOutlined />}
                       />
                       <Space
@@ -796,7 +800,9 @@ export const layout: RunTimeLayoutConfig = ({
             <Space size={8} style={{ marginLeft: 6, cursor: 'pointer' }}>
               <Avatar
                 size={32}
-                src={currentUser?.avatar_url || undefined}
+                src={
+                  currentUser?.avatar_url || currentUser?.avatar || undefined
+                }
                 icon={<UserOutlined />}
               />
             </Space>
