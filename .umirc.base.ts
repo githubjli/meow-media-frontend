@@ -55,6 +55,7 @@ export default defineConfig({
       component: './Account/PaymentOrders',
       hideInMenu: true,
     },
+    { path: '/profile', component: './Account/Profile', hideInMenu: true },
     { path: '/admin/videos', component: './Videos/All', hideInMenu: false },
     { path: '/videos/:id', component: './Videos/Detail', hideInMenu: true },
     { path: '/browse/:id', component: './PublicVideoDetail', hideInMenu: true },
