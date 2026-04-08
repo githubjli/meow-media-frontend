@@ -575,20 +575,6 @@ export const layout: RunTimeLayoutConfig = ({
         size={6}
         style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
       >
-        <Dropdown
-          trigger={['click']}
-          menu={{ items: languageMenuItems as any }}
-        >
-          <Button
-            type="text"
-            icon={<GlobalOutlined />}
-            style={{
-              ...utilityButtonStyle,
-              fontSize: 18,
-              color: isDark ? '#EFBC5C' : '#4b5563',
-            }}
-          />
-        </Dropdown>
         <Tooltip
           title={
             canUseGoLive
@@ -813,19 +799,6 @@ export const layout: RunTimeLayoutConfig = ({
                 src={currentUser?.avatar_url || undefined}
                 icon={<UserOutlined />}
               />
-              <Tag
-                bordered={false}
-                style={{
-                  marginInlineEnd: 0,
-                  borderRadius: 999,
-                  paddingInline: 10,
-                  maxWidth: 180,
-                }}
-              >
-                <Text style={{ fontWeight: 600, maxWidth: 150 }} ellipsis>
-                  {displayName}
-                </Text>
-              </Tag>
             </Space>
           </Dropdown>
         ) : (
