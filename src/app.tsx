@@ -668,7 +668,7 @@ export const layout: RunTimeLayoutConfig = ({
             isDark ? (
               <SunOutlined style={{ color: '#faad14' }} />
             ) : (
-              <MoonOutlined />
+              <MoonOutlined style={{ fontSize: 16 }} />
             )
           }
           style={{
@@ -684,7 +684,7 @@ export const layout: RunTimeLayoutConfig = ({
         >
           <Button
             type="text"
-            icon={<GlobalOutlined />}
+            icon={<GlobalOutlined style={{ fontSize: 16 }} />}
             style={{
               ...utilityButtonStyle,
               color: isDark ? '#EFBC5C' : '#4b5563',
