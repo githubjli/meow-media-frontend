@@ -582,279 +582,59 @@ export const layout: RunTimeLayoutConfig = ({
         />
       </div>
     ),
-    rightContentRender: () => (
-      <Space
-        size={6}
-        align="center"
-        style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
-      >
-        <Tooltip
-          title={
-            canUseGoLive
-              ? undefined
-              : intl.formatMessage({ id: 'nav.goLive.disabledHint' })
-          }
-        >
-          <Button
-            type="primary"
-            icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
-            style={{
-              borderRadius: 10,
-              height: 40,
-              display: 'inline-flex',
-              alignItems: 'center',
-              fontWeight: 700,
-              color: '#2C2C2C',
-              backgroundColor: '#EFBC5C',
-              border: 'none',
-              boxShadow: isDark
-                ? '0 8px 18px rgba(239, 188, 92, 0.2)'
-                : '0 8px 18px rgba(184, 135, 46, 0.2)',
-            }}
-            onClick={handleGoLiveClick}
-            disabled={!canUseGoLive}
-          >
-            {intl.formatMessage({ id: 'nav.goLive' })}
-          </Button>
-        </Tooltip>
-        <Button
-          type="text"
-          icon={
-            isDark ? (
-              <SunOutlined style={{ color: '#faad14' }} />
-            ) : (
-              <MoonOutlined />
-            )
-          }
+
+    rightContentRender: () => {
+      const HEADER_CONTROL_HEIGHT = 30;
+      const HEADER_CONTROL_RADIUS = 10;
+
+      const headerControlBaseStyle: React.CSSProperties = {
+        height: HEADER_CONTROL_HEIGHT,
+        borderRadius: HEADER_CONTROL_RADIUS,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxSizing: 'border-box',
+      };
+
+      const headerIconButtonStyle: React.CSSProperties = {
+        ...headerControlBaseStyle,
+        width: HEADER_CONTROL_HEIGHT,
+        minWidth: HEADER_CONTROL_HEIGHT,
+        padding: 0,
+      };
+
+      const headerAvatarTriggerStyle: React.CSSProperties = {
+        ...headerControlBaseStyle,
+        width: HEADER_CONTROL_HEIGHT,
+        minWidth: HEADER_CONTROL_HEIGHT,
+        padding: 0,
+        cursor: 'pointer',
+      };
+
+      return (
+        <Space
+          size={8}
+          align="center"
           style={{
-            ...utilityButtonStyle,
-            fontSize: 18,
-            color: isDark ? '#EFBC5C' : '#4b5563',
+            marginRight: 6,
+            display: 'flex',
+            alignItems: 'center',
+            height: HEADER_CONTROL_HEIGHT,
           }}
-          onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
-        />
-        <Dropdown
-          trigger={['click']}
-          menu={{ items: languageMenuItems as any }}
         >
-          <Button
-            type="text"
-            icon={<GlobalOutlined />}
-            style={{
-              ...utilityButtonStyle,
-              width: 'auto',
-              minWidth: 58,
-              paddingInline: 10,
-              fontSize: 14,
-              color: isDark ? '#EFBC5C' : '#4b5563',
-            }}
+          <Tooltip
+            title={
+              canUseGoLive
+                ? undefined
+                : intl.formatMessage({ id: 'nav.goLive.disabledHint' })
+            }
           >
-            {currentLocaleLabel}
-          </Button>
-        </Dropdown>
-        {isLoggedIn ? (
-          <Dropdown
-            trigger={['click']}
-            menu={{
-              items: [
-                {
-                  key: 'profile-header',
-                  disabled: true,
-                  label: (
-                    <Space size={10} align="start" style={{ width: '100%' }}>
-                      <Avatar
-                        size={30}
-                        src={
-                          currentUser?.avatar_url ||
-                          currentUser?.avatar ||
-                          undefined
-                        }
-                        icon={<UserOutlined />}
-                      />
-                      <Space
-                        direction="vertical"
-                        size={1}
-                        style={{ minWidth: 0, lineHeight: 1.2 }}
-                      >
-                        <Text
-                          style={{ fontWeight: 600, maxWidth: 180 }}
-                          ellipsis
-                        >
-                          {displayName}
-                        </Text>
-                        {secondaryIdentity ? (
-                          <Text
-                            type="secondary"
-                            style={{ fontSize: 12, maxWidth: 180 }}
-                            ellipsis
-                          >
-                            {secondaryIdentity}
-                          </Text>
-                        ) : null}
-                        {profileHints.length > 0 ? (
-                          <Space size={4} wrap>
-                            {profileHints.map((hint) => (
-                              <Tag
-                                key={hint.key}
-                                bordered={false}
-                                color="gold"
-                                style={{
-                                  borderRadius: 999,
-                                  marginInlineEnd: 0,
-                                  paddingInline: 6,
-                                  fontSize: 11,
-                                  lineHeight: '18px',
-                                }}
-                              >
-                                {intl.formatMessage({ id: hint.label })}
-                              </Tag>
-                            ))}
-                          </Space>
-                        ) : null}
-                      </Space>
-                    </Space>
-                  ),
-                },
-                {
-                  type: 'divider',
-                },
-                {
-                  key: 'profile-dashboard',
-                  icon: <UserOutlined />,
-                  label: intl.formatMessage({ id: 'nav.profile' }),
-                  onClick: () => history.push('/profile'),
-                },
-                {
-                  key: 'my-videos',
-                  icon: <PlaySquareOutlined />,
-                  label: intl.formatMessage({ id: 'nav.myVideos' }),
-                  onClick: () => history.push('/videos/mine'),
-                },
-                {
-                  key: 'upload-video',
-                  icon: <UploadOutlined />,
-                  label: intl.formatMessage({ id: 'nav.uploadVideo' }),
-                  onClick: () => history.push('/videos/upload'),
-                },
-                {
-                  key: 'go-live',
-                  icon: <VideoCameraOutlined />,
-                  label: intl.formatMessage({ id: 'nav.goLive' }),
-                  onClick: handleGoLiveClick,
-                  disabled: !isCreator,
-                },
-                {
-                  type: 'divider',
-                },
-                ...(sellerHasStore
-                  ? [
-                      {
-                        key: 'seller-center',
-                        icon: <ShopOutlined />,
-                        label: intl.formatMessage({ id: 'nav.myStore' }),
-                        onClick: () => history.push('/seller/store'),
-                      } as const,
-                    ]
-                  : []),
-                {
-                  key: 'my-payment-orders',
-                  icon: <DollarOutlined />,
-                  label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
-                  onClick: () => history.push('/account/payment-orders'),
-                },
-                {
-                  type: 'divider',
-                },
-                {
-                  key: 'language',
-                  icon: <CompassOutlined />,
-                  label: intl.formatMessage({ id: 'nav.language' }),
-                  children: languageMenuItems as any,
-                },
-                {
-                  key: 'theme-menu',
-                  icon: <BgColorsOutlined />,
-                  label: intl.formatMessage({ id: 'nav.theme' }),
-                  children: [
-                    {
-                      key: 'theme-light',
-                      icon: <SunOutlined />,
-                      label: intl.formatMessage({ id: 'nav.theme.light' }),
-                      onClick: () => applyThemeMode('light'),
-                    },
-                    {
-                      key: 'theme-dark',
-                      icon: <MoonOutlined />,
-                      label: intl.formatMessage({ id: 'nav.theme.dark' }),
-                      onClick: () => applyThemeMode('dark'),
-                    },
-                    {
-                      key: 'theme-system',
-                      icon: <CompassOutlined />,
-                      label: intl.formatMessage({ id: 'nav.theme.system' }),
-                      onClick: () => applyThemeMode('system'),
-                    },
-                  ],
-                },
-                {
-                  key: 'settings',
-                  icon: <SettingOutlined />,
-                  label: intl.formatMessage({ id: 'nav.settings' }),
-                  onClick: () => history.push('/settings'),
-                },
-                {
-                  key: 'help',
-                  icon: <QuestionCircleOutlined />,
-                  label: intl.formatMessage({ id: 'nav.help' }),
-                },
-                ...(isAdmin
-                  ? ([
-                      {
-                        type: 'divider',
-                      },
-                      {
-                        key: 'all-videos',
-                        icon: <SettingOutlined />,
-                        label: intl.formatMessage({ id: 'nav.allVideos' }),
-                        onClick: () => history.push('/admin/videos'),
-                      },
-                    ] as const)
-                  : []),
-                {
-                  type: 'divider',
-                },
-                {
-                  key: 'logout',
-                  icon: <LogoutOutlined />,
-                  label: intl.formatMessage({ id: 'nav.logOut' }),
-                  onClick: handleLogout,
-                },
-              ],
-            }}
-          >
-            <Space size={8} style={{ marginLeft: 6, cursor: 'pointer' }}>
-              <Avatar
-                size={32}
-                src={
-                  currentUser?.avatar_url || currentUser?.avatar || undefined
-                }
-                icon={<UserOutlined />}
-              />
-            </Space>
-          </Dropdown>
-        ) : (
-          <Space size={8} style={{ marginLeft: 8 }}>
-            <Button
-              type="text"
-              style={{ color: '#745F40', fontWeight: 600 }}
-              onClick={() => history.push('/login')}
-            >
-              {intl.formatMessage({ id: 'nav.logIn' })}
-            </Button>
             <Button
               type="primary"
+              icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
               style={{
-                borderRadius: 9,
+                ...headerControlBaseStyle,
+                paddingInline: 16,
                 fontWeight: 700,
                 color: '#2C2C2C',
                 backgroundColor: '#EFBC5C',
@@ -863,14 +643,266 @@ export const layout: RunTimeLayoutConfig = ({
                   ? '0 8px 18px rgba(239, 188, 92, 0.2)'
                   : '0 8px 18px rgba(184, 135, 46, 0.2)',
               }}
-              onClick={() => history.push('/register')}
+              onClick={handleGoLiveClick}
+              disabled={!canUseGoLive}
             >
-              {intl.formatMessage({ id: 'nav.signUp' })}
+              {intl.formatMessage({ id: 'nav.goLive' })}
             </Button>
-          </Space>
-        )}
-      </Space>
-    ),
+          </Tooltip>
+
+          <Dropdown
+            trigger={['click']}
+            menu={{ items: languageMenuItems as any }}
+          >
+            <Button
+              type="text"
+              icon={<GlobalOutlined />}
+              style={{
+                ...headerIconButtonStyle,
+                fontSize: 16,
+                color: isDark ? '#EFBC5C' : '#4b5563',
+              }}
+              aria-label={intl.formatMessage({ id: 'nav.language' })}
+              title={intl.formatMessage({ id: 'nav.language' })}
+            >
+            </Button>
+          </Dropdown>
+
+          <Button
+            type="text"
+            icon={
+              isDark ? (
+                <SunOutlined style={{ color: '#faad14' }} />
+              ) : (
+                <MoonOutlined />
+              )
+            }
+            style={{
+              ...headerIconButtonStyle,
+              fontSize: 16,
+              color: isDark ? '#EFBC5C' : '#4b5563',
+            }}
+            onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
+          />
+
+          {isLoggedIn ? (
+            <Dropdown
+              trigger={['click']}
+              menu={{
+                items: [
+                  {
+                    key: 'profile-header',
+                    disabled: true,
+                    label: (
+                      <Space size={12} align="start" style={{ width: '100%' }}>
+                        <Avatar
+                          size={40}
+                          src={
+                            currentUser?.avatar_url ||
+                            currentUser?.avatar ||
+                            undefined
+                          }
+                          icon={<UserOutlined />}
+                        />
+                        <Space
+                          direction="vertical"
+                          size={2}
+                          style={{ minWidth: 0, lineHeight: 1.25 }}
+                        >
+                          <Text
+                            style={{ fontWeight: 600, maxWidth: 180 }}
+                            ellipsis
+                          >
+                            {displayName}
+                          </Text>
+                          {secondaryIdentity ? (
+                            <Text
+                              type="secondary"
+                              style={{ fontSize: 12, maxWidth: 180 }}
+                              ellipsis
+                            >
+                              {secondaryIdentity}
+                            </Text>
+                          ) : null}
+                          {profileHints.length > 0 ? (
+                            <Space size={4} wrap>
+                              {profileHints.map((hint) => (
+                                <Tag
+                                  key={hint.key}
+                                  bordered={false}
+                                  color="gold"
+                                  style={{
+                                    borderRadius: 999,
+                                    marginInlineEnd: 0,
+                                    paddingInline: 6,
+                                    fontSize: 11,
+                                    lineHeight: '18px',
+                                  }}
+                                >
+                                  {intl.formatMessage({ id: hint.label })}
+                                </Tag>
+                              ))}
+                            </Space>
+                          ) : null}
+                        </Space>
+                      </Space>
+                    ),
+                  },
+                  { type: 'divider' },
+                  {
+                    key: 'profile-dashboard',
+                    icon: <UserOutlined />,
+                    label: intl.formatMessage({ id: 'nav.profile' }),
+                    onClick: () => history.push('/profile'),
+                  },
+                  {
+                    key: 'my-videos',
+                    icon: <PlaySquareOutlined />,
+                    label: intl.formatMessage({ id: 'nav.myVideos' }),
+                    onClick: () => history.push('/videos/mine'),
+                  },
+                  {
+                    key: 'upload-video',
+                    icon: <UploadOutlined />,
+                    label: intl.formatMessage({ id: 'nav.uploadVideo' }),
+                    onClick: () => history.push('/videos/upload'),
+                  },
+                  {
+                    key: 'go-live',
+                    icon: <VideoCameraOutlined />,
+                    label: intl.formatMessage({ id: 'nav.goLive' }),
+                    onClick: handleGoLiveClick,
+                    disabled: !isCreator,
+                  },
+                  { type: 'divider' },
+                  ...(sellerHasStore
+                    ? [
+                        {
+                          key: 'seller-center',
+                          icon: <ShopOutlined />,
+                          label: intl.formatMessage({ id: 'nav.myStore' }),
+                          onClick: () => history.push('/seller/store'),
+                        } as const,
+                      ]
+                    : []),
+                  {
+                    key: 'my-payment-orders',
+                    icon: <DollarOutlined />,
+                    label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
+                    onClick: () => history.push('/account/payment-orders'),
+                  },
+                  { type: 'divider' },
+                  {
+                    key: 'theme-menu',
+                    icon: <BgColorsOutlined />,
+                    label: intl.formatMessage({ id: 'nav.theme' }),
+                    children: [
+                      {
+                        key: 'theme-light',
+                        icon: <SunOutlined />,
+                        label: intl.formatMessage({ id: 'nav.theme.light' }),
+                        onClick: () => applyThemeMode('light'),
+                      },
+                      {
+                        key: 'theme-dark',
+                        icon: <MoonOutlined />,
+                        label: intl.formatMessage({ id: 'nav.theme.dark' }),
+                        onClick: () => applyThemeMode('dark'),
+                      },
+                      {
+                        key: 'theme-system',
+                        icon: <CompassOutlined />,
+                        label: intl.formatMessage({ id: 'nav.theme.system' }),
+                        onClick: () => applyThemeMode('system'),
+                      },
+                    ],
+                  },
+                  {
+                    key: 'settings',
+                    icon: <SettingOutlined />,
+                    label: intl.formatMessage({ id: 'nav.settings' }),
+                    onClick: () => history.push('/settings'),
+                  },
+                  {
+                    key: 'help',
+                    icon: <QuestionCircleOutlined />,
+                    label: intl.formatMessage({ id: 'nav.help' }),
+                  },
+                  ...(isAdmin
+                    ? ([
+                        { type: 'divider' },
+                        {
+                          key: 'all-videos',
+                          icon: <SettingOutlined />,
+                          label: intl.formatMessage({ id: 'nav.allVideos' }),
+                          onClick: () => history.push('/admin/videos'),
+                        },
+                      ] as const)
+                    : []),
+                  { type: 'divider' },
+                  {
+                    key: 'logout',
+                    icon: <LogoutOutlined />,
+                    label: intl.formatMessage({ id: 'nav.logOut' }),
+                    onClick: handleLogout,
+                  },
+                ],
+              }}
+            >
+              <div
+                style={{
+                  ...headerAvatarTriggerStyle,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Avatar
+                  size={32}
+                  src={
+                    currentUser?.avatar_url || currentUser?.avatar || undefined
+                  }
+                  icon={<UserOutlined />}
+                />
+              </div>
+            </Dropdown>
+          ) : (
+            <Space size={8} style={{ marginLeft: 8, alignItems: 'center' }}>
+              <Button
+                type="text"
+                style={{
+                  ...headerControlBaseStyle,
+                  color: '#745F40',
+                  fontWeight: 600,
+                  paddingInline: 12,
+                }}
+                onClick={() => history.push('/login')}
+              >
+                {intl.formatMessage({ id: 'nav.logIn' })}
+              </Button>
+              <Button
+                type="primary"
+                style={{
+                  ...headerControlBaseStyle,
+                  paddingInline: 16,
+                  fontWeight: 700,
+                  color: '#2C2C2C',
+                  backgroundColor: '#EFBC5C',
+                  border: 'none',
+                  boxShadow: isDark
+                    ? '0 8px 18px rgba(239, 188, 92, 0.2)'
+                    : '0 8px 18px rgba(184, 135, 46, 0.2)',
+                }}
+                onClick={() => history.push('/register')}
+              >
+                {intl.formatMessage({ id: 'nav.signUp' })}
+              </Button>
+            </Space>
+          )}
+        </Space>
+      );
+    },
+
     menuProps: {
       selectedKeys: [
         resolveMenuSelectedPath(

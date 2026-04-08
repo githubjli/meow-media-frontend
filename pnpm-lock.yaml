@@ -33,6 +33,9 @@ importers:
       '@types/video.js':
         specifier: ^7.3.58
         version: 7.3.58
+      eslint:
+        specifier: ^8.35.0
+        version: 8.35.0
       husky:
         specifier: ^9
         version: 9.1.7
