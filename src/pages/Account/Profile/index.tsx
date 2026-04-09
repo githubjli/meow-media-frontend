@@ -192,20 +192,42 @@ export default function AccountProfilePage() {
         avatar: avatarRemoved ? null : selectedAvatarFile,
         avatar_clear: avatarRemoved,
       });
-      setProfile(updated);
+      const mergedProfile = {
+        ...(profile || {}),
+        ...(updated || {}),
+        avatar_url:
+          updated?.avatar_url ??
+          updated?.avatar ??
+          profile?.avatar_url ??
+          profile?.avatar ??
+          null,
+        avatar:
+          updated?.avatar ??
+          updated?.avatar_url ??
+          profile?.avatar ??
+          profile?.avatar_url ??
+          null,
+      } as AccountProfileResponse;
+      setProfile(mergedProfile);
       await setInitialState((prev) => ({
         ...prev,
         currentUser: {
           ...(prev?.currentUser || {}),
-          display_name: updated?.display_name,
-          username: updated?.username,
-          bio: updated?.bio,
-          avatar_url: updated?.avatar_url || updated?.avatar || undefined,
+          display_name:
+            updated?.display_name ?? profile?.display_name ?? undefined,
+          username: updated?.username ?? profile?.username ?? undefined,
+          bio: updated?.bio ?? profile?.bio ?? undefined,
+          avatar_url:
+            updated?.avatar_url ??
+            updated?.avatar ??
+            profile?.avatar_url ??
+            profile?.avatar ??
+            undefined,
         },
       }));
       form.setFieldsValue({
-        display_name: updated?.display_name || '',
-        bio: updated?.bio || '',
+        display_name: mergedProfile?.display_name || '',
+        bio: mergedProfile?.bio || '',
       });
       setSelectedAvatarFile(null);
       setAvatarRemoved(false);
