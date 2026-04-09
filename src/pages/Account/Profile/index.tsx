@@ -505,6 +505,9 @@ export default function AccountProfilePage() {
                       {intl.formatMessage({ id: 'nav.myPaymentOrders' })}
                     </Button>
                   ) : null}
+                  <Button onClick={() => history.push('/account/subscription')}>
+                    {intl.formatMessage({ id: 'nav.mySubscription' })}
+                  </Button>
                 </Space>
               </Space>
             </Card>
