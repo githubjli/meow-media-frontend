@@ -80,7 +80,7 @@ export async function updateAccountProfile(
   if (typeof payload.bio === 'string') {
     jsonPayload.bio = payload.bio;
   }
-  if (payload.avatar_clear === true || payload.avatar === null) {
+  if (payload.avatar_clear === true) {
     jsonPayload.avatar_clear = true;
   }
 
