@@ -2,8 +2,10 @@ export type VideoInteractionSummary = {
   video_id: number | string;
   like_count?: number;
   comment_count?: number;
+  follower_count?: number;
   subscriber_count?: number;
   viewer_has_liked?: boolean;
+  viewer_is_following?: boolean;
   viewer_is_subscribed?: boolean;
   [key: string]: any;
 };

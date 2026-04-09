@@ -97,20 +97,18 @@ export async function unlikeVideo(videoId: string | number): Promise<void> {
   );
 }
 
-export async function subscribeChannel(
-  channelId: string | number,
-): Promise<void> {
+export async function followCreator(creatorId: string | number): Promise<void> {
   return requestJson(
-    `/api/channels/${channelId}/subscribe/`,
+    `/api/creators/${creatorId}/follow/`,
     await withAuth({ method: 'POST' }),
   );
 }
 
-export async function unsubscribeChannel(
-  channelId: string | number,
+export async function unfollowCreator(
+  creatorId: string | number,
 ): Promise<void> {
   return requestJson(
-    `/api/channels/${channelId}/subscribe/`,
+    `/api/creators/${creatorId}/follow/`,
     await withAuth({ method: 'DELETE' }),
   );
 }
