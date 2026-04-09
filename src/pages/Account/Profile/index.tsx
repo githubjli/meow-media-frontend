@@ -189,7 +189,7 @@ export default function AccountProfilePage() {
       const updated = await updateAccountProfile({
         display_name: values.display_name || '',
         bio: values.bio || '',
-        avatar: avatarRemoved ? null : selectedAvatarFile,
+        avatar: avatarRemoved ? null : selectedAvatarFile || undefined,
         avatar_clear: avatarRemoved,
       });
       const mergedProfile = {
