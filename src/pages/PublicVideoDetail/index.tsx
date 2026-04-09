@@ -30,12 +30,12 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import {
   createVideoComment,
+  followCreator,
   getVideoInteractionSummary,
   likeVideo,
   listVideoComments,
-  subscribeChannel,
+  unfollowCreator,
   unlikeVideo,
-  unsubscribeChannel,
 } from '@/services/engagement';
 import {
   getPublicVideoDetail,
@@ -345,14 +345,18 @@ export default function PublicVideoDetailPage() {
     intl.formatMessage({ id: 'publicVideoDetail.creatorUnavailable' });
   const likeCount = interactionSummary?.like_count;
   const commentCount = interactionSummary?.comment_count;
-  const subscriberCount = interactionSummary?.subscriber_count;
+  const followerCount =
+    interactionSummary?.follower_count ?? interactionSummary?.subscriber_count;
   const isLiked = Boolean(interactionSummary?.viewer_has_liked);
-  const isSubscribed = Boolean(interactionSummary?.viewer_is_subscribed);
+  const isFollowing = Boolean(
+    interactionSummary?.viewer_is_following ??
+      interactionSummary?.viewer_is_subscribed,
+  );
   const followerLabel =
-    typeof subscriberCount === 'number'
+    typeof followerCount === 'number'
       ? intl.formatMessage(
           { id: 'publicVideoDetail.followersCount' },
-          { count: subscriberCount.toLocaleString() },
+          { count: followerCount.toLocaleString() },
         )
       : intl.formatMessage({ id: 'publicVideoDetail.followersUnavailable' });
   const likeLabel =
@@ -505,7 +509,7 @@ export default function PublicVideoDetailPage() {
     }
   };
 
-  const handleSubscribe = async () => {
+  const handleFollow = async () => {
     if (!channelId) {
       message.info(
         intl.formatMessage({ id: 'publicVideoDetail.creatorInfoUnavailable' }),
@@ -519,15 +523,20 @@ export default function PublicVideoDetailPage() {
     }
 
     const previousSummary = interactionSummary;
-    const optimisticSubscribed = !isSubscribed;
+    const optimisticFollowing = !isFollowing;
 
     setInteractionSummary((current) => ({
       ...(current || { video_id: videoId }),
-      viewer_is_subscribed: optimisticSubscribed,
+      viewer_is_following: optimisticFollowing,
+      viewer_is_subscribed: optimisticFollowing,
+      follower_count:
+        typeof current?.follower_count === 'number'
+          ? Math.max(current.follower_count + (optimisticFollowing ? 1 : -1), 0)
+          : current?.follower_count,
       subscriber_count:
         typeof current?.subscriber_count === 'number'
           ? Math.max(
-              current.subscriber_count + (optimisticSubscribed ? 1 : -1),
+              current.subscriber_count + (optimisticFollowing ? 1 : -1),
               0,
             )
           : current?.subscriber_count,
@@ -535,17 +544,17 @@ export default function PublicVideoDetailPage() {
 
     setSubscribeSubmitting(true);
     try {
-      if (optimisticSubscribed) {
-        await subscribeChannel(channelId);
+      if (optimisticFollowing) {
+        await followCreator(channelId);
       } else {
-        await unsubscribeChannel(channelId);
+        await unfollowCreator(channelId);
       }
     } catch (error: any) {
       setInteractionSummary(previousSummary);
       message.error(
         error?.message ||
           intl.formatMessage({
-            id: 'publicVideoDetail.error.updateSubscription',
+            id: 'publicVideoDetail.error.updateFollow',
           }),
       );
     } finally {
@@ -958,18 +967,18 @@ export default function PublicVideoDetailPage() {
                       </Space>
 
                       <Button
-                        type={isSubscribed ? 'default' : 'primary'}
+                        type={isFollowing ? 'default' : 'primary'}
                         icon={<UserAddOutlined />}
-                        onClick={handleSubscribe}
+                        onClick={handleFollow}
                         loading={subscribeSubmitting}
                         disabled={!channelId}
                       >
-                        {isSubscribed
+                        {isFollowing
                           ? intl.formatMessage({
-                              id: 'publicVideoDetail.action.subscribed',
+                              id: 'publicVideoDetail.action.following',
                             })
                           : intl.formatMessage({
-                              id: 'publicVideoDetail.action.subscribe',
+                              id: 'publicVideoDetail.action.follow',
                             })}
                       </Button>
                     </Space>

@@ -19,6 +19,7 @@ import {
   Button,
   Card,
   Col,
+  Divider,
   Empty,
   Form,
   Input,
@@ -114,6 +115,7 @@ export default function AccountProfilePage() {
   const canCreateLive = Boolean(
     profile?.can_create_live || profile?.is_creator,
   );
+  const canUseGoLive = isLoggedIn ? canCreateLive : true;
   const canManageStore = Boolean(
     profile?.can_manage_store || profile?.seller_store,
   );
@@ -187,23 +189,45 @@ export default function AccountProfilePage() {
       const updated = await updateAccountProfile({
         display_name: values.display_name || '',
         bio: values.bio || '',
-        avatar: avatarRemoved ? null : selectedAvatarFile,
+        avatar: avatarRemoved ? null : selectedAvatarFile || undefined,
         avatar_clear: avatarRemoved,
       });
-      setProfile(updated);
+      const mergedProfile = {
+        ...(profile || {}),
+        ...(updated || {}),
+        avatar_url:
+          updated?.avatar_url ??
+          updated?.avatar ??
+          profile?.avatar_url ??
+          profile?.avatar ??
+          null,
+        avatar:
+          updated?.avatar ??
+          updated?.avatar_url ??
+          profile?.avatar ??
+          profile?.avatar_url ??
+          null,
+      } as AccountProfileResponse;
+      setProfile(mergedProfile);
       await setInitialState((prev) => ({
         ...prev,
         currentUser: {
           ...(prev?.currentUser || {}),
-          display_name: updated?.display_name,
-          username: updated?.username,
-          bio: updated?.bio,
-          avatar_url: updated?.avatar_url || updated?.avatar || undefined,
+          display_name:
+            updated?.display_name ?? profile?.display_name ?? undefined,
+          username: updated?.username ?? profile?.username ?? undefined,
+          bio: updated?.bio ?? profile?.bio ?? undefined,
+          avatar_url:
+            updated?.avatar_url ??
+            updated?.avatar ??
+            profile?.avatar_url ??
+            profile?.avatar ??
+            undefined,
         },
       }));
       form.setFieldsValue({
-        display_name: updated?.display_name || '',
-        bio: updated?.bio || '',
+        display_name: mergedProfile?.display_name || '',
+        bio: mergedProfile?.bio || '',
       });
       setSelectedAvatarFile(null);
       setAvatarRemoved(false);
@@ -418,70 +442,73 @@ export default function AccountProfilePage() {
               </Form>
             </Card>
 
-            <Card
-              title={intl.formatMessage({ id: 'account.profile.counts.title' })}
-              variant="borderless"
-              style={{ borderRadius: 20 }}
-            >
-              <Row gutter={[12, 12]}>
-                {countCards.map((item) => (
-                  <Col xs={12} md={6} key={item.key}>
-                    <Card size="small" style={{ borderRadius: 12 }}>
-                      <Text type="secondary">{item.label}</Text>
-                      <div style={{ fontSize: 22, fontWeight: 700 }}>
-                        {item.value}
-                      </div>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            </Card>
+            <Card variant="borderless" style={{ borderRadius: 20 }}>
+              <Space direction="vertical" size={14} style={{ width: '100%' }}>
+                <Text strong>
+                  {intl.formatMessage({ id: 'account.profile.counts.title' })}
+                </Text>
+                <Row gutter={[12, 12]}>
+                  {countCards.map((item) => (
+                    <Col xs={12} md={6} key={item.key}>
+                      <Card size="small" style={{ borderRadius: 12 }}>
+                        <Text type="secondary">{item.label}</Text>
+                        <div style={{ fontSize: 22, fontWeight: 700 }}>
+                          {item.value}
+                        </div>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
 
-            <Card
-              title={intl.formatMessage({
-                id: 'account.profile.quickActions.title',
-              })}
-              variant="borderless"
-              style={{ borderRadius: 20 }}
-            >
-              <Space wrap>
-                <Button onClick={() => history.push('/videos/mine')}>
-                  {intl.formatMessage({ id: 'nav.myVideos' })}
-                </Button>
-                <Button onClick={() => history.push('/videos/upload')}>
-                  {intl.formatMessage({ id: 'nav.uploadVideo' })}
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<VideoCameraOutlined />}
-                  disabled={!canCreateLive}
-                  onClick={() =>
-                    history.push(
-                      isLoggedIn
-                        ? '/live/create'
-                        : `/login?redirect=${encodeURIComponent(
-                            '/live/create',
-                          )}`,
-                    )
-                  }
-                >
-                  {intl.formatMessage({ id: 'nav.goLive' })}
-                </Button>
-                {canManageStore ? (
-                  <Button
-                    icon={<ShopOutlined />}
-                    onClick={() => history.push('/seller/store')}
-                  >
-                    {intl.formatMessage({ id: 'nav.myStore' })}
+                <Divider style={{ margin: '2px 0' }} />
+
+                <Text strong>
+                  {intl.formatMessage({
+                    id: 'account.profile.quickActions.title',
+                  })}
+                </Text>
+                <Space wrap>
+                  <Button onClick={() => history.push('/videos/mine')}>
+                    {intl.formatMessage({ id: 'nav.myVideos' })}
                   </Button>
-                ) : null}
-                {canAcceptPayments ? (
-                  <Button
-                    onClick={() => history.push('/account/payment-orders')}
-                  >
-                    {intl.formatMessage({ id: 'nav.myPaymentOrders' })}
+                  <Button onClick={() => history.push('/videos/upload')}>
+                    {intl.formatMessage({ id: 'nav.uploadVideo' })}
                   </Button>
-                ) : null}
+                  <Button
+                    type="primary"
+                    icon={<VideoCameraOutlined />}
+                    disabled={!canUseGoLive}
+                    onClick={() =>
+                      history.push(
+                        isLoggedIn
+                          ? '/live/create'
+                          : `/login?redirect=${encodeURIComponent(
+                              '/live/create',
+                            )}`,
+                      )
+                    }
+                  >
+                    {intl.formatMessage({ id: 'nav.goLive' })}
+                  </Button>
+                  {canManageStore ? (
+                    <Button
+                      icon={<ShopOutlined />}
+                      onClick={() => history.push('/seller/store')}
+                    >
+                      {intl.formatMessage({ id: 'nav.myStore' })}
+                    </Button>
+                  ) : null}
+                  {canAcceptPayments ? (
+                    <Button
+                      onClick={() => history.push('/account/payment-orders')}
+                    >
+                      {intl.formatMessage({ id: 'nav.myPaymentOrders' })}
+                    </Button>
+                  ) : null}
+                  <Button onClick={() => history.push('/account/subscription')}>
+                    {intl.formatMessage({ id: 'nav.mySubscription' })}
+                  </Button>
+                </Space>
               </Space>
             </Card>
           </Space>
