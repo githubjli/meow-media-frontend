@@ -104,7 +104,9 @@ const LayoutChildrenWrapper = ({
   isDark?: boolean;
 }) => {
   useEffect(() => {
-    const favicon = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+    const favicon = document.querySelector(
+      "link[rel*='icon']",
+    ) as HTMLLinkElement;
     const iconPath = '/favicon.ico';
     if (favicon) {
       favicon.href = iconPath;
@@ -633,267 +635,21 @@ export const layout: RunTimeLayoutConfig = ({
           align="center"
           style={{ marginRight: 6, display: 'flex', alignItems: 'center' }}
         >
-        <Tooltip
-          title={
-            canUseGoLive
-              ? undefined
-              : intl.formatMessage({ id: 'nav.goLive.disabledHint' })
-          }
-        >
-          <Button
-            type="primary"
-            icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
-            style={{
-              borderRadius: 10,
-              height: 30,
-              display: 'inline-flex',
-              alignItems: 'center',
-              fontWeight: 700,
-              color: '#2C2C2C',
-              backgroundColor: '#EFBC5C',
-              border: 'none',
-              boxShadow: isDark
-                ? '0 8px 18px rgba(239, 188, 92, 0.2)'
-                : '0 8px 18px rgba(184, 135, 46, 0.2)',
-            }}
-            onClick={handleGoLiveClick}
-            disabled={!canUseGoLive}
+          <Tooltip
+            title={
+              canUseGoLive
+                ? undefined
+                : intl.formatMessage({ id: 'nav.goLive.disabledHint' })
+            }
           >
-            {intl.formatMessage({ id: 'nav.goLive' })}
-          </Button>
-        </Tooltip>
-        <Button
-          type="text"
-          icon={
-            isDark ? (
-              <SunOutlined style={{ color: '#faad14' }} />
-            ) : (
-              <MoonOutlined style={{ fontSize: 16 }} />
-            )
-          }
-          style={{
-            ...utilityButtonStyle,
-            fontSize: 18,
-            color: isDark ? '#EFBC5C' : '#4b5563',
-          }}
-          onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
-        />
-        <Dropdown
-          trigger={['click']}
-          menu={{ items: languageMenuItems as any }}
-        >
-          <Button
-            type="text"
-            icon={<GlobalOutlined style={{ fontSize: 16 }} />}
-            style={{
-              ...utilityButtonStyle,
-              color: isDark ? '#EFBC5C' : '#4b5563',
-            }}
-          />
-        </Dropdown>
-        {isLoggedIn ? (
-          <Dropdown
-            trigger={['click']}
-            menu={{
-              items: [
-                {
-                  key: 'profile-header',
-                  disabled: true,
-                  label: (
-                    <Space size={10} align="start" style={{ width: '100%' }}>
-                      <Avatar
-                        size={30}
-                        src={
-                          currentUser?.avatar_url ||
-                          currentUser?.avatar ||
-                          undefined
-                        }
-                        icon={<UserOutlined />}
-                      />
-                      <Space
-                        direction="vertical"
-                        size={1}
-                        style={{ minWidth: 0, lineHeight: 1.2 }}
-                      >
-                        <Text
-                          style={{ fontWeight: 600, maxWidth: 180 }}
-                          ellipsis
-                        >
-                          {displayName}
-                        </Text>
-                        {secondaryIdentity ? (
-                          <Text
-                            type="secondary"
-                            style={{ fontSize: 12, maxWidth: 180 }}
-                            ellipsis
-                          >
-                            {secondaryIdentity}
-                          </Text>
-                        ) : null}
-                        {profileHints.length > 0 ? (
-                          <Space size={4} wrap>
-                            {profileHints.map((hint) => (
-                              <Tag
-                                key={hint.key}
-                                bordered={false}
-                                color="gold"
-                                style={{
-                                  borderRadius: 999,
-                                  marginInlineEnd: 0,
-                                  paddingInline: 6,
-                                  fontSize: 11,
-                                  lineHeight: '18px',
-                                }}
-                              >
-                                {intl.formatMessage({ id: hint.label })}
-                              </Tag>
-                            ))}
-                          </Space>
-                        ) : null}
-                      </Space>
-                    </Space>
-                  ),
-                },
-                {
-                  type: 'divider',
-                },
-                {
-                  key: 'profile-dashboard',
-                  icon: <UserOutlined />,
-                  label: intl.formatMessage({ id: 'nav.profile' }),
-                  onClick: () => history.push('/profile'),
-                },
-                {
-                  key: 'my-videos',
-                  icon: <PlaySquareOutlined />,
-                  label: intl.formatMessage({ id: 'nav.myVideos' }),
-                  onClick: () => history.push('/videos/mine'),
-                },
-                {
-                  key: 'upload-video',
-                  icon: <UploadOutlined />,
-                  label: intl.formatMessage({ id: 'nav.uploadVideo' }),
-                  onClick: () => history.push('/videos/upload'),
-                },
-                {
-                  key: 'go-live',
-                  icon: <VideoCameraOutlined />,
-                  label: intl.formatMessage({ id: 'nav.goLive' }),
-                  onClick: handleGoLiveClick,
-                  disabled: !isCreator,
-                },
-                {
-                  type: 'divider',
-                },
-                ...(sellerHasStore
-                  ? [
-                      {
-                        key: 'seller-center',
-                        icon: <ShopOutlined />,
-                        label: intl.formatMessage({ id: 'nav.myStore' }),
-                        onClick: () => history.push('/seller/store'),
-                      } as const,
-                    ]
-                  : []),
-                {
-                  key: 'my-payment-orders',
-                  icon: <DollarOutlined />,
-                  label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
-                  onClick: () => history.push('/account/payment-orders'),
-                },
-                {
-                  type: 'divider',
-                },
-                {
-                  key: 'language',
-                  icon: <CompassOutlined />,
-                  label: intl.formatMessage({ id: 'nav.language' }),
-                  children: languageMenuItems as any,
-                },
-                {
-                  key: 'theme-menu',
-                  icon: <BgColorsOutlined />,
-                  label: intl.formatMessage({ id: 'nav.theme' }),
-                  children: [
-                    {
-                      key: 'theme-light',
-                      icon: <SunOutlined />,
-                      label: intl.formatMessage({ id: 'nav.theme.light' }),
-                      onClick: () => applyThemeMode('light'),
-                    },
-                    {
-                      key: 'theme-dark',
-                      icon: <MoonOutlined />,
-                      label: intl.formatMessage({ id: 'nav.theme.dark' }),
-                      onClick: () => applyThemeMode('dark'),
-                    },
-                    {
-                      key: 'theme-system',
-                      icon: <CompassOutlined />,
-                      label: intl.formatMessage({ id: 'nav.theme.system' }),
-                      onClick: () => applyThemeMode('system'),
-                    },
-                  ],
-                },
-                {
-                  key: 'settings',
-                  icon: <SettingOutlined />,
-                  label: intl.formatMessage({ id: 'nav.settings' }),
-                  onClick: () => history.push('/settings'),
-                },
-                {
-                  key: 'help',
-                  icon: <QuestionCircleOutlined />,
-                  label: intl.formatMessage({ id: 'nav.help' }),
-                },
-                ...(isAdmin
-                  ? ([
-                      {
-                        type: 'divider',
-                      },
-                      {
-                        key: 'all-videos',
-                        icon: <SettingOutlined />,
-                        label: intl.formatMessage({ id: 'nav.allVideos' }),
-                        onClick: () => history.push('/admin/videos'),
-                      },
-                    ] as const)
-                  : []),
-                {
-                  type: 'divider',
-                },
-                {
-                  key: 'logout',
-                  icon: <LogoutOutlined />,
-                  label: intl.formatMessage({ id: 'nav.logOut' }),
-                  onClick: handleLogout,
-                },
-              ],
-            }}
-          >
-            <Space size={8} style={{ marginLeft: 6, cursor: 'pointer' }}>
-              <Avatar
-                size={32}
-                src={
-                  currentUser?.avatar_url || currentUser?.avatar || undefined
-                }
-                icon={<UserOutlined />}
-              />
-            </Space>
-          </Dropdown>
-        ) : (
-          <Space size={8} style={{ marginLeft: 8 }}>
-            <Button
-              type="text"
-              style={{ color: '#745F40', fontWeight: 600 }}
-              onClick={() => history.push('/login')}
-            >
-              {intl.formatMessage({ id: 'nav.logIn' })}
-            </Button>
             <Button
               type="primary"
+              icon={<VideoCameraOutlined style={{ fontSize: 16 }} />}
               style={{
-                borderRadius: 9,
+                borderRadius: 10,
+                height: 30,
+                display: 'inline-flex',
+                alignItems: 'center',
                 fontWeight: 700,
                 color: '#2C2C2C',
                 backgroundColor: '#EFBC5C',
@@ -902,12 +658,264 @@ export const layout: RunTimeLayoutConfig = ({
                   ? '0 8px 18px rgba(239, 188, 92, 0.2)'
                   : '0 8px 18px rgba(184, 135, 46, 0.2)',
               }}
-              onClick={() => history.push('/register')}
+              onClick={handleGoLiveClick}
+              disabled={!canUseGoLive}
             >
-              {intl.formatMessage({ id: 'nav.signUp' })}
+              {intl.formatMessage({ id: 'nav.goLive' })}
             </Button>
-          </Space>
-        )}
+          </Tooltip>
+          <Button
+            type="text"
+            icon={
+              isDark ? (
+                <SunOutlined style={{ color: '#faad14' }} />
+              ) : (
+                <MoonOutlined style={{ fontSize: 16 }} />
+              )
+            }
+            style={{
+              ...utilityButtonStyle,
+              fontSize: 18,
+              color: isDark ? '#EFBC5C' : '#4b5563',
+            }}
+            onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
+          />
+          <Dropdown
+            trigger={['click']}
+            menu={{ items: languageMenuItems as any }}
+          >
+            <Button
+              type="text"
+              icon={<GlobalOutlined style={{ fontSize: 16 }} />}
+              style={{
+                ...utilityButtonStyle,
+                color: isDark ? '#EFBC5C' : '#4b5563',
+              }}
+            />
+          </Dropdown>
+          {isLoggedIn ? (
+            <Dropdown
+              trigger={['click']}
+              menu={{
+                items: [
+                  {
+                    key: 'profile-header',
+                    disabled: true,
+                    label: (
+                      <Space size={10} align="start" style={{ width: '100%' }}>
+                        <Avatar
+                          size={30}
+                          src={
+                            currentUser?.avatar_url ||
+                            currentUser?.avatar ||
+                            undefined
+                          }
+                          icon={<UserOutlined />}
+                        />
+                        <Space
+                          direction="vertical"
+                          size={1}
+                          style={{ minWidth: 0, lineHeight: 1.2 }}
+                        >
+                          <Text
+                            style={{ fontWeight: 600, maxWidth: 180 }}
+                            ellipsis
+                          >
+                            {displayName}
+                          </Text>
+                          {secondaryIdentity ? (
+                            <Text
+                              type="secondary"
+                              style={{ fontSize: 12, maxWidth: 180 }}
+                              ellipsis
+                            >
+                              {secondaryIdentity}
+                            </Text>
+                          ) : null}
+                          {profileHints.length > 0 ? (
+                            <Space size={4} wrap>
+                              {profileHints.map((hint) => (
+                                <Tag
+                                  key={hint.key}
+                                  bordered={false}
+                                  color="gold"
+                                  style={{
+                                    borderRadius: 999,
+                                    marginInlineEnd: 0,
+                                    paddingInline: 6,
+                                    fontSize: 11,
+                                    lineHeight: '18px',
+                                  }}
+                                >
+                                  {intl.formatMessage({ id: hint.label })}
+                                </Tag>
+                              ))}
+                            </Space>
+                          ) : null}
+                        </Space>
+                      </Space>
+                    ),
+                  },
+                  {
+                    type: 'divider',
+                  },
+                  {
+                    key: 'profile-dashboard',
+                    icon: <UserOutlined />,
+                    label: intl.formatMessage({ id: 'nav.profile' }),
+                    onClick: () => history.push('/profile'),
+                  },
+                  {
+                    key: 'my-videos',
+                    icon: <PlaySquareOutlined />,
+                    label: intl.formatMessage({ id: 'nav.myVideos' }),
+                    onClick: () => history.push('/videos/mine'),
+                  },
+                  {
+                    key: 'upload-video',
+                    icon: <UploadOutlined />,
+                    label: intl.formatMessage({ id: 'nav.uploadVideo' }),
+                    onClick: () => history.push('/videos/upload'),
+                  },
+                  {
+                    key: 'go-live',
+                    icon: <VideoCameraOutlined />,
+                    label: intl.formatMessage({ id: 'nav.goLive' }),
+                    onClick: handleGoLiveClick,
+                    disabled: !isCreator,
+                  },
+                  {
+                    type: 'divider',
+                  },
+                  ...(sellerHasStore
+                    ? [
+                        {
+                          key: 'seller-center',
+                          icon: <ShopOutlined />,
+                          label: intl.formatMessage({ id: 'nav.myStore' }),
+                          onClick: () => history.push('/seller/store'),
+                        } as const,
+                      ]
+                    : []),
+                  {
+                    key: 'my-payment-orders',
+                    icon: <DollarOutlined />,
+                    label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
+                    onClick: () => history.push('/account/payment-orders'),
+                  },
+                  {
+                    key: 'my-subscription',
+                    icon: <DollarOutlined />,
+                    label: intl.formatMessage({ id: 'nav.mySubscription' }),
+                    onClick: () => history.push('/account/subscription'),
+                  },
+                  {
+                    type: 'divider',
+                  },
+                  {
+                    key: 'language',
+                    icon: <CompassOutlined />,
+                    label: intl.formatMessage({ id: 'nav.language' }),
+                    children: languageMenuItems as any,
+                  },
+                  {
+                    key: 'theme-menu',
+                    icon: <BgColorsOutlined />,
+                    label: intl.formatMessage({ id: 'nav.theme' }),
+                    children: [
+                      {
+                        key: 'theme-light',
+                        icon: <SunOutlined />,
+                        label: intl.formatMessage({ id: 'nav.theme.light' }),
+                        onClick: () => applyThemeMode('light'),
+                      },
+                      {
+                        key: 'theme-dark',
+                        icon: <MoonOutlined />,
+                        label: intl.formatMessage({ id: 'nav.theme.dark' }),
+                        onClick: () => applyThemeMode('dark'),
+                      },
+                      {
+                        key: 'theme-system',
+                        icon: <CompassOutlined />,
+                        label: intl.formatMessage({ id: 'nav.theme.system' }),
+                        onClick: () => applyThemeMode('system'),
+                      },
+                    ],
+                  },
+                  {
+                    key: 'settings',
+                    icon: <SettingOutlined />,
+                    label: intl.formatMessage({ id: 'nav.settings' }),
+                    onClick: () => history.push('/settings'),
+                  },
+                  {
+                    key: 'help',
+                    icon: <QuestionCircleOutlined />,
+                    label: intl.formatMessage({ id: 'nav.help' }),
+                  },
+                  ...(isAdmin
+                    ? ([
+                        {
+                          type: 'divider',
+                        },
+                        {
+                          key: 'all-videos',
+                          icon: <SettingOutlined />,
+                          label: intl.formatMessage({ id: 'nav.allVideos' }),
+                          onClick: () => history.push('/admin/videos'),
+                        },
+                      ] as const)
+                    : []),
+                  {
+                    type: 'divider',
+                  },
+                  {
+                    key: 'logout',
+                    icon: <LogoutOutlined />,
+                    label: intl.formatMessage({ id: 'nav.logOut' }),
+                    onClick: handleLogout,
+                  },
+                ],
+              }}
+            >
+              <Space size={8} style={{ marginLeft: 6, cursor: 'pointer' }}>
+                <Avatar
+                  size={32}
+                  src={
+                    currentUser?.avatar_url || currentUser?.avatar || undefined
+                  }
+                  icon={<UserOutlined />}
+                />
+              </Space>
+            </Dropdown>
+          ) : (
+            <Space size={8} style={{ marginLeft: 8 }}>
+              <Button
+                type="text"
+                style={{ color: '#745F40', fontWeight: 600 }}
+                onClick={() => history.push('/login')}
+              >
+                {intl.formatMessage({ id: 'nav.logIn' })}
+              </Button>
+              <Button
+                type="primary"
+                style={{
+                  borderRadius: 9,
+                  fontWeight: 700,
+                  color: '#2C2C2C',
+                  backgroundColor: '#EFBC5C',
+                  border: 'none',
+                  boxShadow: isDark
+                    ? '0 8px 18px rgba(239, 188, 92, 0.2)'
+                    : '0 8px 18px rgba(184, 135, 46, 0.2)',
+                }}
+                onClick={() => history.push('/register')}
+              >
+                {intl.formatMessage({ id: 'nav.signUp' })}
+              </Button>
+            </Space>
+          )}
         </Space>
       );
     },
@@ -931,7 +939,11 @@ export const layout: RunTimeLayoutConfig = ({
       },
     },
     childrenRender: (children) => {
-      return <LayoutChildrenWrapper isDark={isDark}>{children}</LayoutChildrenWrapper>;
+      return (
+        <LayoutChildrenWrapper isDark={isDark}>
+          {children}
+        </LayoutChildrenWrapper>
+      );
     },
   };
 };
