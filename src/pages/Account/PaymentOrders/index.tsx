@@ -6,20 +6,83 @@ import {
 } from '@/services/livePaymentOrders';
 import type { PaymentOrder, PaymentOrderSummary } from '@/types/paymentOrder';
 import { PageContainer } from '@ant-design/pro-components';
-import { useIntl } from '@umijs/max';
-import { Alert, Button, Empty, Modal, Space, Spin, Table } from 'antd';
+import { history, useIntl, useModel } from '@umijs/max';
+import {
+  Alert,
+  Button,
+  Card,
+  Empty,
+  Modal,
+  Space,
+  Spin,
+  Table,
+  Tag,
+  message,
+} from 'antd';
 import { useEffect, useState } from 'react';
 
 export default function AccountPaymentOrdersPage() {
   const intl = useIntl();
+  const { initialState } = useModel('@@initialState');
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<PaymentOrderSummary[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detail, setDetail] = useState<PaymentOrder | null>(null);
+  const isLoggedIn = Boolean(initialState?.currentUser?.email);
+  const locale = intl.locale || 'en-US';
+
+  const formatDateTime = (value?: string) => {
+    if (!value) return '-';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return new Intl.DateTimeFormat(locale, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(parsed);
+  };
+
+  const formatAmount = (row: PaymentOrderSummary) => {
+    const rawAmount = Number(row.amount);
+    if (!Number.isFinite(rawAmount)) {
+      return `${row.amount ?? '-'} ${row.currency || ''}`.trim();
+    }
+
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: row.currency || 'USD',
+        currencyDisplay: 'code',
+      }).format(rawAmount);
+    } catch (error) {
+      return `${rawAmount} ${row.currency || ''}`.trim();
+    }
+  };
+
+  const resolveStatusColor = (status?: string) => {
+    const normalized = String(status || '').toLowerCase();
+    if (['paid', 'success', 'completed'].includes(normalized)) return 'green';
+    if (['pending', 'created', 'unpaid'].includes(normalized)) return 'gold';
+    if (['failed', 'cancelled', 'canceled'].includes(normalized)) return 'red';
+    return 'default';
+  };
 
   useEffect(() => {
+    if (!initialState?.authLoading && !isLoggedIn) {
+      history.replace(
+        `/login?redirect=${encodeURIComponent('/account/payment-orders')}`,
+      );
+      return;
+    }
+
+    if (!isLoggedIn) {
+      return;
+    }
+
     setLoading(true);
     setErrorMessage('');
     getMyPaymentOrders()
@@ -31,7 +94,7 @@ export default function AccountPaymentOrdersPage() {
         ),
       )
       .finally(() => setLoading(false));
-  }, [intl]);
+  }, [initialState?.authLoading, intl, isLoggedIn]);
 
   return (
     <PageContainer title={false}>
@@ -48,7 +111,9 @@ export default function AccountPaymentOrdersPage() {
         ) : null}
 
         {loading ? (
-          <Spin />
+          <Card variant="borderless" style={{ borderRadius: 20 }}>
+            <Spin />
+          </Card>
         ) : items.length === 0 ? (
           <Empty
             description={intl.formatMessage({
@@ -58,7 +123,6 @@ export default function AccountPaymentOrdersPage() {
         ) : (
           <Table
             rowKey="id"
-            pagination={false}
             dataSource={items}
             columns={[
               {
@@ -71,15 +135,19 @@ export default function AccountPaymentOrdersPage() {
               },
               {
                 title: intl.formatMessage({ id: 'live.orders.amount' }),
-                render: (_, row) => `${row.amount} ${row.currency}`,
+                render: (_, row) => formatAmount(row),
               },
               {
                 title: intl.formatMessage({ id: 'live.orders.status' }),
-                dataIndex: 'status',
+                render: (_, row) => (
+                  <Tag color={resolveStatusColor(row.status)}>
+                    {String(row.status || '-').toUpperCase()}
+                  </Tag>
+                ),
               },
               {
                 title: intl.formatMessage({ id: 'live.orders.createdAt' }),
-                dataIndex: 'created_at',
+                render: (_, row) => formatDateTime(row.created_at),
               },
               {
                 title: intl.formatMessage({ id: 'common.actions' }),
@@ -87,7 +155,14 @@ export default function AccountPaymentOrdersPage() {
                   <Button
                     size="small"
                     onClick={async () => {
-                      if (!row.live?.id) return;
+                      if (!row.live?.id) {
+                        message.warning(
+                          intl.formatMessage({
+                            id: 'account.paymentOrders.error',
+                          }),
+                        );
+                        return;
+                      }
                       setDetailOpen(true);
                       setDetailLoading(true);
                       try {
@@ -96,8 +171,14 @@ export default function AccountPaymentOrdersPage() {
                           row.id,
                         );
                         setDetail(detailItem);
-                      } catch (error) {
+                      } catch (error: any) {
                         setDetail(null);
+                        message.error(
+                          error?.message ||
+                            intl.formatMessage({
+                              id: 'account.paymentOrders.error',
+                            }),
+                        );
                       } finally {
                         setDetailLoading(false);
                       }
@@ -108,6 +189,7 @@ export default function AccountPaymentOrdersPage() {
                 ),
               },
             ]}
+            pagination={{ pageSize: 10, showSizeChanger: false }}
           />
         )}
       </Space>
