@@ -1,4 +1,5 @@
 import PageIntroCard from '@/components/PageIntroCard';
+import QrCodePanel from '@/components/QrCodePanel';
 import {
   cancelBillingSubscription,
   createBillingSubscription,
@@ -9,6 +10,7 @@ import {
 } from '@/services/billing';
 import {
   DollarOutlined,
+  QrcodeOutlined,
   ReloadOutlined,
   StopOutlined,
 } from '@ant-design/icons';
@@ -19,6 +21,7 @@ import {
   Button,
   Card,
   Empty,
+  Modal,
   Skeleton,
   Space,
   Tag,
@@ -51,6 +54,7 @@ export default function AccountSubscriptionPage() {
   );
   const [submittingPlanId, setSubmittingPlanId] = useState<string>('');
   const [cancelling, setCancelling] = useState(false);
+  const [qrPayload, setQrPayload] = useState('');
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const locale = intl.locale || 'en-US';
 
@@ -284,40 +288,67 @@ export default function AccountSubscriptionPage() {
                                   id: 'account.subscription.plans.interval.month',
                                 })}
                             </Text>
+                            {plan.wallet_address ? (
+                              <Text
+                                type="secondary"
+                                style={{ display: 'block', marginTop: 4 }}
+                              >
+                                {intl.formatMessage({
+                                  id: 'account.subscription.walletAddress',
+                                })}
+                                : {plan.wallet_address}
+                              </Text>
+                            ) : null}
                           </div>
-                          <Button
-                            type={isCurrent ? 'default' : 'primary'}
-                            icon={<DollarOutlined />}
-                            loading={submittingPlanId === planId}
-                            disabled={isCurrent}
-                            onClick={async () => {
-                              setSubmittingPlanId(planId);
-                              try {
-                                const next = await createBillingSubscription({
-                                  plan_id: plan.id,
-                                });
-                                setSubscription(next || null);
-                                message.success(
-                                  intl.formatMessage({
-                                    id: 'account.subscription.create.success',
-                                  }),
-                                );
-                              } catch (error: any) {
-                                message.error(
-                                  error?.message ||
+                          <Space direction="vertical" size={8} align="end">
+                            {plan.wallet_address ? (
+                              <Button
+                                icon={<QrcodeOutlined />}
+                                onClick={() =>
+                                  setQrPayload(
+                                    String(plan.wallet_address || ''),
+                                  )
+                                }
+                              >
+                                {intl.formatMessage({
+                                  id: 'account.subscription.qr.cta',
+                                })}
+                              </Button>
+                            ) : null}
+                            <Button
+                              type={isCurrent ? 'default' : 'primary'}
+                              icon={<DollarOutlined />}
+                              loading={submittingPlanId === planId}
+                              disabled={isCurrent}
+                              onClick={async () => {
+                                setSubmittingPlanId(planId);
+                                try {
+                                  const next = await createBillingSubscription({
+                                    plan_id: plan.id,
+                                  });
+                                  setSubscription(next || null);
+                                  message.success(
                                     intl.formatMessage({
-                                      id: 'account.subscription.create.error',
+                                      id: 'account.subscription.create.success',
                                     }),
-                                );
-                              } finally {
-                                setSubmittingPlanId('');
-                              }
-                            }}
-                          >
-                            {intl.formatMessage({
-                              id: 'account.subscription.create.cta',
-                            })}
-                          </Button>
+                                  );
+                                } catch (error: any) {
+                                  message.error(
+                                    error?.message ||
+                                      intl.formatMessage({
+                                        id: 'account.subscription.create.error',
+                                      }),
+                                  );
+                                } finally {
+                                  setSubmittingPlanId('');
+                                }
+                              }}
+                            >
+                              {intl.formatMessage({
+                                id: 'account.subscription.create.cta',
+                              })}
+                            </Button>
+                          </Space>
                         </Space>
                       </Card>
                     );
@@ -328,6 +359,21 @@ export default function AccountSubscriptionPage() {
           </>
         )}
       </Space>
+
+      <Modal
+        open={Boolean(qrPayload)}
+        footer={null}
+        onCancel={() => setQrPayload('')}
+        title={intl.formatMessage({ id: 'account.subscription.qr.title' })}
+      >
+        <QrCodePanel
+          payload={qrPayload}
+          size={220}
+          emptyText={intl.formatMessage({
+            id: 'account.subscription.qr.empty',
+          })}
+        />
+      </Modal>
     </PageContainer>
   );
 }

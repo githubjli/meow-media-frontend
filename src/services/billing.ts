@@ -5,6 +5,7 @@ export type BillingPlan = {
   name?: string;
   code?: string;
   description?: string;
+  wallet_address?: string;
   amount?: string | number;
   currency?: string;
   interval?: 'month' | 'year' | string;
