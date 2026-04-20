@@ -416,9 +416,17 @@ export default function AccountSubscriptionPage() {
                               setSubmittingPlanId(planId);
                               setOrderError('');
                               try {
+                                if (!plan.code) {
+                                  throw new Error(
+                                    intl.formatMessage({
+                                      id: 'account.subscription.create.error',
+                                    }),
+                                  );
+                                }
+
                                 const createdOrder =
                                   await createMembershipOrder({
-                                    plan_id: plan.id,
+                                    plan_code: String(plan.code),
                                   });
                                 setCurrentOrder(createdOrder || null);
                                 setCurrentOrderNo(

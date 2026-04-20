@@ -4,6 +4,7 @@ export type MembershipPlan = {
   id: number | string;
   name?: string;
   description?: string;
+  code?: string;
   price_lbc?: string | number;
   duration_days?: number;
   [key: string]: any;
@@ -53,9 +54,7 @@ export async function listMembershipPlans() {
   return normalizeList<MembershipPlan>(payload);
 }
 
-export async function createMembershipOrder(payload: {
-  plan_id: string | number;
-}) {
+export async function createMembershipOrder(payload: { plan_code: string }) {
   return requestJson<MembershipOrder>(`/api/membership/orders/`, {
     method: 'POST',
     headers: await withAuth(),
