@@ -10,7 +10,6 @@ import {
   getMembershipOrder,
   getMyMembershipStatus,
   listMembershipPlans,
-  submitMembershipOrderTxHint,
   type MembershipOrder,
   type MembershipPlan,
   type MembershipStatus,
@@ -214,6 +213,7 @@ export default function AccountSubscriptionPage() {
     'idle' | 'submitted' | 'failed'
   >('idle');
   const [txHintError, setTxHintError] = useState('');
+  const [walletRelockWarning, setWalletRelockWarning] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const locale = intl.locale || 'en-US';
@@ -583,6 +583,7 @@ export default function AccountSubscriptionPage() {
                               setOrderError('');
                               setCapturedTxid('');
                               setTxHintError('');
+                              setWalletRelockWarning('');
                               setTxHintState('idle');
                               try {
                                 if (!plan.code) {
@@ -839,38 +840,48 @@ export default function AccountSubscriptionPage() {
 
                       setSendingPayment(true);
                       setTxHintError('');
+                      setWalletRelockWarning('');
                       setTxHintState('idle');
                       try {
-                        const { txid } = await runWalletPrototypePaymentFlow({
-                          linkedWalletId: String(
-                            profile?.linked_wallet_id || '',
-                          ),
-                          unlockPassword: walletUnlockPassword,
-                          toAddress: String(currentOrder.pay_to_address),
-                          amountLbc: String(
-                            currentOrder.expected_amount_lbc || '',
-                          ),
-                        });
+                        const paymentResult =
+                          await runWalletPrototypePaymentFlow({
+                            order_no: String(currentOrder.order_no),
+                            wallet_id: String(profile?.linked_wallet_id || ''),
+                            password: walletUnlockPassword,
+                          });
 
-                        setCapturedTxid(txid);
-                        message.info(
+                        if (paymentResult?.txid) {
+                          setCapturedTxid(String(paymentResult.txid));
+                        }
+                        setTxHintState('submitted');
+                        message.success(
                           intl.formatMessage({
                             id: 'account.subscription.wallet.txSubmitted',
                           }),
                         );
 
-                        await submitMembershipOrderTxHint(
-                          currentOrder.order_no,
-                          {
-                            txid,
-                          },
-                        );
-                        setTxHintState('submitted');
-                        message.success(
-                          intl.formatMessage({
-                            id: 'account.subscription.wallet.txidSubmitted',
-                          }),
-                        );
+                        if (paymentResult?.wallet_relocked) {
+                          message.success(
+                            intl.formatMessage({
+                              id: 'account.subscription.wallet.relocked',
+                            }),
+                          );
+                        }
+
+                        if (
+                          paymentResult?.relock_warning ||
+                          paymentResult?.warning
+                        ) {
+                          setWalletRelockWarning(
+                            String(
+                              paymentResult?.relock_warning ||
+                                paymentResult?.warning ||
+                                intl.formatMessage({
+                                  id: 'account.subscription.wallet.relockWarning',
+                                }),
+                            ),
+                          );
+                        }
 
                         const latestOrder = await getMembershipOrder(
                           currentOrder.order_no,
@@ -881,7 +892,7 @@ export default function AccountSubscriptionPage() {
                         setTxHintError(
                           error?.message ||
                             intl.formatMessage({
-                              id: 'account.subscription.wallet.send.error',
+                              id: 'account.subscription.wallet.paymentSubmissionFailed',
                             }),
                         );
                       } finally {
@@ -910,12 +921,19 @@ export default function AccountSubscriptionPage() {
                       type="success"
                       showIcon
                       message={intl.formatMessage({
-                        id: 'account.subscription.wallet.txidSubmitted',
+                        id: 'account.subscription.wallet.submittingPayment',
                       })}
                     />
                   ) : null}
                   {txHintState === 'failed' ? (
                     <Alert type="warning" showIcon message={txHintError} />
+                  ) : null}
+                  {walletRelockWarning ? (
+                    <Alert
+                      type="warning"
+                      showIcon
+                      message={walletRelockWarning}
+                    />
                   ) : null}
                 </Space>
               </Card>

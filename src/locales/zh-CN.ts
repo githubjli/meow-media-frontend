@@ -611,6 +611,13 @@ export default {
     'Do not close this dialog until backend verification is complete.',
   'account.subscription.wallet.send.error':
     'Unable to send wallet payment right now.',
+
+  'account.subscription.wallet.submittingPayment': 'Submitting wallet payment…',
+  'account.subscription.wallet.relocked': 'Wallet relocked.',
+  'account.subscription.wallet.relockWarning':
+    'Payment sent, but wallet relock needs attention.',
+  'account.subscription.wallet.paymentSubmissionFailed':
+    'Payment submission failed.',
   'live.room.unavailable': '直播间不可用。',
   'live.room.sidebar.liveChat': '直播聊天',
   'live.room.sidebar.liveChatPlaceholder': '直播聊天即将上线，当前不可用。',

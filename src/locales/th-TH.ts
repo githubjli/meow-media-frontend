@@ -619,6 +619,13 @@ export default {
     'Do not close this dialog until backend verification is complete.',
   'account.subscription.wallet.send.error':
     'Unable to send wallet payment right now.',
+
+  'account.subscription.wallet.submittingPayment': 'Submitting wallet payment…',
+  'account.subscription.wallet.relocked': 'Wallet relocked.',
+  'account.subscription.wallet.relockWarning':
+    'Payment sent, but wallet relock needs attention.',
+  'account.subscription.wallet.paymentSubmissionFailed':
+    'Payment submission failed.',
   'live.room.unavailable': 'ห้องไลฟ์ไม่พร้อมใช้งาน',
   'live.room.sidebar.liveChat': 'แชตสด',
   'live.room.sidebar.liveChatPlaceholder': 'แชตสดจะเปิดให้ใช้เร็ว ๆ นี้',
