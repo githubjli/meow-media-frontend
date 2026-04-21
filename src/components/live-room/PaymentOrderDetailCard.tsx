@@ -47,6 +47,15 @@ export default function PaymentOrderDetailCard({
           >
             <Tag>{order.order_type}</Tag>
           </Descriptions.Item>
+          {String(order.order_type || '').toLowerCase() === 'membership' ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.planName',
+              })}
+            >
+              {resolvePlanName(order, intl)}
+            </Descriptions.Item>
+          ) : null}
           <Descriptions.Item
             label={intl.formatMessage({ id: 'account.paymentOrders.planName' })}
           >
@@ -104,10 +113,78 @@ export default function PaymentOrderDetailCard({
           >
             {order.expires_at || '-'}
           </Descriptions.Item>
+          {order.expected_amount_lbc !== undefined ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.expectedAmount',
+              })}
+            >
+              {formatSettlementValue(order.expected_amount_lbc, intl)}
+            </Descriptions.Item>
+          ) : null}
+          {order.actual_amount_lbc !== undefined ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.actualAmount',
+              })}
+            >
+              {formatSettlementValue(order.actual_amount_lbc, intl)}
+            </Descriptions.Item>
+          ) : null}
+          {order.pay_to_address ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.paymentAddress',
+              })}
+            >
+              {order.pay_to_address}
+            </Descriptions.Item>
+          ) : null}
+          {order.txid ? (
+            <Descriptions.Item
+              label={intl.formatMessage({ id: 'account.paymentOrders.txid' })}
+            >
+              {order.txid}
+            </Descriptions.Item>
+          ) : null}
+          {typeof order.confirmations === 'number' ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.confirmations',
+              })}
+            >
+              {order.confirmations}
+            </Descriptions.Item>
+          ) : null}
+          {order.created_at ? (
+            <Descriptions.Item
+              label={intl.formatMessage({ id: 'live.orders.createdAt' })}
+            >
+              {order.created_at}
+            </Descriptions.Item>
+          ) : null}
+          {order.paid_at ? (
+            <Descriptions.Item
+              label={intl.formatMessage({ id: 'account.paymentOrders.paidAt' })}
+            >
+              {order.paid_at}
+            </Descriptions.Item>
+          ) : null}
+          {order.expires_at ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.expiresAt',
+              })}
+            >
+              {order.expires_at}
+            </Descriptions.Item>
+          ) : null}
           <Descriptions.Item
-            label={intl.formatMessage({ id: 'live.orders.status' })}
+            label={intl.formatMessage({
+              id: 'account.paymentOrders.actualPaid',
+            })}
           >
-            <Tag>{order.status}</Tag>
+            {resolveActualPaid(order, intl)}
           </Descriptions.Item>
         </Descriptions>
         {canMarkPaid && onMarkPaid ? (
