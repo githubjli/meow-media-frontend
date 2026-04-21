@@ -21,6 +21,11 @@ import {
 } from 'antd';
 import { useEffect, useState } from 'react';
 
+const toNumber = (value: any) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : NaN;
+};
+
 export default function AccountPaymentOrdersPage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
@@ -33,7 +38,7 @@ export default function AccountPaymentOrdersPage() {
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const locale = intl.locale || 'en-US';
 
-  const formatDateTime = (value?: string) => {
+  const formatDateTime = (value?: string | null) => {
     if (!value) return '-';
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return value;
@@ -46,7 +51,7 @@ export default function AccountPaymentOrdersPage() {
     }).format(parsed);
   };
 
-  const formatAmount = (row: PaymentOrderSummary) => {
+  const formatLegacyAmount = (row: PaymentOrderSummary) => {
     const rawAmount = Number(row.amount);
     if (!Number.isFinite(rawAmount)) {
       return `${row.amount ?? '-'} ${row.currency || ''}`.trim();
@@ -63,12 +68,114 @@ export default function AccountPaymentOrdersPage() {
     }
   };
 
-  const resolveStatusColor = (status?: string) => {
+  const formatSettlementAmount = (value: string | number | undefined) => {
+    if (value === undefined || value === null || value === '') return '-';
+    return `${value} ${intl.formatMessage({
+      id: 'account.subscription.plan.ltt',
+    })}`;
+  };
+
+  const resolveAmountDisplay = (row: PaymentOrderSummary) => {
+    const hasMembershipAmounts =
+      row.expected_amount_lbc !== undefined ||
+      row.actual_amount_lbc !== undefined;
+    const isMembershipOrder =
+      String(row.order_type || '').toLowerCase() === 'membership' ||
+      hasMembershipAmounts;
+    const actualAmount = toNumber(row.actual_amount_lbc);
+    if (isMembershipOrder && actualAmount > 0) {
+      return {
+        primary: formatSettlementAmount(row.actual_amount_lbc),
+        secondary:
+          row.expected_amount_lbc !== undefined
+            ? intl.formatMessage(
+                { id: 'account.paymentOrders.expectedAmountValue' },
+                { value: formatSettlementAmount(row.expected_amount_lbc) },
+              )
+            : '',
+      };
+    }
+
+    if (
+      isMembershipOrder &&
+      row.expected_amount_lbc !== undefined &&
+      row.expected_amount_lbc !== null &&
+      row.expected_amount_lbc !== ''
+    ) {
+      return {
+        primary: formatSettlementAmount(row.expected_amount_lbc),
+        secondary: '',
+      };
+    }
+
+    return {
+      primary: formatLegacyAmount(row),
+      secondary: '',
+    };
+  };
+
+  const resolveStatusMeta = (status?: string) => {
     const normalized = String(status || '').toLowerCase();
-    if (['paid', 'success', 'completed'].includes(normalized)) return 'green';
-    if (['pending', 'created', 'unpaid'].includes(normalized)) return 'gold';
-    if (['failed', 'cancelled', 'canceled'].includes(normalized)) return 'red';
-    return 'default';
+    if (normalized === 'paid') {
+      return {
+        color: 'green',
+        text: intl.formatMessage({ id: 'account.paymentOrders.status.paid' }),
+      };
+    }
+    if (normalized === 'underpaid') {
+      return {
+        color: 'orange',
+        text: intl.formatMessage({
+          id: 'account.paymentOrders.status.underpaid',
+        }),
+      };
+    }
+    if (normalized === 'overpaid') {
+      return {
+        color: 'blue',
+        text: intl.formatMessage({
+          id: 'account.paymentOrders.status.overpaid',
+        }),
+      };
+    }
+    if (normalized === 'expired') {
+      return {
+        color: 'default',
+        text: intl.formatMessage({
+          id: 'account.paymentOrders.status.expired',
+        }),
+      };
+    }
+    if (
+      normalized === 'paid_after_expiry' ||
+      normalized === 'paid_after_expired' ||
+      normalized === 'paid_after_expire'
+    ) {
+      return {
+        color: 'purple',
+        text: intl.formatMessage({
+          id: 'account.paymentOrders.status.paidAfterExpiry',
+        }),
+      };
+    }
+    if (['pending', 'created', 'unpaid'].includes(normalized)) {
+      return {
+        color: 'gold',
+        text: intl.formatMessage({
+          id: 'account.paymentOrders.status.pending',
+        }),
+      };
+    }
+    if (['failed', 'cancelled', 'canceled'].includes(normalized)) {
+      return {
+        color: 'red',
+        text: String(status || '-').toUpperCase(),
+      };
+    }
+    return {
+      color: 'default',
+      text: String(status || '-').toUpperCase(),
+    };
   };
 
   useEffect(() => {
@@ -127,7 +234,7 @@ export default function AccountPaymentOrdersPage() {
             columns={[
               {
                 title: intl.formatMessage({ id: 'live.orders.id' }),
-                dataIndex: 'id',
+                render: (_, row) => row.order_no || row.id,
               },
               {
                 title: intl.formatMessage({ id: 'live.orders.orderType' }),
@@ -135,15 +242,26 @@ export default function AccountPaymentOrdersPage() {
               },
               {
                 title: intl.formatMessage({ id: 'live.orders.amount' }),
-                render: (_, row) => formatAmount(row),
+                render: (_, row) => {
+                  const amount = resolveAmountDisplay(row);
+                  return (
+                    <Space direction="vertical" size={0}>
+                      <span>{amount.primary}</span>
+                      {amount.secondary ? (
+                        <span style={{ color: '#8c8c8c', fontSize: 12 }}>
+                          {amount.secondary}
+                        </span>
+                      ) : null}
+                    </Space>
+                  );
+                },
               },
               {
                 title: intl.formatMessage({ id: 'live.orders.status' }),
-                render: (_, row) => (
-                  <Tag color={resolveStatusColor(row.status)}>
-                    {String(row.status || '-').toUpperCase()}
-                  </Tag>
-                ),
+                render: (_, row) => {
+                  const statusMeta = resolveStatusMeta(row.status);
+                  return <Tag color={statusMeta.color}>{statusMeta.text}</Tag>;
+                },
               },
               {
                 title: intl.formatMessage({ id: 'live.orders.createdAt' }),
@@ -155,15 +273,13 @@ export default function AccountPaymentOrdersPage() {
                   <Button
                     size="small"
                     onClick={async () => {
-                      if (!row.live?.id) {
-                        message.warning(
-                          intl.formatMessage({
-                            id: 'account.paymentOrders.error',
-                          }),
-                        );
+                      setDetailOpen(true);
+
+                      if (row.order_type === 'membership' || !row.live?.id) {
+                        setDetail(row as PaymentOrder);
                         return;
                       }
-                      setDetailOpen(true);
+
                       setDetailLoading(true);
                       try {
                         const detailItem = await getLivePaymentOrderDetail(
@@ -203,7 +319,14 @@ export default function AccountPaymentOrdersPage() {
         {detailLoading ? (
           <Spin />
         ) : detail ? (
-          <PaymentOrderDetailCard order={detail} />
+          <PaymentOrderDetailCard
+            order={{
+              ...detail,
+              created_at: formatDateTime(detail.created_at),
+              paid_at: formatDateTime(detail.paid_at),
+              expires_at: formatDateTime(detail.expires_at),
+            }}
+          />
         ) : (
           <Empty />
         )}
