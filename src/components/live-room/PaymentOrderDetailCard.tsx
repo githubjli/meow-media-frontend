@@ -2,6 +2,36 @@ import type { PaymentOrder } from '@/types/paymentOrder';
 import { useIntl } from '@umijs/max';
 import { Button, Card, Descriptions, Space, Tag } from 'antd';
 
+const toNumber = (value: any) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : NaN;
+};
+
+const formatLbcValue = (value: string | number | undefined) => {
+  if (value === undefined || value === null || value === '') return '-';
+  return `${value} LBC`;
+};
+
+const resolveDisplayAmount = (order: PaymentOrder) => {
+  const actual = toNumber(order.actual_amount_lbc);
+  if (actual > 0) return formatLbcValue(order.actual_amount_lbc);
+  if (
+    order.expected_amount_lbc !== undefined &&
+    order.expected_amount_lbc !== null &&
+    order.expected_amount_lbc !== ''
+  ) {
+    return formatLbcValue(order.expected_amount_lbc);
+  }
+  if (
+    order.amount !== undefined &&
+    order.amount !== null &&
+    order.amount !== ''
+  ) {
+    return `${order.amount} ${order.currency || ''}`.trim();
+  }
+  return '-';
+};
+
 export default function PaymentOrderDetailCard({
   order,
   canMarkPaid,
@@ -25,6 +55,15 @@ export default function PaymentOrderDetailCard({
           >
             {String(order.id)}
           </Descriptions.Item>
+          {order.order_no ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.orderNo',
+              })}
+            >
+              {order.order_no}
+            </Descriptions.Item>
+          ) : null}
           <Descriptions.Item
             label={intl.formatMessage({ id: 'live.orders.orderType' })}
           >
@@ -33,13 +72,79 @@ export default function PaymentOrderDetailCard({
           <Descriptions.Item
             label={intl.formatMessage({ id: 'live.orders.amount' })}
           >
-            {`${order.amount} ${order.currency}`}
+            {resolveDisplayAmount(order)}
           </Descriptions.Item>
+          {order.expected_amount_lbc !== undefined ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.expectedAmount',
+              })}
+            >
+              {formatLbcValue(order.expected_amount_lbc)}
+            </Descriptions.Item>
+          ) : null}
+          {order.actual_amount_lbc !== undefined ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.actualAmount',
+              })}
+            >
+              {formatLbcValue(order.actual_amount_lbc)}
+            </Descriptions.Item>
+          ) : null}
+          {order.pay_to_address ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.paymentAddress',
+              })}
+            >
+              {order.pay_to_address}
+            </Descriptions.Item>
+          ) : null}
+          {order.txid ? (
+            <Descriptions.Item
+              label={intl.formatMessage({ id: 'account.paymentOrders.txid' })}
+            >
+              {order.txid}
+            </Descriptions.Item>
+          ) : null}
+          {typeof order.confirmations === 'number' ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.confirmations',
+              })}
+            >
+              {order.confirmations}
+            </Descriptions.Item>
+          ) : null}
+          {order.paid_at ? (
+            <Descriptions.Item
+              label={intl.formatMessage({ id: 'account.paymentOrders.paidAt' })}
+            >
+              {order.paid_at}
+            </Descriptions.Item>
+          ) : null}
+          {order.expires_at ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.expiresAt',
+              })}
+            >
+              {order.expires_at}
+            </Descriptions.Item>
+          ) : null}
           <Descriptions.Item
             label={intl.formatMessage({ id: 'live.orders.status' })}
           >
             <Tag>{order.status}</Tag>
           </Descriptions.Item>
+          {order.backend_note || order.reason || order.detail ? (
+            <Descriptions.Item
+              label={intl.formatMessage({ id: 'account.paymentOrders.note' })}
+            >
+              {order.backend_note || order.reason || order.detail}
+            </Descriptions.Item>
+          ) : null}
           {order.external_reference ? (
             <Descriptions.Item
               label={intl.formatMessage({
