@@ -233,8 +233,10 @@ export default function AccountPaymentOrdersPage() {
             dataSource={items}
             columns={[
               {
-                title: intl.formatMessage({ id: 'live.orders.id' }),
-                render: (_, row) => row.order_no || row.id,
+                title: intl.formatMessage({
+                  id: 'account.paymentOrders.orderNo',
+                }),
+                render: (_, row) => row.order_no || '-',
               },
               {
                 title: intl.formatMessage({ id: 'live.orders.orderType' }),
