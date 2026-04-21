@@ -580,6 +580,12 @@ export default {
   'account.subscription.current.validUntil': 'Valid until',
   'account.subscription.current.remainingDays': '{days} days left',
   'account.subscription.plan.durationDays': '{days} days',
+
+  'account.subscription.plan.duration': 'Duration',
+  'account.subscription.plan.payWithLtt': 'Pay with LTT',
+  'account.subscription.plan.settlementCurrency': 'Settlement currency',
+  'account.subscription.plan.thb': 'THB',
+  'account.subscription.plan.ltt': 'LTT',
   'account.subscription.order.title': 'Membership Payment',
   'account.subscription.order.empty': 'No membership order selected yet.',
   'account.subscription.order.paid':

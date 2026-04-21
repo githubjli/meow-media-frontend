@@ -157,6 +157,33 @@ const getMembershipActive = (membership: MembershipStatus | null) => {
   return status === 'active' || status === 'valid';
 };
 
+const resolvePlanSettlementCurrency = (plan: MembershipPlan) =>
+  String(
+    plan.settlement_currency || plan.payment_currency || plan.currency || 'LTT',
+  ).toUpperCase();
+
+const resolvePlanDisplayPrice = (plan: MembershipPlan) => {
+  const thbValue =
+    plan.price_thb ||
+    plan.display_price_thb ||
+    plan.price_fiat_thb ||
+    plan.thb_price;
+
+  if (thbValue !== undefined && thbValue !== null && thbValue !== '') {
+    return {
+      labelKey: 'account.subscription.plan.price',
+      value: `฿${thbValue}`,
+      hasThb: true,
+    };
+  }
+
+  return {
+    labelKey: 'account.subscription.plan.price',
+    value: `${plan.price_lbc ?? '-'} ${resolvePlanSettlementCurrency(plan)}`,
+    hasThb: false,
+  };
+};
+
 export default function AccountSubscriptionPage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
@@ -510,7 +537,16 @@ export default function AccountSubscriptionPage() {
                               })}
                           </Paragraph>
                           <Text strong>
-                            {`${plan.price_lbc ?? '-'} LBC`} /{' '}
+                            {intl.formatMessage({
+                              id: 'account.subscription.plan.price',
+                            })}
+                            : {resolvePlanDisplayPrice(plan).value}
+                          </Text>
+                          <Text type="secondary" style={{ display: 'block' }}>
+                            {intl.formatMessage({
+                              id: 'account.subscription.plan.duration',
+                            })}
+                            :{' '}
                             {intl.formatMessage(
                               {
                                 id: 'account.subscription.plan.durationDays',
@@ -518,6 +554,24 @@ export default function AccountSubscriptionPage() {
                               { days: plan.duration_days ?? '-' },
                             )}
                           </Text>
+                          <Text type="secondary" style={{ display: 'block' }}>
+                            {intl.formatMessage({
+                              id: 'account.subscription.plan.payWithLtt',
+                            })}
+                          </Text>
+                          <Text type="secondary" style={{ display: 'block' }}>
+                            {intl.formatMessage({
+                              id: 'account.subscription.plan.settlementCurrency',
+                            })}
+                            : {resolvePlanSettlementCurrency(plan)}
+                          </Text>
+                          {resolvePlanDisplayPrice(plan).hasThb ? (
+                            <Text type="secondary" style={{ display: 'block' }}>
+                              {intl.formatMessage({
+                                id: 'account.subscription.plan.thb',
+                              })}
+                            </Text>
+                          ) : null}
                         </div>
                         <Space direction="vertical" size={8} align="end">
                           <Button

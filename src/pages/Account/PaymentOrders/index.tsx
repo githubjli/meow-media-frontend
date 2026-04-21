@@ -68,33 +68,38 @@ export default function AccountPaymentOrdersPage() {
     }
   };
 
-  const formatLbcAmount = (value: string | number | undefined) => {
+  const formatSettlementAmount = (value: string | number | undefined) => {
     if (value === undefined || value === null || value === '') return '-';
-    return `${value} LBC`;
+    return `${value} ${intl.formatMessage({
+      id: 'account.subscription.plan.ltt',
+    })}`;
   };
 
   const resolveAmountDisplay = (row: PaymentOrderSummary) => {
+    const isMembershipOrder =
+      String(row.order_type || '').toLowerCase() === 'membership';
     const actualAmount = toNumber(row.actual_amount_lbc);
-    if (actualAmount > 0) {
+    if (isMembershipOrder && actualAmount > 0) {
       return {
-        primary: formatLbcAmount(row.actual_amount_lbc),
+        primary: formatSettlementAmount(row.actual_amount_lbc),
         secondary:
           row.expected_amount_lbc !== undefined
             ? intl.formatMessage(
                 { id: 'account.paymentOrders.expectedAmountValue' },
-                { value: formatLbcAmount(row.expected_amount_lbc) },
+                { value: formatSettlementAmount(row.expected_amount_lbc) },
               )
             : '',
       };
     }
 
     if (
+      isMembershipOrder &&
       row.expected_amount_lbc !== undefined &&
       row.expected_amount_lbc !== null &&
       row.expected_amount_lbc !== ''
     ) {
       return {
-        primary: formatLbcAmount(row.expected_amount_lbc),
+        primary: formatSettlementAmount(row.expected_amount_lbc),
         secondary: '',
       };
     }

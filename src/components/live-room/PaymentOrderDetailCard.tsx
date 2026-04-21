@@ -7,20 +7,25 @@ const toNumber = (value: any) => {
   return Number.isFinite(parsed) ? parsed : NaN;
 };
 
-const formatLbcValue = (value: string | number | undefined) => {
+const formatSettlementValue = (
+  value: string | number | undefined,
+  intl: any,
+) => {
   if (value === undefined || value === null || value === '') return '-';
-  return `${value} LBC`;
+  return `${value} ${intl.formatMessage({
+    id: 'account.subscription.plan.ltt',
+  })}`;
 };
 
-const resolveDisplayAmount = (order: PaymentOrder) => {
+const resolveDisplayAmount = (order: PaymentOrder, intl: any) => {
   const actual = toNumber(order.actual_amount_lbc);
-  if (actual > 0) return formatLbcValue(order.actual_amount_lbc);
+  if (actual > 0) return formatSettlementValue(order.actual_amount_lbc, intl);
   if (
     order.expected_amount_lbc !== undefined &&
     order.expected_amount_lbc !== null &&
     order.expected_amount_lbc !== ''
   ) {
-    return formatLbcValue(order.expected_amount_lbc);
+    return formatSettlementValue(order.expected_amount_lbc, intl);
   }
   if (
     order.amount !== undefined &&
@@ -72,7 +77,7 @@ export default function PaymentOrderDetailCard({
           <Descriptions.Item
             label={intl.formatMessage({ id: 'live.orders.amount' })}
           >
-            {resolveDisplayAmount(order)}
+            {resolveDisplayAmount(order, intl)}
           </Descriptions.Item>
           {order.expected_amount_lbc !== undefined ? (
             <Descriptions.Item
@@ -80,7 +85,7 @@ export default function PaymentOrderDetailCard({
                 id: 'account.paymentOrders.expectedAmount',
               })}
             >
-              {formatLbcValue(order.expected_amount_lbc)}
+              {formatSettlementValue(order.expected_amount_lbc, intl)}
             </Descriptions.Item>
           ) : null}
           {order.actual_amount_lbc !== undefined ? (
@@ -89,7 +94,7 @@ export default function PaymentOrderDetailCard({
                 id: 'account.paymentOrders.actualAmount',
               })}
             >
-              {formatLbcValue(order.actual_amount_lbc)}
+              {formatSettlementValue(order.actual_amount_lbc, intl)}
             </Descriptions.Item>
           ) : null}
           {order.pay_to_address ? (
