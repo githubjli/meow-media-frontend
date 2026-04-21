@@ -75,42 +75,56 @@ export default function AccountPaymentOrdersPage() {
     })}`;
   };
 
-  const resolveAmountDisplay = (row: PaymentOrderSummary) => {
+  const resolveBusinessPrice = (row: PaymentOrderSummary) => {
+    const thbValue =
+      row.price_thb ||
+      row.display_price_thb ||
+      row.price_fiat_thb ||
+      row.thb_price;
+
+    if (thbValue !== undefined && thbValue !== null && thbValue !== '') {
+      return `฿${thbValue}`;
+    }
+
+    return '';
+  };
+
+  const resolvePriceDisplay = (row: PaymentOrderSummary) => {
     const hasMembershipAmounts =
-      row.expected_amount_lbc !== undefined ||
-      row.actual_amount_lbc !== undefined;
+      (row.expected_amount_lbc !== undefined &&
+        row.expected_amount_lbc !== null &&
+        row.expected_amount_lbc !== '') ||
+      (row.actual_amount_lbc !== undefined &&
+        row.actual_amount_lbc !== null &&
+        row.actual_amount_lbc !== '');
     const isMembershipOrder =
       String(row.order_type || '').toLowerCase() === 'membership' ||
       hasMembershipAmounts;
-    const actualAmount = toNumber(row.actual_amount_lbc);
-    if (isMembershipOrder && actualAmount > 0) {
-      return {
-        primary: formatSettlementAmount(row.actual_amount_lbc),
-        secondary:
-          row.expected_amount_lbc !== undefined
-            ? intl.formatMessage(
-                { id: 'account.paymentOrders.expectedAmountValue' },
-                { value: formatSettlementAmount(row.expected_amount_lbc) },
-              )
-            : '',
-      };
-    }
 
-    if (
-      isMembershipOrder &&
-      row.expected_amount_lbc !== undefined &&
-      row.expected_amount_lbc !== null &&
-      row.expected_amount_lbc !== ''
-    ) {
+    if (!isMembershipOrder) {
       return {
-        primary: formatSettlementAmount(row.expected_amount_lbc),
+        primary: formatLegacyAmount(row),
         secondary: '',
       };
     }
 
+    const businessPrice = resolveBusinessPrice(row);
+    const actualAmount = toNumber(row.actual_amount_lbc);
+    const settlementAmount =
+      actualAmount > 0
+        ? formatSettlementAmount(row.actual_amount_lbc)
+        : formatSettlementAmount(row.expected_amount_lbc);
+
     return {
-      primary: formatLegacyAmount(row),
-      secondary: '',
+      primary:
+        businessPrice ||
+        intl.formatMessage({
+          id: 'account.paymentOrders.price.businessPending',
+        }),
+      secondary: intl.formatMessage(
+        { id: 'account.paymentOrders.price.settlementValue' },
+        { value: settlementAmount },
+      ),
     };
   };
 
@@ -243,9 +257,11 @@ export default function AccountPaymentOrdersPage() {
                 dataIndex: 'order_type',
               },
               {
-                title: intl.formatMessage({ id: 'live.orders.amount' }),
+                title: intl.formatMessage({
+                  id: 'account.paymentOrders.price',
+                }),
                 render: (_, row) => {
-                  const amount = resolveAmountDisplay(row);
+                  const amount = resolvePriceDisplay(row);
                   return (
                     <Space direction="vertical" size={0}>
                       <span>{amount.primary}</span>

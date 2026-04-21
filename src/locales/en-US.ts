@@ -495,6 +495,11 @@ export default {
   'account.paymentOrders.settlementCurrency': 'Settlement currency',
   'account.paymentOrders.planName': 'Plan',
   'account.paymentOrders.membershipOrder': 'Membership order',
+
+  'account.paymentOrders.price': 'Price',
+  'account.paymentOrders.actualPaid': 'Actual Paid',
+  'account.paymentOrders.price.businessPending': 'Price pending',
+  'account.paymentOrders.price.settlementValue': 'Pay with LTT: {value}',
   'account.profile.title': 'Profile Dashboard',
   'account.profile.subtitle':
     'Review your account identity, capabilities, and activity overview.',

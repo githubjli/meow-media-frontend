@@ -474,6 +474,11 @@ export default {
   'account.paymentOrders.settlementCurrency': 'Settlement currency',
   'account.paymentOrders.planName': 'Plan',
   'account.paymentOrders.membershipOrder': 'Membership order',
+
+  'account.paymentOrders.price': 'Price',
+  'account.paymentOrders.actualPaid': 'Actual Paid',
+  'account.paymentOrders.price.businessPending': 'Price pending',
+  'account.paymentOrders.price.settlementValue': 'Pay with LTT: {value}',
   'account.profile.title': '个人仪表盘',
   'account.profile.subtitle': '查看你的账号身份、能力与关键数据概览。',
   'account.profile.error.load': '暂时无法加载个人资料。',

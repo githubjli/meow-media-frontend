@@ -500,6 +500,11 @@ export default {
   'account.paymentOrders.settlementCurrency': 'Settlement currency',
   'account.paymentOrders.planName': 'Plan',
   'account.paymentOrders.membershipOrder': 'Membership order',
+
+  'account.paymentOrders.price': 'Price',
+  'account.paymentOrders.actualPaid': 'Actual Paid',
+  'account.paymentOrders.price.businessPending': 'Price pending',
+  'account.paymentOrders.price.settlementValue': 'Pay with LTT: {value}',
   'account.profile.title': 'ပရိုဖိုင် ဒက်ရှ်ဘုတ်',
   'account.profile.subtitle':
     'သင့်အကောင့်အချက်အလက်၊ လုပ်ဆောင်ခွင့်များနှင့် အဓိကအရေအတွက်များကို ကြည့်ရှုပါ။',

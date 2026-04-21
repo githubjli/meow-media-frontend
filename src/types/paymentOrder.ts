@@ -24,6 +24,10 @@ export type PaymentOrderSummary = {
   product_title?: string;
   plan_name?: string;
   plan?: { id?: number | string; name?: string } | null;
+  price_thb?: string | number;
+  display_price_thb?: string | number;
+  price_fiat_thb?: string | number;
+  thb_price?: string | number;
   live?: { id?: number | string; title?: string } | null;
   product?: { id?: number | string; title?: string } | null;
   [key: string]: any;
