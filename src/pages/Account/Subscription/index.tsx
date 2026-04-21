@@ -1,21 +1,31 @@
 import PageIntroCard from '@/components/PageIntroCard';
 import QrCodePanel from '@/components/QrCodePanel';
 import {
+  getAccountProfile,
+  updateAccountProfile,
+  type AccountProfileResponse,
+} from '@/services/accountProfile';
+import {
   createMembershipOrder,
   getMembershipOrder,
   getMyMembershipStatus,
   listMembershipPlans,
+  submitMembershipOrderTxHint,
   type MembershipOrder,
   type MembershipPlan,
   type MembershipStatus,
 } from '@/services/membership';
+import { runWalletPrototypePaymentFlow } from '@/services/walletPrototype';
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CopyOutlined,
   DollarOutlined,
   ExclamationCircleOutlined,
+  LockOutlined,
   ReloadOutlined,
+  SafetyCertificateOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel } from '@umijs/max';
@@ -24,6 +34,7 @@ import {
   Button,
   Card,
   Empty,
+  Input,
   Modal,
   Skeleton,
   Space,
@@ -151,9 +162,14 @@ export default function AccountSubscriptionPage() {
   const { initialState } = useModel('@@initialState');
   const [plansLoading, setPlansLoading] = useState(true);
   const [membershipLoading, setMembershipLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileSaving, setProfileSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [membership, setMembership] = useState<MembershipStatus | null>(null);
+  const [profile, setProfile] = useState<AccountProfileResponse | null>(null);
+  const [linkedWalletIdInput, setLinkedWalletIdInput] = useState('');
+  const [primaryUserAddressInput, setPrimaryUserAddressInput] = useState('');
   const [submittingPlanId, setSubmittingPlanId] = useState<string>('');
   const [orderUiOpen, setOrderUiOpen] = useState(false);
   const [currentOrderNo, setCurrentOrderNo] = useState('');
@@ -164,6 +180,13 @@ export default function AccountSubscriptionPage() {
   const [orderError, setOrderError] = useState('');
   const [copyAddressCopied, setCopyAddressCopied] = useState(false);
   const [expiresCountdown, setExpiresCountdown] = useState('--:--');
+  const [walletUnlockPassword, setWalletUnlockPassword] = useState('');
+  const [sendingPayment, setSendingPayment] = useState(false);
+  const [capturedTxid, setCapturedTxid] = useState('');
+  const [txHintState, setTxHintState] = useState<
+    'idle' | 'submitted' | 'failed'
+  >('idle');
+  const [txHintError, setTxHintError] = useState('');
 
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const locale = intl.locale || 'en-US';
@@ -175,6 +198,23 @@ export default function AccountSubscriptionPage() {
       setMembership(payload || null);
     } finally {
       setMembershipLoading(false);
+    }
+  };
+
+  const loadProfile = async () => {
+    setProfileLoading(true);
+    try {
+      const payload = await getAccountProfile();
+      setProfile(payload || null);
+      setLinkedWalletIdInput(String(payload?.linked_wallet_id || ''));
+      setPrimaryUserAddressInput(String(payload?.primary_user_address || ''));
+    } catch (error: any) {
+      setErrorMessage(
+        error?.message ||
+          intl.formatMessage({ id: 'account.subscription.error.load' }),
+      );
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -195,7 +235,7 @@ export default function AccountSubscriptionPage() {
   };
 
   const loadPageData = async () => {
-    await Promise.all([loadPlans(), loadMembershipStatus()]);
+    await Promise.all([loadPlans(), loadMembershipStatus(), loadProfile()]);
   };
 
   useEffect(() => {
@@ -237,11 +277,9 @@ export default function AccountSubscriptionPage() {
         const latestOrder = await getMembershipOrder(currentOrderNo);
         setCurrentOrder(latestOrder);
         setOrderError('');
-        if (normalizeOrderStatus(latestOrder?.status) === 'paid') {
+        const latestStatus = normalizeOrderStatus(latestOrder?.status);
+        if (latestStatus === 'paid' || latestStatus === 'overpaid') {
           await loadMembershipStatus();
-          message.success(
-            intl.formatMessage({ id: 'account.subscription.order.paid' }),
-          );
         }
       } catch (error: any) {
         setOrderError(
@@ -293,7 +331,7 @@ export default function AccountSubscriptionPage() {
             <Button
               icon={<ReloadOutlined />}
               onClick={loadPageData}
-              loading={plansLoading || membershipLoading}
+              loading={plansLoading || membershipLoading || profileLoading}
             >
               {intl.formatMessage({ id: 'common.refresh' })}
             </Button>
@@ -344,6 +382,80 @@ export default function AccountSubscriptionPage() {
               </Text>
             </Space>
           )}
+        </Card>
+
+        <Card
+          title={intl.formatMessage({
+            id: 'account.subscription.wallet.title',
+          })}
+          variant="borderless"
+          style={{ borderRadius: 20 }}
+          loading={profileLoading}
+          extra={
+            <Button
+              icon={<SafetyCertificateOutlined />}
+              loading={profileSaving}
+              onClick={async () => {
+                setProfileSaving(true);
+                try {
+                  const updated = await updateAccountProfile({
+                    linked_wallet_id: linkedWalletIdInput,
+                    primary_user_address: primaryUserAddressInput,
+                  });
+                  setProfile(updated || profile);
+                  message.success(
+                    intl.formatMessage({
+                      id: 'account.subscription.wallet.save.success',
+                    }),
+                  );
+                } catch (error: any) {
+                  message.error(
+                    error?.message ||
+                      intl.formatMessage({
+                        id: 'account.subscription.wallet.save.error',
+                      }),
+                  );
+                } finally {
+                  setProfileSaving(false);
+                }
+              }}
+            >
+              {intl.formatMessage({ id: 'common.save' })}
+            </Button>
+          }
+        >
+          <Space direction="vertical" size={10} style={{ width: '100%' }}>
+            <Text type="secondary">
+              {intl.formatMessage({
+                id: 'account.subscription.wallet.link.status',
+              })}
+              : {profile?.wallet_link_status || '-'}
+            </Text>
+            <Text type="secondary">
+              {intl.formatMessage({
+                id: 'account.subscription.wallet.linkedAt',
+              })}
+              : {formatDateTime(locale, profile?.linked_at)}
+            </Text>
+            <Input
+              prefix={<WalletOutlined />}
+              value={linkedWalletIdInput}
+              onChange={(event) => setLinkedWalletIdInput(event.target.value)}
+              placeholder={intl.formatMessage({
+                id: 'account.subscription.wallet.linkedWallet.placeholder',
+              })}
+            />
+            <Input
+              prefix={<WalletOutlined />}
+              value={primaryUserAddressInput}
+              onChange={(event) =>
+                setPrimaryUserAddressInput(event.target.value)
+              }
+              placeholder={intl.formatMessage({
+                id: 'account.subscription.wallet.primaryAddress.placeholder',
+              })}
+            />
+          </Space>
         </Card>
 
         {plansLoading ? (
@@ -415,6 +527,9 @@ export default function AccountSubscriptionPage() {
                             onClick={async () => {
                               setSubmittingPlanId(planId);
                               setOrderError('');
+                              setCapturedTxid('');
+                              setTxHintError('');
+                              setTxHintState('idle');
                               try {
                                 if (!plan.code) {
                                   throw new Error(
@@ -467,6 +582,7 @@ export default function AccountSubscriptionPage() {
         onCancel={() => {
           setOrderUiOpen(false);
           setOrderError('');
+          setWalletUnlockPassword('');
         }}
         footer={null}
         title={intl.formatMessage({ id: 'account.subscription.order.title' })}
@@ -509,18 +625,37 @@ export default function AccountSubscriptionPage() {
                   :{' '}
                   <Text strong>{currentOrder.expected_amount_lbc ?? '-'}</Text>
                 </Text>
+                {currentOrder.actual_amount ? (
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'account.subscription.order.actualAmount',
+                    })}
+                    : <Text strong>{currentOrder.actual_amount}</Text>
+                  </Text>
+                ) : null}
                 <Text>
                   {intl.formatMessage({
                     id: 'account.subscription.order.expiresIn',
                   })}
                   : <Text strong>{expiresCountdown}</Text>
                 </Text>
-                {currentOrder.txid ? (
+                {currentOrder.paid_at ? (
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'account.subscription.order.paidAt',
+                    })}
+                    :{' '}
+                    <Text strong>
+                      {formatDateTime(locale, currentOrder.paid_at)}
+                    </Text>
+                  </Text>
+                ) : null}
+                {currentOrder.txid || capturedTxid ? (
                   <Text>
                     {intl.formatMessage({
                       id: 'account.subscription.order.txid',
                     })}
-                    : <Text code>{currentOrder.txid}</Text>
+                    : <Text code>{currentOrder.txid || capturedTxid}</Text>
                   </Text>
                 ) : null}
                 {typeof currentOrder.confirmations === 'number' ? (
@@ -535,7 +670,8 @@ export default function AccountSubscriptionPage() {
 
               <Alert
                 type={
-                  normalizeOrderStatus(currentOrder.status) === 'paid'
+                  normalizeOrderStatus(currentOrder.status) === 'paid' ||
+                  normalizeOrderStatus(currentOrder.status) === 'overpaid'
                     ? 'success'
                     : 'info'
                 }
@@ -593,6 +729,143 @@ export default function AccountSubscriptionPage() {
                 />
               </Card>
 
+              <Card
+                size="small"
+                style={{ borderRadius: 12 }}
+                title={intl.formatMessage({
+                  id: 'account.subscription.wallet.auth.title',
+                })}
+              >
+                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'account.subscription.wallet.linkedWallet',
+                    })}
+                    : <Text strong>{profile?.linked_wallet_id || '-'}</Text>
+                  </Text>
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'account.subscription.wallet.primaryAddress',
+                    })}
+                    : <Text strong>{profile?.primary_user_address || '-'}</Text>
+                  </Text>
+                  <Alert
+                    type="info"
+                    showIcon
+                    message={intl.formatMessage({
+                      id: 'account.subscription.wallet.platformAddress.notice',
+                    })}
+                  />
+                  <Input.Password
+                    value={walletUnlockPassword}
+                    onChange={(event) =>
+                      setWalletUnlockPassword(event.target.value)
+                    }
+                    placeholder={intl.formatMessage({
+                      id: 'account.subscription.wallet.unlock.placeholder',
+                    })}
+                    prefix={<LockOutlined />}
+                  />
+                  <Button
+                    type="default"
+                    icon={<WalletOutlined />}
+                    loading={sendingPayment}
+                    disabled={
+                      !walletUnlockPassword ||
+                      !currentOrder.pay_to_address ||
+                      !currentOrder.expected_amount_lbc
+                    }
+                    onClick={async () => {
+                      if (
+                        !currentOrder.order_no ||
+                        !currentOrder.pay_to_address
+                      ) {
+                        return;
+                      }
+
+                      setSendingPayment(true);
+                      setTxHintError('');
+                      setTxHintState('idle');
+                      try {
+                        const { txid } = await runWalletPrototypePaymentFlow({
+                          linkedWalletId: String(
+                            profile?.linked_wallet_id || '',
+                          ),
+                          unlockPassword: walletUnlockPassword,
+                          toAddress: String(currentOrder.pay_to_address),
+                          amountLbc: String(
+                            currentOrder.expected_amount_lbc || '',
+                          ),
+                        });
+
+                        setCapturedTxid(txid);
+                        message.info(
+                          intl.formatMessage({
+                            id: 'account.subscription.wallet.txSubmitted',
+                          }),
+                        );
+
+                        await submitMembershipOrderTxHint(
+                          currentOrder.order_no,
+                          {
+                            txid,
+                          },
+                        );
+                        setTxHintState('submitted');
+                        message.success(
+                          intl.formatMessage({
+                            id: 'account.subscription.wallet.txidSubmitted',
+                          }),
+                        );
+
+                        const latestOrder = await getMembershipOrder(
+                          currentOrder.order_no,
+                        );
+                        setCurrentOrder(latestOrder);
+                      } catch (error: any) {
+                        setTxHintState('failed');
+                        setTxHintError(
+                          error?.message ||
+                            intl.formatMessage({
+                              id: 'account.subscription.wallet.send.error',
+                            }),
+                        );
+                      } finally {
+                        setWalletUnlockPassword('');
+                        setSendingPayment(false);
+                      }
+                    }}
+                  >
+                    {intl.formatMessage({
+                      id: 'account.subscription.wallet.sendPayment',
+                    })}
+                  </Button>
+
+                  {capturedTxid ? (
+                    <Alert
+                      type="info"
+                      showIcon
+                      message={intl.formatMessage({
+                        id: 'account.subscription.wallet.waitingBackendVerification',
+                      })}
+                      description={capturedTxid}
+                    />
+                  ) : null}
+                  {txHintState === 'submitted' ? (
+                    <Alert
+                      type="success"
+                      showIcon
+                      message={intl.formatMessage({
+                        id: 'account.subscription.wallet.txidSubmitted',
+                      })}
+                    />
+                  ) : null}
+                  {txHintState === 'failed' ? (
+                    <Alert type="warning" showIcon message={txHintError} />
+                  ) : null}
+                </Space>
+              </Card>
+
               {normalizeOrderStatus(currentOrder.status) === 'expired' ? (
                 <Alert
                   type="warning"
@@ -602,6 +875,25 @@ export default function AccountSubscriptionPage() {
                   })}
                 />
               ) : null}
+
+              {normalizeOrderStatus(currentOrder.status) === 'paid' ||
+              normalizeOrderStatus(currentOrder.status) === 'overpaid' ? (
+                <Alert
+                  type="success"
+                  showIcon
+                  message={intl.formatMessage({
+                    id: 'account.subscription.wallet.backendConfirmed',
+                  })}
+                />
+              ) : null}
+
+              <Alert
+                type="info"
+                showIcon
+                message={intl.formatMessage({
+                  id: 'account.subscription.wallet.doNotClose',
+                })}
+              />
 
               <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
                 <Button

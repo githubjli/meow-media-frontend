@@ -21,6 +21,8 @@ export type MembershipOrder = {
   expires_at?: string | null;
   txid?: string;
   confirmations?: number;
+  actual_amount?: string | number;
+  paid_at?: string | null;
   [key: string]: any;
 };
 
@@ -66,6 +68,17 @@ export async function getMembershipOrder(orderNo: string) {
   return requestJson<MembershipOrder>(`/api/membership/orders/${orderNo}/`, {
     method: 'GET',
     headers: await withAuth(),
+  });
+}
+
+export async function submitMembershipOrderTxHint(
+  orderNo: string,
+  payload: { txid: string },
+) {
+  return requestJson<any>(`/api/membership/orders/${orderNo}/tx-hint/`, {
+    method: 'POST',
+    headers: await withAuth(),
+    body: JSON.stringify(payload),
   });
 }
 

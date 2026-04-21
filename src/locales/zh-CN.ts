@@ -556,6 +556,38 @@ export default {
   'account.subscription.order.status.overpaid': 'Overpaid',
   'account.subscription.order.status.expired': 'Expired',
   'account.subscription.order.status.paidAfterExpiry': 'Paid after expiry',
+
+  'account.subscription.order.actualAmount': 'Actual amount',
+  'account.subscription.order.paidAt': 'Paid at',
+  'account.subscription.wallet.title': 'Linked Wallet Metadata',
+  'account.subscription.wallet.link.status': 'Wallet link status',
+  'account.subscription.wallet.linkedAt': 'Linked at',
+  'account.subscription.wallet.linkedWallet.placeholder': 'Linked wallet ID',
+  'account.subscription.wallet.primaryAddress.placeholder':
+    'Primary user address',
+  'account.subscription.wallet.save.success': 'Wallet metadata updated.',
+  'account.subscription.wallet.save.error': 'Unable to update wallet metadata.',
+  'account.subscription.wallet.auth.title':
+    'Wallet authorization and payment (prototype)',
+  'account.subscription.wallet.linkedWallet': 'Linked wallet',
+  'account.subscription.wallet.primaryAddress': 'Primary address',
+  'account.subscription.wallet.platformAddress.notice':
+    'Platform receive address for this order is shown above. Do not use your primary address as the payment target.',
+  'account.subscription.wallet.unlock.placeholder':
+    'Unlock wallet password (transient only)',
+  'account.subscription.wallet.sendPayment': 'Unlock, Send, and Lock Wallet',
+  'account.subscription.wallet.txSubmitted':
+    'Transaction submitted from wallet. Payment is still pending backend verification.',
+  'account.subscription.wallet.txidSubmitted':
+    'Transaction ID submitted to backend.',
+  'account.subscription.wallet.waitingBackendVerification':
+    'Waiting for backend verification of this transaction.',
+  'account.subscription.wallet.backendConfirmed':
+    'Backend confirmed payment status.',
+  'account.subscription.wallet.doNotClose':
+    'Do not close this dialog until backend verification is complete.',
+  'account.subscription.wallet.send.error':
+    'Unable to send wallet payment right now.',
   'live.room.unavailable': '直播间不可用。',
   'live.room.sidebar.liveChat': '直播聊天',
   'live.room.sidebar.liveChatPlaceholder': '直播聊天即将上线，当前不可用。',
