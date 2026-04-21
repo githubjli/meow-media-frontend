@@ -10,6 +10,10 @@ export type AccountProfileResponse = {
   avatar?: string | null;
   avatar_url?: string | null;
   bio?: string | null;
+  linked_wallet_id?: string | null;
+  primary_user_address?: string | null;
+  wallet_link_status?: string | null;
+  linked_at?: string | null;
   is_creator?: boolean;
   is_seller?: boolean;
   is_admin?: boolean;
@@ -46,6 +50,8 @@ export async function getAccountProfile() {
 export type UpdateAccountProfilePayload = {
   display_name?: string;
   bio?: string;
+  linked_wallet_id?: string;
+  primary_user_address?: string;
   avatar?: File | null;
   avatar_clear?: boolean;
 };
@@ -64,6 +70,12 @@ export async function updateAccountProfile(
     if (typeof payload.bio === 'string') {
       formData.append('bio', payload.bio);
     }
+    if (typeof payload.linked_wallet_id === 'string') {
+      formData.append('linked_wallet_id', payload.linked_wallet_id);
+    }
+    if (typeof payload.primary_user_address === 'string') {
+      formData.append('primary_user_address', payload.primary_user_address);
+    }
     formData.append('avatar', payload.avatar as File);
 
     return requestJson<AccountProfileResponse>('/api/account/profile', {
@@ -79,6 +91,12 @@ export async function updateAccountProfile(
   }
   if (typeof payload.bio === 'string') {
     jsonPayload.bio = payload.bio;
+  }
+  if (typeof payload.linked_wallet_id === 'string') {
+    jsonPayload.linked_wallet_id = payload.linked_wallet_id;
+  }
+  if (typeof payload.primary_user_address === 'string') {
+    jsonPayload.primary_user_address = payload.primary_user_address;
   }
   if (payload.avatar_clear === true) {
     jsonPayload.avatar_clear = true;
