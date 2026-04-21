@@ -2,11 +2,6 @@ import type { PaymentOrder } from '@/types/paymentOrder';
 import { useIntl } from '@umijs/max';
 import { Button, Card, Descriptions, Space, Tag } from 'antd';
 
-const toNumber = (value: any) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : NaN;
-};
-
 const formatSettlementValue = (
   value: string | number | undefined,
   intl: any,
@@ -21,26 +16,6 @@ const resolvePlanName = (order: PaymentOrder, intl: any) =>
   order.plan_name ||
   order.plan?.name ||
   intl.formatMessage({ id: 'account.paymentOrders.membershipOrder' });
-
-const resolveBusinessPrice = (order: PaymentOrder) => {
-  const thbValue =
-    order.price_thb ||
-    order.display_price_thb ||
-    order.price_fiat_thb ||
-    order.thb_price;
-
-  if (thbValue !== undefined && thbValue !== null && thbValue !== '') {
-    return `฿${thbValue}`;
-  }
-
-  return '-';
-};
-
-const resolveActualPaid = (order: PaymentOrder, intl: any) => {
-  const actual = toNumber(order.actual_amount_lbc);
-  if (actual > 0) return formatSettlementValue(order.actual_amount_lbc, intl);
-  return '-';
-};
 
 export default function PaymentOrderDetailCard({
   order,
@@ -60,15 +35,13 @@ export default function PaymentOrderDetailCard({
     >
       <Space direction="vertical" size={8} style={{ width: '100%' }}>
         <Descriptions column={1} size="small">
-          {order.order_no ? (
-            <Descriptions.Item
-              label={intl.formatMessage({
-                id: 'account.paymentOrders.orderNo',
-              })}
-            >
-              {order.order_no}
-            </Descriptions.Item>
-          ) : null}
+          <Descriptions.Item
+            label={intl.formatMessage({
+              id: 'account.paymentOrders.orderNo',
+            })}
+          >
+            {order.order_no || '-'}
+          </Descriptions.Item>
           <Descriptions.Item
             label={intl.formatMessage({ id: 'live.orders.orderType' })}
           >
@@ -84,9 +57,61 @@ export default function PaymentOrderDetailCard({
             </Descriptions.Item>
           ) : null}
           <Descriptions.Item
-            label={intl.formatMessage({ id: 'account.paymentOrders.price' })}
+            label={intl.formatMessage({ id: 'account.paymentOrders.planName' })}
           >
-            {resolveBusinessPrice(order)}
+            {resolvePlanName(order, intl)}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={intl.formatMessage({
+              id: 'account.paymentOrders.expectedAmount',
+            })}
+          >
+            {formatSettlementValue(order.expected_amount_lbc, intl)}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={intl.formatMessage({
+              id: 'account.paymentOrders.actualAmount',
+            })}
+          >
+            {formatSettlementValue(order.actual_amount_lbc, intl)}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={intl.formatMessage({ id: 'account.paymentOrders.txid' })}
+          >
+            {order.txid || '-'}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={intl.formatMessage({
+              id: 'account.paymentOrders.paymentAddress',
+            })}
+          >
+            {order.pay_to_address || '-'}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={intl.formatMessage({
+              id: 'account.paymentOrders.confirmations',
+            })}
+          >
+            {typeof order.confirmations === 'number'
+              ? order.confirmations
+              : '-'}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={intl.formatMessage({ id: 'live.orders.createdAt' })}
+          >
+            {order.created_at || '-'}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={intl.formatMessage({ id: 'account.paymentOrders.paidAt' })}
+          >
+            {order.paid_at || '-'}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={intl.formatMessage({
+              id: 'account.paymentOrders.expiresAt',
+            })}
+          >
+            {order.expires_at || '-'}
           </Descriptions.Item>
           {order.expected_amount_lbc !== undefined ? (
             <Descriptions.Item
@@ -160,68 +185,6 @@ export default function PaymentOrderDetailCard({
             })}
           >
             {resolveActualPaid(order, intl)}
-          </Descriptions.Item>
-          {order.expected_amount_lbc !== undefined ? (
-            <Descriptions.Item
-              label={intl.formatMessage({
-                id: 'account.paymentOrders.expectedAmount',
-              })}
-            >
-              {formatSettlementValue(order.expected_amount_lbc, intl)}
-            </Descriptions.Item>
-          ) : null}
-          {order.txid ? (
-            <Descriptions.Item
-              label={intl.formatMessage({ id: 'account.paymentOrders.txid' })}
-            >
-              {order.txid}
-            </Descriptions.Item>
-          ) : null}
-          {order.pay_to_address ? (
-            <Descriptions.Item
-              label={intl.formatMessage({
-                id: 'account.paymentOrders.paymentAddress',
-              })}
-            >
-              {order.pay_to_address}
-            </Descriptions.Item>
-          ) : null}
-          {typeof order.confirmations === 'number' ? (
-            <Descriptions.Item
-              label={intl.formatMessage({
-                id: 'account.paymentOrders.confirmations',
-              })}
-            >
-              {order.confirmations}
-            </Descriptions.Item>
-          ) : null}
-          {order.created_at ? (
-            <Descriptions.Item
-              label={intl.formatMessage({ id: 'live.orders.createdAt' })}
-            >
-              {order.created_at}
-            </Descriptions.Item>
-          ) : null}
-          {order.paid_at ? (
-            <Descriptions.Item
-              label={intl.formatMessage({ id: 'account.paymentOrders.paidAt' })}
-            >
-              {order.paid_at}
-            </Descriptions.Item>
-          ) : null}
-          {order.expires_at ? (
-            <Descriptions.Item
-              label={intl.formatMessage({
-                id: 'account.paymentOrders.expiresAt',
-              })}
-            >
-              {order.expires_at}
-            </Descriptions.Item>
-          ) : null}
-          <Descriptions.Item
-            label={intl.formatMessage({ id: 'live.orders.status' })}
-          >
-            <Tag>{order.status}</Tag>
           </Descriptions.Item>
         </Descriptions>
         {canMarkPaid && onMarkPaid ? (
