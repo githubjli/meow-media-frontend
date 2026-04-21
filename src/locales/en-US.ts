@@ -474,6 +474,23 @@ export default {
   'account.paymentOrders.subtitle': 'Track your live payment order records.',
   'account.paymentOrders.empty': 'No payment orders yet.',
   'account.paymentOrders.error': 'Unable to load payment orders.',
+
+  'account.paymentOrders.orderNo': 'Order No',
+  'account.paymentOrders.expectedAmount': 'Expected Amount',
+  'account.paymentOrders.expectedAmountValue': 'Expected: {value}',
+  'account.paymentOrders.actualAmount': 'Actual Amount',
+  'account.paymentOrders.paymentAddress': 'Payment Address',
+  'account.paymentOrders.txid': 'Transaction ID',
+  'account.paymentOrders.confirmations': 'Confirmations',
+  'account.paymentOrders.paidAt': 'Paid At',
+  'account.paymentOrders.expiresAt': 'Expires At',
+  'account.paymentOrders.note': 'Verification Note',
+  'account.paymentOrders.status.pending': 'Pending',
+  'account.paymentOrders.status.paid': 'Paid',
+  'account.paymentOrders.status.underpaid': 'Underpaid',
+  'account.paymentOrders.status.overpaid': 'Overpaid',
+  'account.paymentOrders.status.expired': 'Expired',
+  'account.paymentOrders.status.paidAfterExpiry': 'Paid after expiry',
   'account.profile.title': 'Profile Dashboard',
   'account.profile.subtitle':
     'Review your account identity, capabilities, and activity overview.',
@@ -553,6 +570,72 @@ export default {
   'account.subscription.create.cta': 'Choose Plan',
   'account.subscription.create.success': 'Subscription updated successfully.',
   'account.subscription.create.error': 'Unable to start subscription.',
+
+  'account.subscription.current.validUntil': 'Valid until',
+  'account.subscription.current.remainingDays': '{days} days left',
+  'account.subscription.plan.durationDays': '{days} days',
+
+  'account.subscription.plan.duration': 'Duration',
+  'account.subscription.plan.payWithLtt': 'Pay with LTT',
+  'account.subscription.plan.settlementCurrency': 'Settlement currency',
+  'account.subscription.plan.thb': 'THB',
+  'account.subscription.plan.ltt': 'LTT',
+  'account.subscription.order.title': 'Membership Payment',
+  'account.subscription.order.empty': 'No membership order selected yet.',
+  'account.subscription.order.paid':
+    'Payment received. Membership status refreshed.',
+  'account.subscription.order.poll.error':
+    'Unable to refresh order status right now.',
+  'account.subscription.order.amount': 'Amount',
+  'account.subscription.order.address': 'Payment address',
+  'account.subscription.order.expiresIn': 'Expires in',
+  'account.subscription.order.waitingMessage':
+    'Waiting for blockchain payment confirmation from backend status.',
+  'account.subscription.order.copy.cta': 'Copy Address',
+  'account.subscription.order.copy.copied': 'Address Copied',
+  'account.subscription.order.copy.success': 'Payment address copied.',
+  'account.subscription.order.expired.recreate':
+    'This order has expired. Please choose a plan again to create a new order.',
+  'account.subscription.order.txid': 'Transaction ID',
+  'account.subscription.order.confirmations': 'Confirmations',
+  'account.subscription.order.status.pending': 'Pending payment',
+  'account.subscription.order.status.paid': 'Paid',
+  'account.subscription.order.status.underpaid': 'Underpaid',
+  'account.subscription.order.status.overpaid': 'Overpaid',
+  'account.subscription.order.status.expired': 'Expired',
+  'account.subscription.order.status.paidAfterExpiry': 'Paid after expiry',
+
+  'account.subscription.order.actualAmount': 'Actual amount',
+  'account.subscription.order.paidAt': 'Paid at',
+  'account.subscription.wallet.title': 'Linked Wallet Metadata',
+  'account.subscription.wallet.link.status': 'Wallet link status',
+  'account.subscription.wallet.linkedAt': 'Linked at',
+  'account.subscription.wallet.linkedWallet.placeholder': 'Linked wallet ID',
+  'account.subscription.wallet.primaryAddress.placeholder':
+    'Primary user address',
+  'account.subscription.wallet.save.success': 'Wallet metadata updated.',
+  'account.subscription.wallet.save.error': 'Unable to update wallet metadata.',
+  'account.subscription.wallet.auth.title':
+    'Wallet authorization and payment (prototype)',
+  'account.subscription.wallet.linkedWallet': 'Linked wallet',
+  'account.subscription.wallet.primaryAddress': 'Primary address',
+  'account.subscription.wallet.platformAddress.notice':
+    'Platform receive address for this order is shown above. Do not use your primary address as the payment target.',
+  'account.subscription.wallet.unlock.placeholder':
+    'Unlock wallet password (transient only)',
+  'account.subscription.wallet.sendPayment': 'Unlock, Send, and Lock Wallet',
+  'account.subscription.wallet.txSubmitted':
+    'Transaction submitted from wallet. Payment is still pending backend verification.',
+  'account.subscription.wallet.txidSubmitted':
+    'Transaction ID submitted to backend.',
+  'account.subscription.wallet.waitingBackendVerification':
+    'Waiting for backend verification of this transaction.',
+  'account.subscription.wallet.backendConfirmed':
+    'Backend confirmed payment status.',
+  'account.subscription.wallet.doNotClose':
+    'Do not close this dialog until backend verification is complete.',
+  'account.subscription.wallet.send.error':
+    'Unable to send wallet payment right now.',
   'live.room.unavailable': 'Live room unavailable.',
   'live.room.sidebar.liveChat': 'Live Chat',
   'live.room.sidebar.liveChatPlaceholder':
