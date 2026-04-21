@@ -643,6 +643,11 @@ export default {
     'Payment sent, but wallet relock needs attention.',
   'account.subscription.wallet.paymentSubmissionFailed':
     'Payment submission failed.',
+
+  'account.subscription.order.checkStatus': 'Check Payment Status',
+  'account.subscription.order.close': 'Close',
+  'account.subscription.wallet.paymentConfirmed': 'Payment confirmed',
+  'account.subscription.wallet.membershipActivated': 'Membership activated',
   'live.room.unavailable': 'Live room unavailable.',
   'live.room.sidebar.liveChat': 'Live Chat',
   'live.room.sidebar.liveChatPlaceholder':

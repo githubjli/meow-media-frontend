@@ -618,6 +618,11 @@ export default {
     'Payment sent, but wallet relock needs attention.',
   'account.subscription.wallet.paymentSubmissionFailed':
     'Payment submission failed.',
+
+  'account.subscription.order.checkStatus': 'Check Payment Status',
+  'account.subscription.order.close': 'Close',
+  'account.subscription.wallet.paymentConfirmed': 'Payment confirmed',
+  'account.subscription.wallet.membershipActivated': 'Membership activated',
   'live.room.unavailable': '直播间不可用。',
   'live.room.sidebar.liveChat': '直播聊天',
   'live.room.sidebar.liveChatPlaceholder': '直播聊天即将上线，当前不可用。',

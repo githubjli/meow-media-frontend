@@ -626,6 +626,11 @@ export default {
     'Payment sent, but wallet relock needs attention.',
   'account.subscription.wallet.paymentSubmissionFailed':
     'Payment submission failed.',
+
+  'account.subscription.order.checkStatus': 'Check Payment Status',
+  'account.subscription.order.close': 'Close',
+  'account.subscription.wallet.paymentConfirmed': 'Payment confirmed',
+  'account.subscription.wallet.membershipActivated': 'Membership activated',
   'live.room.unavailable': 'ห้องไลฟ์ไม่พร้อมใช้งาน',
   'live.room.sidebar.liveChat': 'แชตสด',
   'live.room.sidebar.liveChatPlaceholder': 'แชตสดจะเปิดให้ใช้เร็ว ๆ นี้',

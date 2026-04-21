@@ -908,20 +908,20 @@ export default function AccountSubscriptionPage() {
 
                   {capturedTxid ? (
                     <Alert
-                      type="info"
+                      type="success"
                       showIcon
                       message={intl.formatMessage({
-                        id: 'account.subscription.wallet.waitingBackendVerification',
+                        id: 'account.subscription.wallet.txSubmitted',
                       })}
                       description={capturedTxid}
                     />
                   ) : null}
-                  {txHintState === 'submitted' ? (
+                  {capturedTxid ? (
                     <Alert
-                      type="success"
+                      type="info"
                       showIcon
                       message={intl.formatMessage({
-                        id: 'account.subscription.wallet.submittingPayment',
+                        id: 'account.subscription.wallet.waitingBackendVerification',
                       })}
                     />
                   ) : null}
@@ -950,13 +950,22 @@ export default function AccountSubscriptionPage() {
 
               {normalizeOrderStatus(currentOrder.status) === 'paid' ||
               normalizeOrderStatus(currentOrder.status) === 'overpaid' ? (
-                <Alert
-                  type="success"
-                  showIcon
-                  message={intl.formatMessage({
-                    id: 'account.subscription.wallet.backendConfirmed',
-                  })}
-                />
+                <>
+                  <Alert
+                    type="success"
+                    showIcon
+                    message={intl.formatMessage({
+                      id: 'account.subscription.wallet.paymentConfirmed',
+                    })}
+                  />
+                  <Alert
+                    type="success"
+                    showIcon
+                    message={intl.formatMessage({
+                      id: 'account.subscription.wallet.membershipActivated',
+                    })}
+                  />
+                </>
               ) : null}
 
               <Alert
@@ -990,10 +999,18 @@ export default function AccountSubscriptionPage() {
                     }
                   }}
                 >
-                  {intl.formatMessage({ id: 'common.refresh' })}
+                  {capturedTxid
+                    ? intl.formatMessage({
+                        id: 'account.subscription.order.checkStatus',
+                      })
+                    : intl.formatMessage({ id: 'common.refresh' })}
                 </Button>
                 <Button onClick={() => setOrderUiOpen(false)}>
-                  {intl.formatMessage({ id: 'common.cancel' })}
+                  {capturedTxid
+                    ? intl.formatMessage({
+                        id: 'account.subscription.order.close',
+                      })
+                    : intl.formatMessage({ id: 'common.cancel' })}
                 </Button>
               </Space>
             </>
