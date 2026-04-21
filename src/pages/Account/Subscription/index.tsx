@@ -1,18 +1,31 @@
 import PageIntroCard from '@/components/PageIntroCard';
 import QrCodePanel from '@/components/QrCodePanel';
 import {
-  cancelBillingSubscription,
-  createBillingSubscription,
-  getMyBillingSubscription,
-  listBillingPlans,
-  type BillingPlan,
-  type BillingSubscription,
-} from '@/services/billing';
+  getAccountProfile,
+  updateAccountProfile,
+  type AccountProfileResponse,
+} from '@/services/accountProfile';
 import {
+  createMembershipOrder,
+  getMembershipOrder,
+  getMyMembershipStatus,
+  listMembershipPlans,
+  submitMembershipOrderTxHint,
+  type MembershipOrder,
+  type MembershipPlan,
+  type MembershipStatus,
+} from '@/services/membership';
+import { runWalletPrototypePaymentFlow } from '@/services/walletPrototype';
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CopyOutlined,
   DollarOutlined,
-  QrcodeOutlined,
+  ExclamationCircleOutlined,
+  LockOutlined,
   ReloadOutlined,
-  StopOutlined,
+  SafetyCertificateOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel } from '@umijs/max';
@@ -21,6 +34,7 @@ import {
   Button,
   Card,
   Empty,
+  Input,
   Modal,
   Skeleton,
   Space,
@@ -31,8 +45,9 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 const { Text, Title, Paragraph } = Typography;
+const ORDER_POLL_INTERVAL_MS = 4000;
 
-const formatDate = (locale: string, value?: string | null) => {
+const formatDateTime = (locale: string, value?: string | null) => {
   if (!value) return '-';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return String(value);
@@ -40,33 +55,174 @@ const formatDate = (locale: string, value?: string | null) => {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(parsed);
+};
+
+const formatCountdown = (expiresAt?: string | null) => {
+  if (!expiresAt) return '--:--';
+  const expiresMs = new Date(expiresAt).getTime();
+  if (Number.isNaN(expiresMs)) return '--:--';
+  const diffMs = Math.max(expiresMs - Date.now(), 0);
+  const minutes = Math.floor(diffMs / 60000);
+  const seconds = Math.floor((diffMs % 60000) / 1000);
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(
+    2,
+    '0',
+  )}`;
+};
+
+const normalizeOrderStatus = (status?: string) =>
+  String(status || 'pending').toLowerCase();
+
+const getOrderStatusPresentation = (intl: any, status?: string) => {
+  const normalized = normalizeOrderStatus(status);
+  if (normalized === 'paid') {
+    return {
+      color: 'success' as const,
+      icon: <CheckCircleOutlined />,
+      text: intl.formatMessage({
+        id: 'account.subscription.order.status.paid',
+      }),
+    };
+  }
+
+  if (
+    normalized === 'paid_after_expiry' ||
+    normalized === 'paid_after_expired' ||
+    normalized === 'paid_after_expire'
+  ) {
+    return {
+      color: 'warning' as const,
+      icon: <ExclamationCircleOutlined />,
+      text: intl.formatMessage({
+        id: 'account.subscription.order.status.paidAfterExpiry',
+      }),
+    };
+  }
+
+  if (normalized === 'underpaid') {
+    return {
+      color: 'warning' as const,
+      icon: <ExclamationCircleOutlined />,
+      text: intl.formatMessage({
+        id: 'account.subscription.order.status.underpaid',
+      }),
+    };
+  }
+
+  if (normalized === 'overpaid') {
+    return {
+      color: 'processing' as const,
+      icon: <ExclamationCircleOutlined />,
+      text: intl.formatMessage({
+        id: 'account.subscription.order.status.overpaid',
+      }),
+    };
+  }
+
+  if (normalized === 'expired') {
+    return {
+      color: 'default' as const,
+      icon: <ClockCircleOutlined />,
+      text: intl.formatMessage({
+        id: 'account.subscription.order.status.expired',
+      }),
+    };
+  }
+
+  return {
+    color: 'processing' as const,
+    icon: <ClockCircleOutlined />,
+    text: intl.formatMessage({
+      id: 'account.subscription.order.status.pending',
+    }),
+  };
+};
+
+const shouldPollOrder = (status?: string) => {
+  const normalized = normalizeOrderStatus(status);
+  return (
+    normalized === 'pending' ||
+    normalized === 'underpaid' ||
+    normalized === 'overpaid'
+  );
+};
+
+const getMembershipActive = (membership: MembershipStatus | null) => {
+  if (!membership) return false;
+  if (typeof membership.is_active === 'boolean') return membership.is_active;
+  const status = String(membership.status || '').toLowerCase();
+  return status === 'active' || status === 'valid';
 };
 
 export default function AccountSubscriptionPage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
-  const [loading, setLoading] = useState(true);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [membershipLoading, setMembershipLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileSaving, setProfileSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [plans, setPlans] = useState<BillingPlan[]>([]);
-  const [subscription, setSubscription] = useState<BillingSubscription | null>(
+  const [plans, setPlans] = useState<MembershipPlan[]>([]);
+  const [membership, setMembership] = useState<MembershipStatus | null>(null);
+  const [profile, setProfile] = useState<AccountProfileResponse | null>(null);
+  const [linkedWalletIdInput, setLinkedWalletIdInput] = useState('');
+  const [primaryUserAddressInput, setPrimaryUserAddressInput] = useState('');
+  const [submittingPlanId, setSubmittingPlanId] = useState<string>('');
+  const [orderUiOpen, setOrderUiOpen] = useState(false);
+  const [currentOrderNo, setCurrentOrderNo] = useState('');
+  const [currentOrder, setCurrentOrder] = useState<MembershipOrder | null>(
     null,
   );
-  const [submittingPlanId, setSubmittingPlanId] = useState<string>('');
-  const [cancelling, setCancelling] = useState(false);
-  const [qrPayload, setQrPayload] = useState('');
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderError, setOrderError] = useState('');
+  const [copyAddressCopied, setCopyAddressCopied] = useState(false);
+  const [expiresCountdown, setExpiresCountdown] = useState('--:--');
+  const [walletUnlockPassword, setWalletUnlockPassword] = useState('');
+  const [sendingPayment, setSendingPayment] = useState(false);
+  const [capturedTxid, setCapturedTxid] = useState('');
+  const [txHintState, setTxHintState] = useState<
+    'idle' | 'submitted' | 'failed'
+  >('idle');
+  const [txHintError, setTxHintError] = useState('');
+
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const locale = intl.locale || 'en-US';
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadMembershipStatus = async () => {
+    setMembershipLoading(true);
+    try {
+      const payload = await getMyMembershipStatus().catch(() => null);
+      setMembership(payload || null);
+    } finally {
+      setMembershipLoading(false);
+    }
+  };
+
+  const loadProfile = async () => {
+    setProfileLoading(true);
+    try {
+      const payload = await getAccountProfile();
+      setProfile(payload || null);
+      setLinkedWalletIdInput(String(payload?.linked_wallet_id || ''));
+      setPrimaryUserAddressInput(String(payload?.primary_user_address || ''));
+    } catch (error: any) {
+      setErrorMessage(
+        error?.message ||
+          intl.formatMessage({ id: 'account.subscription.error.load' }),
+      );
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const loadPlans = async () => {
+    setPlansLoading(true);
     setErrorMessage('');
     try {
-      const [subscriptionData, plansData] = await Promise.all([
-        getMyBillingSubscription().catch(() => null),
-        listBillingPlans(),
-      ]);
-      setSubscription(subscriptionData || null);
+      const plansData = await listMembershipPlans();
       setPlans(plansData || []);
     } catch (error: any) {
       setErrorMessage(
@@ -74,8 +230,12 @@ export default function AccountSubscriptionPage() {
           intl.formatMessage({ id: 'account.subscription.error.load' }),
       );
     } finally {
-      setLoading(false);
+      setPlansLoading(false);
     }
+  };
+
+  const loadPageData = async () => {
+    await Promise.all([loadPlans(), loadMembershipStatus(), loadProfile()]);
   };
 
   useEffect(() => {
@@ -90,20 +250,74 @@ export default function AccountSubscriptionPage() {
       return;
     }
 
-    loadData();
-  }, [initialState?.authLoading, isLoggedIn, intl]);
+    loadPageData();
+  }, [initialState?.authLoading, isLoggedIn]);
 
-  const activePlanId = String(subscription?.plan?.id || '');
+  useEffect(() => {
+    if (!orderUiOpen || !currentOrder?.expires_at) {
+      setExpiresCountdown('--:--');
+      return;
+    }
+
+    setExpiresCountdown(formatCountdown(currentOrder.expires_at));
+    const timer = window.setInterval(() => {
+      setExpiresCountdown(formatCountdown(currentOrder.expires_at));
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [orderUiOpen, currentOrder?.expires_at]);
+
+  useEffect(() => {
+    if (!orderUiOpen || !currentOrderNo) return;
+
+    const poll = async () => {
+      try {
+        const latestOrder = await getMembershipOrder(currentOrderNo);
+        setCurrentOrder(latestOrder);
+        setOrderError('');
+        const latestStatus = normalizeOrderStatus(latestOrder?.status);
+        if (latestStatus === 'paid' || latestStatus === 'overpaid') {
+          await loadMembershipStatus();
+        }
+      } catch (error: any) {
+        setOrderError(
+          error?.message ||
+            intl.formatMessage({ id: 'account.subscription.order.poll.error' }),
+        );
+      }
+    };
+
+    poll();
+    const timer = window.setInterval(() => {
+      if (shouldPollOrder(currentOrder?.status)) {
+        poll();
+      }
+    }, ORDER_POLL_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [orderUiOpen, currentOrderNo, currentOrder?.status, intl]);
+
   const sortedPlans = useMemo(
     () =>
-      [...plans].sort((a, b) => Number(a.amount || 0) - Number(b.amount || 0)),
+      [...plans].sort(
+        (a, b) => Number(a.price_lbc || 0) - Number(b.price_lbc || 0),
+      ),
     [plans],
   );
-  const activeStatus = String(subscription?.status || '').toLowerCase();
-  const isActive =
-    activeStatus === 'active' ||
-    activeStatus === 'trialing' ||
-    activeStatus === 'cancel_at_period_end';
+
+  const membershipActive = getMembershipActive(membership);
+  const membershipPlanName =
+    membership?.plan_name ||
+    membership?.plan?.name ||
+    intl.formatMessage({ id: 'account.subscription.current.unknownPlan' });
+  const orderStatusPresentation = getOrderStatusPresentation(
+    intl,
+    currentOrder?.status,
+  );
 
   return (
     <PageContainer title={false}>
@@ -116,8 +330,8 @@ export default function AccountSubscriptionPage() {
           actions={
             <Button
               icon={<ReloadOutlined />}
-              onClick={loadData}
-              loading={loading}
+              onClick={loadPageData}
+              loading={plansLoading || membershipLoading || profileLoading}
             >
               {intl.formatMessage({ id: 'common.refresh' })}
             </Button>
@@ -128,251 +342,591 @@ export default function AccountSubscriptionPage() {
           <Alert type="warning" showIcon message={errorMessage} />
         ) : null}
 
-        {loading ? (
+        <Card
+          title={intl.formatMessage({
+            id: 'account.subscription.current.title',
+          })}
+          variant="borderless"
+          style={{ borderRadius: 20 }}
+          loading={membershipLoading}
+        >
+          {!membership ? (
+            <Empty
+              description={intl.formatMessage({
+                id: 'account.subscription.current.empty',
+              })}
+            />
+          ) : (
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              <Title level={5} style={{ margin: 0 }}>
+                {membershipPlanName}
+              </Title>
+              <Space wrap>
+                <Tag color={membershipActive ? 'green' : 'default'}>
+                  {String(membership?.status || '-').toUpperCase()}
+                </Tag>
+                {typeof membership.remaining_days === 'number' ? (
+                  <Tag color="blue">
+                    {intl.formatMessage(
+                      { id: 'account.subscription.current.remainingDays' },
+                      { days: membership.remaining_days },
+                    )}
+                  </Tag>
+                ) : null}
+              </Space>
+              <Text type="secondary">
+                {intl.formatMessage({
+                  id: 'account.subscription.current.validUntil',
+                })}
+                : {formatDateTime(locale, membership.valid_until)}
+              </Text>
+            </Space>
+          )}
+        </Card>
+
+        <Card
+          title={intl.formatMessage({
+            id: 'account.subscription.wallet.title',
+          })}
+          variant="borderless"
+          style={{ borderRadius: 20 }}
+          loading={profileLoading}
+          extra={
+            <Button
+              icon={<SafetyCertificateOutlined />}
+              loading={profileSaving}
+              onClick={async () => {
+                setProfileSaving(true);
+                try {
+                  const updated = await updateAccountProfile({
+                    linked_wallet_id: linkedWalletIdInput,
+                    primary_user_address: primaryUserAddressInput,
+                  });
+                  setProfile(updated || profile);
+                  message.success(
+                    intl.formatMessage({
+                      id: 'account.subscription.wallet.save.success',
+                    }),
+                  );
+                } catch (error: any) {
+                  message.error(
+                    error?.message ||
+                      intl.formatMessage({
+                        id: 'account.subscription.wallet.save.error',
+                      }),
+                  );
+                } finally {
+                  setProfileSaving(false);
+                }
+              }}
+            >
+              {intl.formatMessage({ id: 'common.save' })}
+            </Button>
+          }
+        >
+          <Space direction="vertical" size={10} style={{ width: '100%' }}>
+            <Text type="secondary">
+              {intl.formatMessage({
+                id: 'account.subscription.wallet.link.status',
+              })}
+              : {profile?.wallet_link_status || '-'}
+            </Text>
+            <Text type="secondary">
+              {intl.formatMessage({
+                id: 'account.subscription.wallet.linkedAt',
+              })}
+              : {formatDateTime(locale, profile?.linked_at)}
+            </Text>
+            <Input
+              prefix={<WalletOutlined />}
+              value={linkedWalletIdInput}
+              onChange={(event) => setLinkedWalletIdInput(event.target.value)}
+              placeholder={intl.formatMessage({
+                id: 'account.subscription.wallet.linkedWallet.placeholder',
+              })}
+            />
+            <Input
+              prefix={<WalletOutlined />}
+              value={primaryUserAddressInput}
+              onChange={(event) =>
+                setPrimaryUserAddressInput(event.target.value)
+              }
+              placeholder={intl.formatMessage({
+                id: 'account.subscription.wallet.primaryAddress.placeholder',
+              })}
+            />
+          </Space>
+        </Card>
+
+        {plansLoading ? (
           <Card variant="borderless" style={{ borderRadius: 20 }}>
             <Skeleton active paragraph={{ rows: 6 }} />
           </Card>
         ) : (
-          <>
-            <Card
-              title={intl.formatMessage({
-                id: 'account.subscription.current.title',
-              })}
-              variant="borderless"
-              style={{ borderRadius: 20 }}
-            >
-              {!subscription ? (
-                <Empty
-                  description={intl.formatMessage({
-                    id: 'account.subscription.current.empty',
-                  })}
-                />
-              ) : (
-                <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                  <Title level={5} style={{ margin: 0 }}>
-                    {subscription?.plan?.name ||
-                      intl.formatMessage({
-                        id: 'account.subscription.current.unknownPlan',
-                      })}
-                  </Title>
-                  <Space wrap>
-                    <Tag color={isActive ? 'green' : 'default'}>
-                      {String(subscription.status || '-').toUpperCase()}
-                    </Tag>
-                    {subscription.auto_renew ? (
-                      <Tag color="blue">
-                        {intl.formatMessage({
-                          id: 'account.subscription.current.autoRenew',
-                        })}
-                      </Tag>
-                    ) : null}
-                  </Space>
-                  <Text type="secondary">
-                    {intl.formatMessage({
-                      id: 'account.subscription.current.period',
-                    })}
-                    : {formatDate(locale, subscription.current_period_start)} -{' '}
-                    {formatDate(locale, subscription.current_period_end)}
-                  </Text>
-                  {subscription.cancel_at ? (
-                    <Text type="secondary">
-                      {intl.formatMessage({
-                        id: 'account.subscription.current.cancelAt',
-                      })}
-                      : {formatDate(locale, subscription.cancel_at)}
-                    </Text>
-                  ) : null}
-                  <Space>
-                    <Button
-                      danger
-                      icon={<StopOutlined />}
-                      loading={cancelling}
-                      disabled={!subscription?.id || !isActive}
-                      onClick={async () => {
-                        if (!subscription?.id) return;
-                        setCancelling(true);
-                        try {
-                          const next = await cancelBillingSubscription(
-                            subscription.id,
-                          );
-                          setSubscription(next || subscription);
-                          message.success(
-                            intl.formatMessage({
-                              id: 'account.subscription.cancel.success',
-                            }),
-                          );
-                        } catch (error: any) {
-                          message.error(
-                            error?.message ||
-                              intl.formatMessage({
-                                id: 'account.subscription.cancel.error',
-                              }),
-                          );
-                        } finally {
-                          setCancelling(false);
-                        }
-                      }}
+          <Card
+            title={intl.formatMessage({
+              id: 'account.subscription.plans.title',
+            })}
+            variant="borderless"
+            style={{ borderRadius: 20 }}
+          >
+            {sortedPlans.length === 0 ? (
+              <Empty
+                description={intl.formatMessage({
+                  id: 'account.subscription.plans.empty',
+                })}
+              />
+            ) : (
+              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                {sortedPlans.map((plan) => {
+                  const planId = String(plan.id);
+                  return (
+                    <Card
+                      key={planId}
+                      size="small"
+                      style={{ borderRadius: 12 }}
+                      styles={{ body: { padding: 14 } }}
                     >
-                      {intl.formatMessage({
-                        id: 'account.subscription.cancel.cta',
-                      })}
-                    </Button>
-                  </Space>
-                </Space>
-              )}
-            </Card>
-
-            <Card
-              title={intl.formatMessage({
-                id: 'account.subscription.plans.title',
-              })}
-              variant="borderless"
-              style={{ borderRadius: 20 }}
-            >
-              {sortedPlans.length === 0 ? (
-                <Empty
-                  description={intl.formatMessage({
-                    id: 'account.subscription.plans.empty',
-                  })}
-                />
-              ) : (
-                <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                  {sortedPlans.map((plan) => {
-                    const planId = String(plan.id);
-                    const isCurrent = Boolean(
-                      activePlanId && activePlanId === planId,
-                    );
-                    return (
-                      <Card
-                        key={planId}
-                        size="small"
-                        style={{ borderRadius: 12 }}
-                        styles={{ body: { padding: 14 } }}
+                      <Space
+                        align="start"
+                        style={{
+                          width: '100%',
+                          justifyContent: 'space-between',
+                        }}
                       >
-                        <Space
-                          align="start"
-                          style={{
-                            width: '100%',
-                            justifyContent: 'space-between',
-                          }}
-                        >
-                          <div style={{ minWidth: 0 }}>
-                            <Space align="center" size={8}>
-                              <Title level={5} style={{ margin: 0 }}>
-                                {plan.name || plan.code || `Plan ${planId}`}
-                              </Title>
-                              {isCurrent ? (
-                                <Tag color="green">
-                                  {intl.formatMessage({
-                                    id: 'account.subscription.plans.current',
-                                  })}
-                                </Tag>
-                              ) : null}
-                            </Space>
-                            <Paragraph
-                              type="secondary"
-                              style={{ marginBottom: 0 }}
-                            >
-                              {plan.description ||
-                                intl.formatMessage({
-                                  id: 'account.subscription.plans.noDescription',
-                                })}
-                            </Paragraph>
-                            <Text strong>
-                              {`${plan.amount ?? '-'} ${
-                                plan.currency || ''
-                              }`.trim()}{' '}
-                              /{' '}
-                              {plan.interval ||
-                                intl.formatMessage({
-                                  id: 'account.subscription.plans.interval.month',
-                                })}
-                            </Text>
-                            {plan.wallet_address ? (
-                              <Text
-                                type="secondary"
-                                style={{ display: 'block', marginTop: 4 }}
-                              >
-                                {intl.formatMessage({
-                                  id: 'account.subscription.walletAddress',
-                                })}
-                                : {plan.wallet_address}
-                              </Text>
-                            ) : null}
-                          </div>
-                          <Space direction="vertical" size={8} align="end">
-                            {plan.wallet_address ? (
-                              <Button
-                                icon={<QrcodeOutlined />}
-                                onClick={() =>
-                                  setQrPayload(
-                                    String(plan.wallet_address || ''),
-                                  )
-                                }
-                              >
-                                {intl.formatMessage({
-                                  id: 'account.subscription.qr.cta',
-                                })}
-                              </Button>
-                            ) : null}
-                            <Button
-                              type={isCurrent ? 'default' : 'primary'}
-                              icon={<DollarOutlined />}
-                              loading={submittingPlanId === planId}
-                              disabled={isCurrent}
-                              onClick={async () => {
-                                setSubmittingPlanId(planId);
-                                try {
-                                  const next = await createBillingSubscription({
-                                    plan_id: plan.id,
-                                  });
-                                  setSubscription(next || null);
-                                  message.success(
+                        <div style={{ minWidth: 0 }}>
+                          <Space align="center" size={8}>
+                            <Title level={5} style={{ margin: 0 }}>
+                              {plan.name || `Plan ${planId}`}
+                            </Title>
+                          </Space>
+                          <Paragraph
+                            type="secondary"
+                            style={{ marginBottom: 0 }}
+                          >
+                            {plan.description ||
+                              intl.formatMessage({
+                                id: 'account.subscription.plans.noDescription',
+                              })}
+                          </Paragraph>
+                          <Text strong>
+                            {`${plan.price_lbc ?? '-'} LBC`} /{' '}
+                            {intl.formatMessage(
+                              {
+                                id: 'account.subscription.plan.durationDays',
+                              },
+                              { days: plan.duration_days ?? '-' },
+                            )}
+                          </Text>
+                        </div>
+                        <Space direction="vertical" size={8} align="end">
+                          <Button
+                            type="primary"
+                            icon={<DollarOutlined />}
+                            loading={submittingPlanId === planId}
+                            onClick={async () => {
+                              setSubmittingPlanId(planId);
+                              setOrderError('');
+                              setCapturedTxid('');
+                              setTxHintError('');
+                              setTxHintState('idle');
+                              try {
+                                if (!plan.code) {
+                                  throw new Error(
                                     intl.formatMessage({
-                                      id: 'account.subscription.create.success',
+                                      id: 'account.subscription.create.error',
                                     }),
                                   );
-                                } catch (error: any) {
-                                  message.error(
-                                    error?.message ||
-                                      intl.formatMessage({
-                                        id: 'account.subscription.create.error',
-                                      }),
-                                  );
-                                } finally {
-                                  setSubmittingPlanId('');
                                 }
-                              }}
-                            >
-                              {intl.formatMessage({
-                                id: 'account.subscription.create.cta',
-                              })}
-                            </Button>
-                          </Space>
+
+                                const createdOrder =
+                                  await createMembershipOrder({
+                                    plan_code: String(plan.code),
+                                  });
+                                setCurrentOrder(createdOrder || null);
+                                setCurrentOrderNo(
+                                  String(createdOrder?.order_no || ''),
+                                );
+                                setCopyAddressCopied(false);
+                                setOrderUiOpen(true);
+                              } catch (error: any) {
+                                const errorText =
+                                  error?.message ||
+                                  intl.formatMessage({
+                                    id: 'account.subscription.create.error',
+                                  });
+                                setOrderError(errorText);
+                                message.error(errorText);
+                              } finally {
+                                setSubmittingPlanId('');
+                              }
+                            }}
+                          >
+                            {intl.formatMessage({
+                              id: 'account.subscription.create.cta',
+                            })}
+                          </Button>
                         </Space>
-                      </Card>
-                    );
-                  })}
-                </Space>
-              )}
-            </Card>
-          </>
+                      </Space>
+                    </Card>
+                  );
+                })}
+              </Space>
+            )}
+          </Card>
         )}
       </Space>
 
       <Modal
-        open={Boolean(qrPayload)}
+        open={orderUiOpen}
+        onCancel={() => {
+          setOrderUiOpen(false);
+          setOrderError('');
+          setWalletUnlockPassword('');
+        }}
         footer={null}
-        onCancel={() => setQrPayload('')}
-        title={intl.formatMessage({ id: 'account.subscription.qr.title' })}
+        title={intl.formatMessage({ id: 'account.subscription.order.title' })}
       >
-        <QrCodePanel
-          payload={qrPayload}
-          size={220}
-          emptyText={intl.formatMessage({
-            id: 'account.subscription.qr.empty',
-          })}
-        />
+        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          {orderError ? (
+            <Alert type="warning" showIcon message={orderError} />
+          ) : null}
+          {orderLoading ? (
+            <Skeleton active paragraph={{ rows: 4 }} />
+          ) : !currentOrder ? (
+            <Empty
+              description={intl.formatMessage({
+                id: 'account.subscription.order.empty',
+              })}
+            />
+          ) : (
+            <>
+              <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                <Title level={5} style={{ margin: 0 }}>
+                  {currentOrder.plan?.name ||
+                    currentOrder.plan_name ||
+                    intl.formatMessage({
+                      id: 'account.subscription.current.unknownPlan',
+                    })}
+                </Title>
+                <Space wrap>
+                  <Tag
+                    color={orderStatusPresentation.color}
+                    icon={orderStatusPresentation.icon}
+                  >
+                    {orderStatusPresentation.text}
+                  </Tag>
+                  <Tag>{`#${currentOrder.order_no}`}</Tag>
+                </Space>
+                <Text>
+                  {intl.formatMessage({
+                    id: 'account.subscription.order.amount',
+                  })}
+                  :{' '}
+                  <Text strong>{currentOrder.expected_amount_lbc ?? '-'}</Text>
+                </Text>
+                {currentOrder.actual_amount ? (
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'account.subscription.order.actualAmount',
+                    })}
+                    : <Text strong>{currentOrder.actual_amount}</Text>
+                  </Text>
+                ) : null}
+                <Text>
+                  {intl.formatMessage({
+                    id: 'account.subscription.order.expiresIn',
+                  })}
+                  : <Text strong>{expiresCountdown}</Text>
+                </Text>
+                {currentOrder.paid_at ? (
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'account.subscription.order.paidAt',
+                    })}
+                    :{' '}
+                    <Text strong>
+                      {formatDateTime(locale, currentOrder.paid_at)}
+                    </Text>
+                  </Text>
+                ) : null}
+                {currentOrder.txid || capturedTxid ? (
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'account.subscription.order.txid',
+                    })}
+                    : <Text code>{currentOrder.txid || capturedTxid}</Text>
+                  </Text>
+                ) : null}
+                {typeof currentOrder.confirmations === 'number' ? (
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'account.subscription.order.confirmations',
+                    })}
+                    : <Text strong>{currentOrder.confirmations}</Text>
+                  </Text>
+                ) : null}
+              </Space>
+
+              <Alert
+                type={
+                  normalizeOrderStatus(currentOrder.status) === 'paid' ||
+                  normalizeOrderStatus(currentOrder.status) === 'overpaid'
+                    ? 'success'
+                    : 'info'
+                }
+                showIcon
+                message={intl.formatMessage({
+                  id: 'account.subscription.order.waitingMessage',
+                })}
+                description={formatDateTime(locale, currentOrder.expires_at)}
+              />
+
+              <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                <Text strong>
+                  {intl.formatMessage({
+                    id: 'account.subscription.order.address',
+                  })}
+                </Text>
+                <Text copyable={false} style={{ wordBreak: 'break-all' }}>
+                  {currentOrder.pay_to_address || '-'}
+                </Text>
+                <Button
+                  icon={<CopyOutlined />}
+                  disabled={!currentOrder.pay_to_address}
+                  onClick={async () => {
+                    if (!currentOrder.pay_to_address) return;
+                    await navigator.clipboard.writeText(
+                      currentOrder.pay_to_address,
+                    );
+                    setCopyAddressCopied(true);
+                    message.success(
+                      intl.formatMessage({
+                        id: 'account.subscription.order.copy.success',
+                      }),
+                    );
+                  }}
+                >
+                  {copyAddressCopied
+                    ? intl.formatMessage({
+                        id: 'account.subscription.order.copy.copied',
+                      })
+                    : intl.formatMessage({
+                        id: 'account.subscription.order.copy.cta',
+                      })}
+                </Button>
+              </Space>
+
+              <Card size="small" style={{ borderRadius: 12 }}>
+                <QrCodePanel
+                  payload={
+                    currentOrder.qr_text || currentOrder.pay_to_address || ''
+                  }
+                  size={220}
+                  emptyText={intl.formatMessage({
+                    id: 'account.subscription.qr.empty',
+                  })}
+                />
+              </Card>
+
+              <Card
+                size="small"
+                style={{ borderRadius: 12 }}
+                title={intl.formatMessage({
+                  id: 'account.subscription.wallet.auth.title',
+                })}
+              >
+                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'account.subscription.wallet.linkedWallet',
+                    })}
+                    : <Text strong>{profile?.linked_wallet_id || '-'}</Text>
+                  </Text>
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'account.subscription.wallet.primaryAddress',
+                    })}
+                    : <Text strong>{profile?.primary_user_address || '-'}</Text>
+                  </Text>
+                  <Alert
+                    type="info"
+                    showIcon
+                    message={intl.formatMessage({
+                      id: 'account.subscription.wallet.platformAddress.notice',
+                    })}
+                  />
+                  <Input.Password
+                    value={walletUnlockPassword}
+                    onChange={(event) =>
+                      setWalletUnlockPassword(event.target.value)
+                    }
+                    placeholder={intl.formatMessage({
+                      id: 'account.subscription.wallet.unlock.placeholder',
+                    })}
+                    prefix={<LockOutlined />}
+                  />
+                  <Button
+                    type="default"
+                    icon={<WalletOutlined />}
+                    loading={sendingPayment}
+                    disabled={
+                      !walletUnlockPassword ||
+                      !currentOrder.pay_to_address ||
+                      !currentOrder.expected_amount_lbc
+                    }
+                    onClick={async () => {
+                      if (
+                        !currentOrder.order_no ||
+                        !currentOrder.pay_to_address
+                      ) {
+                        return;
+                      }
+
+                      setSendingPayment(true);
+                      setTxHintError('');
+                      setTxHintState('idle');
+                      try {
+                        const { txid } = await runWalletPrototypePaymentFlow({
+                          linkedWalletId: String(
+                            profile?.linked_wallet_id || '',
+                          ),
+                          unlockPassword: walletUnlockPassword,
+                          toAddress: String(currentOrder.pay_to_address),
+                          amountLbc: String(
+                            currentOrder.expected_amount_lbc || '',
+                          ),
+                        });
+
+                        setCapturedTxid(txid);
+                        message.info(
+                          intl.formatMessage({
+                            id: 'account.subscription.wallet.txSubmitted',
+                          }),
+                        );
+
+                        await submitMembershipOrderTxHint(
+                          currentOrder.order_no,
+                          {
+                            txid,
+                          },
+                        );
+                        setTxHintState('submitted');
+                        message.success(
+                          intl.formatMessage({
+                            id: 'account.subscription.wallet.txidSubmitted',
+                          }),
+                        );
+
+                        const latestOrder = await getMembershipOrder(
+                          currentOrder.order_no,
+                        );
+                        setCurrentOrder(latestOrder);
+                      } catch (error: any) {
+                        setTxHintState('failed');
+                        setTxHintError(
+                          error?.message ||
+                            intl.formatMessage({
+                              id: 'account.subscription.wallet.send.error',
+                            }),
+                        );
+                      } finally {
+                        setWalletUnlockPassword('');
+                        setSendingPayment(false);
+                      }
+                    }}
+                  >
+                    {intl.formatMessage({
+                      id: 'account.subscription.wallet.sendPayment',
+                    })}
+                  </Button>
+
+                  {capturedTxid ? (
+                    <Alert
+                      type="info"
+                      showIcon
+                      message={intl.formatMessage({
+                        id: 'account.subscription.wallet.waitingBackendVerification',
+                      })}
+                      description={capturedTxid}
+                    />
+                  ) : null}
+                  {txHintState === 'submitted' ? (
+                    <Alert
+                      type="success"
+                      showIcon
+                      message={intl.formatMessage({
+                        id: 'account.subscription.wallet.txidSubmitted',
+                      })}
+                    />
+                  ) : null}
+                  {txHintState === 'failed' ? (
+                    <Alert type="warning" showIcon message={txHintError} />
+                  ) : null}
+                </Space>
+              </Card>
+
+              {normalizeOrderStatus(currentOrder.status) === 'expired' ? (
+                <Alert
+                  type="warning"
+                  showIcon
+                  message={intl.formatMessage({
+                    id: 'account.subscription.order.expired.recreate',
+                  })}
+                />
+              ) : null}
+
+              {normalizeOrderStatus(currentOrder.status) === 'paid' ||
+              normalizeOrderStatus(currentOrder.status) === 'overpaid' ? (
+                <Alert
+                  type="success"
+                  showIcon
+                  message={intl.formatMessage({
+                    id: 'account.subscription.wallet.backendConfirmed',
+                  })}
+                />
+              ) : null}
+
+              <Alert
+                type="info"
+                showIcon
+                message={intl.formatMessage({
+                  id: 'account.subscription.wallet.doNotClose',
+                })}
+              />
+
+              <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={async () => {
+                    if (!currentOrder.order_no) return;
+                    setOrderLoading(true);
+                    try {
+                      const latestOrder = await getMembershipOrder(
+                        currentOrder.order_no,
+                      );
+                      setCurrentOrder(latestOrder);
+                    } catch (error: any) {
+                      setOrderError(
+                        error?.message ||
+                          intl.formatMessage({
+                            id: 'account.subscription.order.poll.error',
+                          }),
+                      );
+                    } finally {
+                      setOrderLoading(false);
+                    }
+                  }}
+                >
+                  {intl.formatMessage({ id: 'common.refresh' })}
+                </Button>
+                <Button onClick={() => setOrderUiOpen(false)}>
+                  {intl.formatMessage({ id: 'common.cancel' })}
+                </Button>
+              </Space>
+            </>
+          )}
+        </Space>
       </Modal>
     </PageContainer>
   );
