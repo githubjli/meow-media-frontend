@@ -76,8 +76,12 @@ export default function AccountPaymentOrdersPage() {
   };
 
   const resolveAmountDisplay = (row: PaymentOrderSummary) => {
+    const hasMembershipAmounts =
+      row.expected_amount_lbc !== undefined ||
+      row.actual_amount_lbc !== undefined;
     const isMembershipOrder =
-      String(row.order_type || '').toLowerCase() === 'membership';
+      String(row.order_type || '').toLowerCase() === 'membership' ||
+      hasMembershipAmounts;
     const actualAmount = toNumber(row.actual_amount_lbc);
     if (isMembershipOrder && actualAmount > 0) {
       return {
@@ -318,6 +322,7 @@ export default function AccountPaymentOrdersPage() {
           <PaymentOrderDetailCard
             order={{
               ...detail,
+              created_at: formatDateTime(detail.created_at),
               paid_at: formatDateTime(detail.paid_at),
               expires_at: formatDateTime(detail.expires_at),
             }}

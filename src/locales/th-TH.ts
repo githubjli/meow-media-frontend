@@ -477,6 +477,10 @@ export default {
   'account.paymentOrders.status.overpaid': 'Overpaid',
   'account.paymentOrders.status.expired': 'Expired',
   'account.paymentOrders.status.paidAfterExpiry': 'Paid after expiry',
+
+  'account.paymentOrders.settlementCurrency': 'Settlement currency',
+  'account.paymentOrders.planName': 'Plan',
+  'account.paymentOrders.membershipOrder': 'Membership order',
   'account.profile.title': 'แดชบอร์ดโปรไฟล์',
   'account.profile.subtitle':
     'ดูข้อมูลบัญชี สิทธิ์การใช้งาน และภาพรวมตัวเลขสำคัญของคุณ',
@@ -593,6 +597,11 @@ export default {
   'account.subscription.wallet.title': 'Linked Wallet Metadata',
   'account.subscription.wallet.link.status': 'Wallet link status',
   'account.subscription.wallet.linkedAt': 'Linked at',
+
+  'account.subscription.wallet.status.linked': 'Linked',
+  'account.subscription.wallet.status.pending': 'Pending link',
+  'account.subscription.wallet.status.failed': 'Link failed',
+  'account.subscription.wallet.status.unlinked': 'Not linked',
   'account.subscription.wallet.linkedWallet.placeholder': 'Linked wallet ID',
   'account.subscription.wallet.primaryAddress.placeholder':
     'Primary user address',

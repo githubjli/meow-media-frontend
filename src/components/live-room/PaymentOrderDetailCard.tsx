@@ -17,6 +17,11 @@ const formatSettlementValue = (
   })}`;
 };
 
+const resolvePlanName = (order: PaymentOrder, intl: any) =>
+  order.plan_name ||
+  order.plan?.name ||
+  intl.formatMessage({ id: 'account.paymentOrders.membershipOrder' });
+
 const resolveDisplayAmount = (order: PaymentOrder, intl: any) => {
   const actual = toNumber(order.actual_amount_lbc);
   if (actual > 0) return formatSettlementValue(order.actual_amount_lbc, intl);
@@ -74,6 +79,22 @@ export default function PaymentOrderDetailCard({
           >
             <Tag>{order.order_type}</Tag>
           </Descriptions.Item>
+          {String(order.order_type || '').toLowerCase() === 'membership' ? (
+            <Descriptions.Item
+              label={intl.formatMessage({
+                id: 'account.paymentOrders.planName',
+              })}
+            >
+              {resolvePlanName(order, intl)}
+            </Descriptions.Item>
+          ) : null}
+          <Descriptions.Item
+            label={intl.formatMessage({
+              id: 'account.paymentOrders.settlementCurrency',
+            })}
+          >
+            {intl.formatMessage({ id: 'account.subscription.plan.ltt' })}
+          </Descriptions.Item>
           <Descriptions.Item
             label={intl.formatMessage({ id: 'live.orders.amount' })}
           >
@@ -120,6 +141,13 @@ export default function PaymentOrderDetailCard({
               })}
             >
               {order.confirmations}
+            </Descriptions.Item>
+          ) : null}
+          {order.created_at ? (
+            <Descriptions.Item
+              label={intl.formatMessage({ id: 'live.orders.createdAt' })}
+            >
+              {order.created_at}
             </Descriptions.Item>
           ) : null}
           {order.paid_at ? (

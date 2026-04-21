@@ -470,6 +470,10 @@ export default {
   'account.paymentOrders.status.overpaid': 'Overpaid',
   'account.paymentOrders.status.expired': 'Expired',
   'account.paymentOrders.status.paidAfterExpiry': 'Paid after expiry',
+
+  'account.paymentOrders.settlementCurrency': 'Settlement currency',
+  'account.paymentOrders.planName': 'Plan',
+  'account.paymentOrders.membershipOrder': 'Membership order',
   'account.profile.title': '个人仪表盘',
   'account.profile.subtitle': '查看你的账号身份、能力与关键数据概览。',
   'account.profile.error.load': '暂时无法加载个人资料。',
@@ -585,6 +589,11 @@ export default {
   'account.subscription.wallet.title': 'Linked Wallet Metadata',
   'account.subscription.wallet.link.status': 'Wallet link status',
   'account.subscription.wallet.linkedAt': 'Linked at',
+
+  'account.subscription.wallet.status.linked': 'Linked',
+  'account.subscription.wallet.status.pending': 'Pending link',
+  'account.subscription.wallet.status.failed': 'Link failed',
+  'account.subscription.wallet.status.unlinked': 'Not linked',
   'account.subscription.wallet.linkedWallet.placeholder': 'Linked wallet ID',
   'account.subscription.wallet.primaryAddress.placeholder':
     'Primary user address',

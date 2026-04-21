@@ -183,6 +183,49 @@ const resolvePlanDisplayPrice = (plan: MembershipPlan) => {
   };
 };
 
+const resolveMembershipValidUntil = (membership: MembershipStatus | null) =>
+  membership?.valid_until ||
+  membership?.ends_at ||
+  membership?.expires_at ||
+  null;
+
+const resolveWalletLinkStatusLabel = (
+  intl: any,
+  profile: AccountProfileResponse | null,
+) => {
+  const rawStatus =
+    profile?.wallet_link_status ||
+    profile?.linked_status ||
+    profile?.link_status;
+  const normalized = String(rawStatus || '').toLowerCase();
+
+  if (normalized === 'linked' || normalized === 'active') {
+    return intl.formatMessage({
+      id: 'account.subscription.wallet.status.linked',
+    });
+  }
+  if (normalized === 'pending') {
+    return intl.formatMessage({
+      id: 'account.subscription.wallet.status.pending',
+    });
+  }
+  if (normalized === 'failed' || normalized === 'error') {
+    return intl.formatMessage({
+      id: 'account.subscription.wallet.status.failed',
+    });
+  }
+  if (!normalized && profile?.linked_wallet_id) {
+    return intl.formatMessage({
+      id: 'account.subscription.wallet.status.linked',
+    });
+  }
+
+  return (
+    rawStatus ||
+    intl.formatMessage({ id: 'account.subscription.wallet.status.unlinked' })
+  );
+};
+
 export default function AccountSubscriptionPage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
@@ -405,7 +448,11 @@ export default function AccountSubscriptionPage() {
                 {intl.formatMessage({
                   id: 'account.subscription.current.validUntil',
                 })}
-                : {formatDateTime(locale, membership.valid_until)}
+                :{' '}
+                {formatDateTime(
+                  locale,
+                  resolveMembershipValidUntil(membership),
+                )}
               </Text>
             </Space>
           )}
@@ -456,7 +503,7 @@ export default function AccountSubscriptionPage() {
               {intl.formatMessage({
                 id: 'account.subscription.wallet.link.status',
               })}
-              : {profile?.wallet_link_status || '-'}
+              : {resolveWalletLinkStatusLabel(intl, profile)}
             </Text>
             <Text type="secondary">
               {intl.formatMessage({

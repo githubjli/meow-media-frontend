@@ -22,6 +22,8 @@ export type PaymentOrderSummary = {
   created_at?: string;
   live_title?: string;
   product_title?: string;
+  plan_name?: string;
+  plan?: { id?: number | string; name?: string } | null;
   live?: { id?: number | string; title?: string } | null;
   product?: { id?: number | string; title?: string } | null;
   [key: string]: any;
