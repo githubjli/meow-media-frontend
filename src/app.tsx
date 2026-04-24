@@ -27,6 +27,7 @@ import {
   ReadOutlined,
   SettingOutlined,
   ShopOutlined,
+  ShoppingOutlined,
   SunOutlined,
   ThunderboltOutlined,
   UploadOutlined,
@@ -553,6 +554,12 @@ export const layout: RunTimeLayoutConfig = ({
                 icon: <PlaySquareOutlined />,
                 className: 'sidebar-menu-item sidebar-menu-item-category',
               },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.orders' }),
+                path: '/seller/orders',
+                icon: <ShoppingOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
             ],
           }
         : null;
@@ -795,6 +802,12 @@ export const layout: RunTimeLayoutConfig = ({
                           label: intl.formatMessage({ id: 'nav.myStore' }),
                           onClick: () => history.push('/seller/store'),
                         } as const,
+                        {
+                          key: 'seller-orders',
+                          icon: <ShoppingOutlined />,
+                          label: intl.formatMessage({ id: 'nav.sellerOrders' }),
+                          onClick: () => history.push('/seller/orders'),
+                        } as const,
                       ]
                     : []),
                   {
@@ -808,6 +821,18 @@ export const layout: RunTimeLayoutConfig = ({
                     icon: <DollarOutlined />,
                     label: intl.formatMessage({ id: 'nav.mySubscription' }),
                     onClick: () => history.push('/account/subscription'),
+                  },
+                  {
+                    key: 'my-shipping-addresses',
+                    icon: <HomeOutlined />,
+                    label: intl.formatMessage({ id: 'nav.shippingAddresses' }),
+                    onClick: () => history.push('/account/shipping-addresses'),
+                  },
+                  {
+                    key: 'my-product-orders',
+                    icon: <ShoppingOutlined />,
+                    label: intl.formatMessage({ id: 'nav.productOrders' }),
+                    onClick: () => history.push('/account/product-orders'),
                   },
                   {
                     type: 'divider',
@@ -864,6 +889,12 @@ export const layout: RunTimeLayoutConfig = ({
                           icon: <SettingOutlined />,
                           label: intl.formatMessage({ id: 'nav.allVideos' }),
                           onClick: () => history.push('/admin/videos'),
+                        },
+                        {
+                          key: 'admin-product-orders',
+                          icon: <ShoppingOutlined />,
+                          label: intl.formatMessage({ id: 'admin.productOrders.title' }),
+                          onClick: () => history.push('/admin/product-orders'),
                         },
                       ] as const)
                     : []),
