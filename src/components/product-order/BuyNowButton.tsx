@@ -7,6 +7,7 @@ import { Button, List, Modal, Typography, message } from 'antd';
 import { useState, type MouseEvent } from 'react';
 
 const { Text } = Typography;
+const BUY_NOW_MESSAGE_KEY = 'buy-now-product-order';
 
 export default function BuyNowButton({
   productId,
@@ -22,10 +23,18 @@ export default function BuyNowButton({
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<ShippingAddress[]>([]);
 
+  const clearBuyNowMessage = () => {
+    message.destroy(BUY_NOW_MESSAGE_KEY);
+  };
+
   const onBuyNow = async (event?: MouseEvent) => {
     event?.stopPropagation();
+    clearBuyNowMessage();
+
     if (!isLoggedIn) {
-      history.push(`/login?redirect=${encodeURIComponent(history.location.pathname)}`);
+      history.push(
+        `/login?redirect=${encodeURIComponent(history.location.pathname)}`,
+      );
       return;
     }
 
@@ -33,14 +42,23 @@ export default function BuyNowButton({
     try {
       const addresses = await listShippingAddresses();
       if (!addresses.length) {
-        message.info(intl.formatMessage({ id: 'buyNow.noAddress' }));
+        message.info({
+          key: BUY_NOW_MESSAGE_KEY,
+          content: intl.formatMessage({ id: 'buyNow.noAddress' }),
+        });
         history.push('/account/shipping-addresses');
         return;
       }
+
       setItems(addresses);
+      clearBuyNowMessage();
       setOpen(true);
     } catch (error: any) {
-      message.error(error?.message || intl.formatMessage({ id: 'buyNow.error.loadAddress' }));
+      message.error({
+        key: BUY_NOW_MESSAGE_KEY,
+        content:
+          error?.message || intl.formatMessage({ id: 'buyNow.error.loadAddress' }),
+      });
     } finally {
       setLoading(false);
     }
@@ -48,16 +66,25 @@ export default function BuyNowButton({
 
   const createOrder = async (shippingAddressId: string | number) => {
     setLoading(true);
+    clearBuyNowMessage();
+
     try {
       const created = await createProductOrder({
         product_id: productId,
         quantity: 1,
         shipping_address_id: shippingAddressId,
       });
+
       setOpen(false);
+      setItems([]);
+      clearBuyNowMessage();
       history.push(`/account/product-orders/${created.order_no}`);
     } catch (error: any) {
-      message.error(error?.message || intl.formatMessage({ id: 'buyNow.error.createOrder' }));
+      message.error({
+        key: BUY_NOW_MESSAGE_KEY,
+        content:
+          error?.message || intl.formatMessage({ id: 'buyNow.error.createOrder' }),
+      });
     } finally {
       setLoading(false);
     }
@@ -65,7 +92,12 @@ export default function BuyNowButton({
 
   return (
     <>
-      <Button type={buttonType} icon={<ShoppingCartOutlined />} onClick={onBuyNow} loading={loading}>
+      <Button
+        type={buttonType}
+        icon={<ShoppingCartOutlined />}
+        onClick={onBuyNow}
+        loading={loading}
+      >
         {intl.formatMessage({ id: 'buyNow.action' })}
       </Button>
       <Modal
@@ -79,7 +111,12 @@ export default function BuyNowButton({
           renderItem={(item) => (
             <List.Item
               actions={[
-                <Button key={item.id} type="primary" size="small" onClick={() => createOrder(item.id)}>
+                <Button
+                  key={item.id}
+                  type="primary"
+                  size="small"
+                  onClick={() => createOrder(item.id)}
+                >
                   {intl.formatMessage({ id: 'buyNow.useAddress' })}
                 </Button>,
               ]}
@@ -87,12 +124,24 @@ export default function BuyNowButton({
               <List.Item.Meta
                 title={
                   <span>
-                    {item.receiver_name} ({item.phone}) {item.is_default ? `• ${intl.formatMessage({ id: 'account.shippingAddresses.default' })}` : ''}
+                    {item.receiver_name} ({item.phone}){' '}
+                    {item.is_default
+                      ? `• ${intl.formatMessage({
+                          id: 'account.shippingAddresses.default',
+                        })}`
+                      : ''}
                   </span>
                 }
                 description={
                   <Text type="secondary">
-                    {[item.street_address, item.district, item.city, item.province, item.country, item.postal_code]
+                    {[
+                      item.street_address,
+                      item.district,
+                      item.city,
+                      item.province,
+                      item.country,
+                      item.postal_code,
+                    ]
                       .filter(Boolean)
                       .join(', ')}
                   </Text>
