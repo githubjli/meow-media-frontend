@@ -1,7 +1,7 @@
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import {
   getProductOrderDetail as fetchProductOrderDetail,
-  payProductOrderWithWallet,
+  payProductOrderWithWallet as submitProductOrderWalletPayment,
 } from '@/services/productOrders';
 import {
   listPublicCategories,
@@ -566,7 +566,7 @@ const HeaderSearchWithQr = ({
       if (currentUser?.linked_wallet_id) {
         payload.wallet_id = String(currentUser.linked_wallet_id);
       }
-      const response = await payProductOrderWithWallet(
+      const response = await submitProductOrderWalletPayment(
         String(confirmOrder.order_no),
         payload,
       );
