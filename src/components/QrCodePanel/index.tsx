@@ -3,9 +3,19 @@ import { Empty, Image, Space, Typography } from 'antd';
 const { Text } = Typography;
 
 type QrCodePanelProps = {
-  payload?: string;
+  payload?: unknown;
   size?: number;
   emptyText?: string;
+};
+
+const resolveQrPayload = (payload?: unknown) => {
+  if (typeof payload === 'string') return payload;
+  if (!payload) return '';
+  try {
+    return JSON.stringify(payload);
+  } catch (error) {
+    return String(payload);
+  }
 };
 
 const buildQrImageUrl = (payload: string, size: number) =>
@@ -18,8 +28,9 @@ export default function QrCodePanel({
   size = 220,
   emptyText = 'QR code is not available yet.',
 }: QrCodePanelProps) {
-  const hasPayload = Boolean(payload);
-  const previewUrl = hasPayload ? buildQrImageUrl(String(payload), size) : '';
+  const qrValue = resolveQrPayload(payload);
+  const hasPayload = Boolean(qrValue);
+  const previewUrl = hasPayload ? buildQrImageUrl(qrValue, size) : '';
 
   if (!previewUrl) {
     return (
@@ -42,7 +53,7 @@ export default function QrCodePanel({
         style={{ objectFit: 'contain', borderRadius: 10 }}
         preview={false}
       />
-      {hasPayload ? <Text type="secondary">{String(payload)}</Text> : null}
+      {hasPayload ? <Text type="secondary">{qrValue}</Text> : null}
     </Space>
   );
 }
