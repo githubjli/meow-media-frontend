@@ -71,7 +71,6 @@ export async function confirmProductOrderReceived(orderNo: string) {
   );
 }
 
-
 export async function submitProductOrderTxHint(
   orderNo: string,
   payload: { txid: string },
@@ -91,11 +90,14 @@ export async function shipSellerProductOrder(
     shipped_note?: string;
   },
 ) {
-  return requestJson<ProductOrder>(`/api/seller/product-orders/${orderNo}/ship/`, {
-    method: 'POST',
-    headers: await withAuth(),
-    body: JSON.stringify(payload),
-  });
+  return requestJson<ProductOrder>(
+    `/api/seller/product-orders/${orderNo}/ship/`,
+    {
+      method: 'POST',
+      headers: await withAuth(),
+      body: JSON.stringify(payload),
+    },
+  );
 }
 
 export async function markProductOrderSettled(
@@ -112,13 +114,11 @@ export async function markProductOrderSettled(
   );
 }
 
-export async function listSellerProductOrders(
-  params?: {
-    status?: string;
-    search?: string;
-    page?: number;
-  },
-) {
+export async function listSellerProductOrders(params?: {
+  status?: string;
+  search?: string;
+  page?: number;
+}) {
   const payload = await requestJson<any>(
     `/api/seller/product-orders/${buildQuery(params)}`,
     {

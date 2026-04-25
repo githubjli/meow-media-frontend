@@ -828,7 +828,8 @@ export default {
   'account.shippingAddresses.address': 'Address',
   'account.shippingAddresses.error.load': 'Unable to load shipping addresses.',
   'account.shippingAddresses.error.save': 'Unable to save shipping address.',
-  'account.shippingAddresses.error.delete': 'Unable to delete shipping address.',
+  'account.shippingAddresses.error.delete':
+    'Unable to delete shipping address.',
   'account.shippingAddresses.message.saved': 'Shipping address saved.',
   'account.shippingAddresses.message.deleted': 'Shipping address deleted.',
   'account.shippingAddresses.fields.receiver_name': 'Receiver Name',
@@ -841,7 +842,8 @@ export default {
   'account.shippingAddresses.fields.postal_code': 'Postal Code',
 
   'account.productOrders.title': 'Product Orders',
-  'account.productOrders.subtitle': 'Track your product order status and payment.',
+  'account.productOrders.subtitle':
+    'Track your product order status and payment.',
   'account.productOrders.empty': 'No product orders yet.',
   'account.productOrders.orderNo': 'Order No',
   'account.productOrders.product': 'Product',
@@ -862,12 +864,14 @@ export default {
   'account.productOrders.expectedAmount': 'Expected Amount',
   'account.productOrders.currency': 'Currency',
   'account.productOrders.expiresAt': 'Expires At',
-  'account.productOrders.paymentReminder': 'QR/payment data is not proof of payment. Backend confirms by chain/payment status.',
+  'account.productOrders.paymentReminder':
+    'QR/payment data is not proof of payment. Backend confirms by chain/payment status.',
   'account.productOrders.confirmReceived': 'Confirm Received',
   'account.productOrders.confirmReceivedSuccess': 'Order marked as received.',
   'account.productOrders.error.load': 'Unable to load product orders.',
   'account.productOrders.error.detail': 'Unable to load product order detail.',
-  'account.productOrders.error.confirmReceived': 'Unable to confirm receiving this order.',
+  'account.productOrders.error.confirmReceived':
+    'Unable to confirm receiving this order.',
   'account.productOrders.shipment': 'Shipment',
   'account.productOrders.shipment.carrier': 'Carrier',
   'account.productOrders.trackingNumber': 'Tracking Number',
@@ -899,17 +903,19 @@ export default {
   'seller.orders.shippingAddressSnapshot': 'Shipping Address Snapshot',
   'seller.orders.shipmentSummary': 'Shipment Summary',
   'seller.orders.payoutSummary': 'Payout Summary',
-  'seller.orders.shipOnlyWhenPaid': 'Shipping is allowed only when order status is paid.',
+  'seller.orders.shipOnlyWhenPaid':
+    'Shipping is allowed only when order status is paid.',
   'seller.orders.markShipped': 'Mark Shipped',
   'seller.orders.shipSuccess': 'Shipment submitted.',
   'seller.orders.shipError': 'Unable to submit shipment.',
 
   'admin.productOrders.title': 'Admin Product Orders',
-  'admin.productOrders.subtitle': 'Phase 1 settlement action for product orders.',
-  'admin.productOrders.phase1Hint': 'Minimal UI: mark an order as settled by order number.',
+  'admin.productOrders.subtitle':
+    'Phase 1 settlement action for product orders.',
+  'admin.productOrders.phase1Hint':
+    'Minimal UI: mark an order as settled by order number.',
   'admin.productOrders.settleSuccess': 'Order marked as settled.',
   'admin.productOrders.settleError': 'Unable to mark this order as settled.',
-
 
   'common.yes': 'Yes',
   'common.no': 'No',
@@ -932,14 +938,17 @@ export default {
   'account.productOrders.txid': 'TXID',
   'account.productOrders.confirmations': 'Confirmations',
   'account.productOrders.payment.underpaid': 'Underpaid',
-  'account.productOrders.payment.underpaidAdvice': 'Payment received but amount is insufficient. Please contact support or wait for backend handling.',
+  'account.productOrders.payment.underpaidAdvice':
+    'Payment received but amount is insufficient. Please contact support or wait for backend handling.',
   'account.productOrders.payment.overpaid': 'Overpaid amount detected.',
   'account.productOrders.payment.paid': 'Payment verified as paid.',
   'account.productOrders.paymentExpired': 'Payment expired.',
-  'account.productOrders.paymentTimeout': 'Payment timeout. This order is cancelled.',
+  'account.productOrders.paymentTimeout':
+    'Payment timeout. This order is cancelled.',
   'account.productOrders.stockReleased': 'Stock released.',
   'account.productOrders.createNewOrder': 'Create a new order',
-  'account.productOrders.createNewOrderGuidance': 'This order expired/cancelled. Please create a new order to continue.',
+  'account.productOrders.createNewOrderGuidance':
+    'This order expired/cancelled. Please create a new order to continue.',
   'account.productOrders.actualAmount': 'Actual Amount',
   'account.productOrders.cancelReason': 'Cancel Reason',
 
@@ -948,44 +957,58 @@ export default {
   'seller.orders.shipOrder': 'Ship Order',
   'seller.orders.paymentSummary': 'Payment Summary',
 
-
   'common.add': 'Add',
   'common.active': 'Active',
 
   'qrScan.scan': 'Scan QR',
   'qrScan.modalTitle': 'Scan Payment QR',
-  'qrScan.pasteHint': 'Paste QR text manually if camera scanning is unavailable.',
+  'qrScan.pasteHint':
+    'Paste QR text manually if camera scanning is unavailable.',
   'qrScan.pastePlaceholder': 'Paste QR text',
   'qrScan.failed': 'QR scan failed.',
-  'qrScan.noOrderNo': 'Parsed payment data has no order number, cannot link to a platform order.',
+  'qrScan.noOrderNo':
+    'Parsed payment data has no order number, cannot link to a platform order.',
   'qrScan.productPayment': 'Product payment QR',
 
   'qrScan.mode.camera': 'Camera scan',
   'qrScan.mode.manual': 'Paste manually',
   'qrScan.cameraHint': 'Use rear camera to scan payment QR.',
-  'qrScan.cameraUnavailable': 'Camera scan is unavailable in this browser, please paste QR text manually.',
-  'qrScan.cameraDenied': 'Camera permission denied. Please allow camera access or use manual paste.',
+  'qrScan.cameraUnavailable':
+    'Camera scan is unavailable in this browser, please paste QR text manually.',
+  'qrScan.cameraDenied':
+    'Camera permission denied. Please allow camera access or use manual paste.',
+  'qrScan.cameraUnsupported': 'This browser does not support camera scanning.',
+  'qrScan.cameraInsecureContext':
+    'Camera scanning requires HTTPS secure context.',
+  'qrScan.scannerInitFailed':
+    'Camera opened, but QR scanner initialization failed.',
   'qrScan.emptyManual': 'Please paste QR text first.',
-  'qrScan.loadOrderDetailFailed': 'Unable to load product order detail from scanned QR.',
+  'qrScan.loadOrderDetailFailed':
+    'Unable to load product order detail from scanned QR.',
   'qrScan.copied': 'Copied.',
   'qrScan.copyFailed': 'Unable to copy.',
   'qrScan.walletPasswordRequired': 'Please enter your wallet password.',
-  'qrScan.walletSubmitted': 'Payment submitted. Waiting for blockchain confirmation.',
+  'qrScan.walletSubmitted':
+    'Payment submitted. Waiting for blockchain confirmation.',
   'qrScan.walletPayFailed': 'Unable to send linked wallet payment right now.',
   'qrScan.confirmModal.title': 'Product Payment Confirmation',
-  'qrScan.confirmModal.notProof': 'Scanned QR is not payment proof. Backend confirms payment by on-chain status.',
+  'qrScan.confirmModal.notProof':
+    'Scanned QR is not payment proof. Backend confirms payment by on-chain status.',
   'qrScan.confirmModal.walletPasswordPlaceholder': 'Enter wallet password',
   'qrScan.confirmModal.payWithWallet': 'Pay with linked wallet',
-  'qrScan.confirmModal.walletUnavailable': 'Linked wallet is unavailable. You can still pay manually with copied address/amount.',
+  'qrScan.confirmModal.walletUnavailable':
+    'Linked wallet is unavailable. You can still pay manually with copied address/amount.',
   'qrScan.confirmModal.txSubmitted': 'Transaction submitted',
-  'qrScan.confirmModal.waitingVerification': 'Waiting for backend blockchain confirmation.',
+  'qrScan.confirmModal.waitingVerification':
+    'Waiting for backend blockchain confirmation.',
   'qrScan.confirmModal.viewDetail': 'View order detail',
   'qrScan.confirmModal.copyAddress': 'Copy address',
   'qrScan.confirmModal.copyAmount': 'Copy amount',
 
   'orderConfirmation.title': 'Order Confirmation',
   'confirmAndPay.title': 'Confirm and Pay',
-  'confirmAndPay.notProof': 'This QR is not proof of payment. Backend confirms by chain sync or txid hint.',
+  'confirmAndPay.notProof':
+    'This QR is not proof of payment. Backend confirms by chain sync or txid hint.',
 
   'refundRequests.title': 'Refund Requests',
   'refundRequests.request': 'Request Refund',
@@ -1017,5 +1040,4 @@ export default {
   'payout.status': 'Payout Status',
   'token.ltt': 'LTT',
   'token.thbLtt': 'THB-LTT',
-
 };

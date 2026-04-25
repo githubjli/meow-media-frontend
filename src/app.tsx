@@ -1,5 +1,9 @@
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import {
+  getProductOrderDetail,
+  payProductOrderWithWallet,
+} from '@/services/productOrders';
+import {
   listPublicCategories,
   type PublicCategory,
 } from '@/services/publicCategories';
@@ -14,6 +18,7 @@ import {
   getCanonicalCategorySlug,
   getLocalizedCategoryLabel,
 } from '@/utils/categoryI18n';
+import { parsePaymentQrText } from '@/utils/paymentQr';
 import {
   AlertOutlined,
   BgColorsOutlined,
@@ -317,7 +322,6 @@ export async function getInitialState(): Promise<InitialState> {
   };
 }
 
-
 const HeaderSearchWithQr = ({
   isDark,
   currentUser,
@@ -332,7 +336,6 @@ const HeaderSearchWithQr = ({
   const [qrText, setQrText] = useState('');
   const [parseError, setParseError] = useState('');
   const [cameraError, setCameraError] = useState('');
-  const [cameraSupported, setCameraSupported] = useState(true);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [confirmOrder, setConfirmOrder] = useState<any>(null);
   const [confirmError, setConfirmError] = useState('');
@@ -341,21 +344,45 @@ const HeaderSearchWithQr = ({
   const [submittedTxid, setSubmittedTxid] = useState('');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const frameRef = useRef<number | null>(null);
-  const detectorRef = useRef<any>(null);
+  const zxingControlsRef = useRef<any>(null);
+  const zxingReaderRef = useRef<any>(null);
   const detectedRef = useRef(false);
 
   const stopCamera = () => {
-    if (frameRef.current) {
-      cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
-    }
+    zxingControlsRef.current?.stop?.();
+    zxingControlsRef.current = null;
+    zxingReaderRef.current?.reset?.();
+    zxingReaderRef.current = null;
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
     detectedRef.current = false;
+  };
+
+  const mapGetUserMediaError = (error: any) => {
+    const name = String(error?.name || '');
+    const messageText = String(error?.message || '');
+    const insecureContext = !window.isSecureContext;
+
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      return intl.formatMessage({ id: 'qrScan.cameraDenied' });
+    }
+    if (
+      name === 'NotFoundError' ||
+      name === 'DevicesNotFoundError' ||
+      name === 'OverconstrainedError'
+    ) {
+      return intl.formatMessage({ id: 'qrScan.cameraUnavailable' });
+    }
+    if (name === 'NotSupportedError') {
+      return intl.formatMessage({ id: 'qrScan.cameraUnsupported' });
+    }
+    if (name === 'SecurityError' || insecureContext) {
+      return intl.formatMessage({ id: 'qrScan.cameraInsecureContext' });
+    }
+    return messageText || intl.formatMessage({ id: 'qrScan.failed' });
   };
 
   const handleParsedQr = async (text: string) => {
@@ -394,82 +421,94 @@ const HeaderSearchWithQr = ({
     setParseError(parsed.error || intl.formatMessage({ id: 'qrScan.failed' }));
   };
 
-  const startCamera = async () => {
-    if (!open || mode !== 'camera') return;
+  const startCameraScan = async () => {
+    if (!open) return;
 
-    const hasMediaDevices =
-      typeof navigator !== 'undefined' &&
-      Boolean(navigator.mediaDevices?.getUserMedia);
-    const BarcodeDetectorCtor = (window as any).BarcodeDetector;
+    console.log('[QR_SCAN] secure context', window.isSecureContext);
+    console.log(
+      '[QR_SCAN] mediaDevices exists',
+      Boolean(navigator.mediaDevices?.getUserMedia),
+    );
 
-    if (!hasMediaDevices || !BarcodeDetectorCtor) {
-      setCameraSupported(false);
+    if (!window.isSecureContext) {
+      setCameraError(
+        intl.formatMessage({ id: 'qrScan.cameraInsecureContext' }),
+      );
       setMode('manual');
-      setCameraError(intl.formatMessage({ id: 'qrScan.cameraUnavailable' }));
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError(intl.formatMessage({ id: 'qrScan.cameraUnsupported' }));
+      setMode('manual');
       return;
     }
 
     try {
       stopCamera();
+      detectedRef.current = false;
       setCameraError('');
       setParseError('');
+      setMode('camera');
+      console.log('[QR_SCAN] getUserMedia start');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: 'environment' },
         },
         audio: false,
       });
+      console.log('[QR_SCAN] getUserMedia success');
       streamRef.current = stream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await new Promise<void>((resolve) => {
+          const element = videoRef.current;
+          if (!element) return resolve();
+          if (element.readyState >= 1) return resolve();
+          element.onloadedmetadata = () => resolve();
+          setTimeout(() => resolve(), 500);
+        });
         await videoRef.current.play();
       }
 
-      detectorRef.current = new BarcodeDetectorCtor({
-        formats: ['qr_code'],
-      });
-
-      const detectLoop = async () => {
-        if (!open || mode !== 'camera' || detectedRef.current) return;
-
-        try {
-          if (videoRef.current && detectorRef.current) {
-            const results = await detectorRef.current.detect(videoRef.current);
-            const first = results?.[0];
-            const value = first?.rawValue;
-            if (value) {
-              detectedRef.current = true;
-              void handleParsedQr(value);
-              return;
-            }
-          }
-        } catch (error) {
-          setCameraError(intl.formatMessage({ id: 'qrScan.failed' }));
-        }
-
-        frameRef.current = requestAnimationFrame(detectLoop);
-      };
-
-      frameRef.current = requestAnimationFrame(detectLoop);
+      try {
+        const { BrowserMultiFormatReader } = await import('@zxing/browser');
+        const codeReader = new BrowserMultiFormatReader();
+        zxingReaderRef.current = codeReader;
+        zxingControlsRef.current = await codeReader.decodeFromVideoElement(
+          videoRef.current as HTMLVideoElement,
+          (result) => {
+            const value = String(result?.getText?.() || '');
+            if (!value || detectedRef.current) return;
+            detectedRef.current = true;
+            console.log('[QR_SCAN] decoded text', value);
+            stopCamera();
+            void handleParsedQr(value);
+          },
+        );
+      } catch (scanError: any) {
+        setCameraError(
+          scanError?.message ||
+            intl.formatMessage({ id: 'qrScan.scannerInitFailed' }),
+        );
+      }
     } catch (error: any) {
-      setCameraSupported(false);
-      setMode('manual');
-      setCameraError(
-        error?.message || intl.formatMessage({ id: 'qrScan.cameraDenied' }),
+      console.log(
+        '[QR_SCAN] getUserMedia error name/message',
+        error?.name,
+        error?.message,
       );
+      setCameraError(mapGetUserMediaError(error));
+      setMode('manual');
       stopCamera();
     }
   };
 
   useEffect(() => {
-    if (open && mode === 'camera') {
-      startCamera();
-      return;
+    if (!open) {
+      stopCamera();
     }
-
-    stopCamera();
-  }, [open, mode]);
+  }, [open]);
 
   useEffect(() => {
     return () => {
@@ -482,8 +521,7 @@ const HeaderSearchWithQr = ({
     setCameraError('');
     setQrText('');
     setOpen(true);
-    setMode('camera');
-    setCameraSupported(true);
+    setMode('manual');
   };
 
   const onSubmitManualQr = async () => {
@@ -513,7 +551,9 @@ const HeaderSearchWithQr = ({
   const onPayWithLinkedWallet = async () => {
     if (!confirmOrder?.order_no) return;
     if (!walletPassword) {
-      setConfirmError(intl.formatMessage({ id: 'qrScan.walletPasswordRequired' }));
+      setConfirmError(
+        intl.formatMessage({ id: 'qrScan.walletPasswordRequired' }),
+      );
       return;
     }
 
@@ -533,7 +573,9 @@ const HeaderSearchWithQr = ({
       const txid = String(response?.txid || response?.transaction_id || '');
       setSubmittedTxid(txid);
       message.success(intl.formatMessage({ id: 'qrScan.walletSubmitted' }));
-      const latestOrder = await getProductOrderDetail(String(confirmOrder.order_no));
+      const latestOrder = await getProductOrderDetail(
+        String(confirmOrder.order_no),
+      );
       setConfirmOrder(latestOrder);
       setWalletPassword('');
     } catch (error: any) {
@@ -595,8 +637,10 @@ const HeaderSearchWithQr = ({
           <Space>
             <Button
               type={mode === 'camera' ? 'primary' : 'default'}
-              onClick={() => setMode('camera')}
-              disabled={!cameraSupported}
+              onClick={() => {
+                setMode('camera');
+                void startCameraScan();
+              }}
             >
               {intl.formatMessage({ id: 'qrScan.mode.camera' })}
             </Button>
@@ -615,6 +659,7 @@ const HeaderSearchWithQr = ({
                 style={{ width: '100%', borderRadius: 12, background: '#000' }}
                 muted
                 playsInline
+                autoPlay
               />
               <Text type="secondary">
                 {intl.formatMessage({ id: 'qrScan.cameraHint' })}
@@ -632,12 +677,16 @@ const HeaderSearchWithQr = ({
                 rows={5}
                 value={qrText}
                 onChange={(event) => setQrText(event.target.value)}
-                placeholder={intl.formatMessage({ id: 'qrScan.pastePlaceholder' })}
+                placeholder={intl.formatMessage({
+                  id: 'qrScan.pastePlaceholder',
+                })}
               />
             </>
           )}
 
-          {parseError ? <Alert type="error" showIcon message={parseError} /> : null}
+          {parseError ? (
+            <Alert type="error" showIcon message={parseError} />
+          ) : null}
         </Space>
       </Modal>
       <Modal
@@ -661,7 +710,10 @@ const HeaderSearchWithQr = ({
               <Text strong>{confirmOrder.order_no || '-'}</Text>
             </Text>
             <Text>
-              {intl.formatMessage({ id: 'account.productOrders.expectedAmount' })}:{' '}
+              {intl.formatMessage({
+                id: 'account.productOrders.expectedAmount',
+              })}
+              :{' '}
               <Text strong>{String(confirmOrder.expected_amount || '-')}</Text>
             </Text>
             <Text>
@@ -669,21 +721,27 @@ const HeaderSearchWithQr = ({
               <Text strong>{confirmOrder.currency || 'THB-LTT'}</Text>
             </Text>
             <Text>
-              {intl.formatMessage({ id: 'account.productOrders.paymentAddress' })}:{' '}
-              <Text strong>{confirmOrder.pay_to_address || '-'}</Text>
+              {intl.formatMessage({
+                id: 'account.productOrders.paymentAddress',
+              })}
+              : <Text strong>{confirmOrder.pay_to_address || '-'}</Text>
             </Text>
             <Text>
               {intl.formatMessage({ id: 'account.productOrders.expiresAt' })}:{' '}
               <Text strong>{confirmOrder.expires_at || '-'}</Text>
             </Text>
             <Text>
-              {intl.formatMessage({ id: 'account.productOrders.paymentStatus' })}:{' '}
-              <Text strong>{String(confirmOrder.payment_status || '-')}</Text>
+              {intl.formatMessage({
+                id: 'account.productOrders.paymentStatus',
+              })}
+              : <Text strong>{String(confirmOrder.payment_status || '-')}</Text>
             </Text>
             <Alert
               type="warning"
               showIcon
-              message={intl.formatMessage({ id: 'qrScan.confirmModal.notProof' })}
+              message={intl.formatMessage({
+                id: 'qrScan.confirmModal.notProof',
+              })}
             />
 
             {hasLinkedWallet ? (
@@ -701,7 +759,9 @@ const HeaderSearchWithQr = ({
                   loading={payingWithWallet}
                   onClick={onPayWithLinkedWallet}
                 >
-                  {intl.formatMessage({ id: 'qrScan.confirmModal.payWithWallet' })}
+                  {intl.formatMessage({
+                    id: 'qrScan.confirmModal.payWithWallet',
+                  })}
                 </Button>
               </>
             ) : (
@@ -733,12 +793,16 @@ const HeaderSearchWithQr = ({
                 })}
               />
             ) : null}
-            {confirmError ? <Alert type="error" showIcon message={confirmError} /> : null}
+            {confirmError ? (
+              <Alert type="error" showIcon message={confirmError} />
+            ) : null}
 
             <Space wrap>
               <Button
                 onClick={() =>
-                  history.push(`/account/product-orders/${confirmOrder.order_no}`)
+                  history.push(
+                    `/account/product-orders/${confirmOrder.order_no}`,
+                  )
                 }
               >
                 {intl.formatMessage({ id: 'qrScan.confirmModal.viewDetail' })}
@@ -1253,14 +1317,20 @@ export const layout: RunTimeLayoutConfig = ({
                         {
                           key: 'seller-payout-addresses',
                           icon: <DollarOutlined />,
-                          label: intl.formatMessage({ id: 'nav.sellerPayoutAddresses' }),
-                          onClick: () => history.push('/seller/payout-addresses'),
+                          label: intl.formatMessage({
+                            id: 'nav.sellerPayoutAddresses',
+                          }),
+                          onClick: () =>
+                            history.push('/seller/payout-addresses'),
                         } as const,
                         {
                           key: 'seller-refund-requests',
                           icon: <NotificationOutlined />,
-                          label: intl.formatMessage({ id: 'nav.sellerRefundRequests' }),
-                          onClick: () => history.push('/seller/refund-requests'),
+                          label: intl.formatMessage({
+                            id: 'nav.sellerRefundRequests',
+                          }),
+                          onClick: () =>
+                            history.push('/seller/refund-requests'),
                         } as const,
                       ]
                     : []),
@@ -1347,13 +1417,17 @@ export const layout: RunTimeLayoutConfig = ({
                         {
                           key: 'admin-product-orders',
                           icon: <ShoppingOutlined />,
-                          label: intl.formatMessage({ id: 'admin.productOrders.title' }),
+                          label: intl.formatMessage({
+                            id: 'admin.productOrders.title',
+                          }),
                           onClick: () => history.push('/admin/product-orders'),
                         },
                         {
                           key: 'admin-refund-requests',
                           icon: <NotificationOutlined />,
-                          label: intl.formatMessage({ id: 'admin.refundRequests.title' }),
+                          label: intl.formatMessage({
+                            id: 'admin.refundRequests.title',
+                          }),
                           onClick: () => history.push('/admin/refund-requests'),
                         },
                       ] as const)
