@@ -1,6 +1,6 @@
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import {
-  getProductOrderDetail,
+  getProductOrderDetail as fetchProductOrderDetail,
   payProductOrderWithWallet,
 } from '@/services/productOrders';
 import {
@@ -391,7 +391,7 @@ const HeaderSearchWithQr = ({
       try {
         setLoadingOrder(true);
         setParseError('');
-        const orderDetail = await getProductOrderDetail(parsed.orderNo);
+        const orderDetail = await fetchProductOrderDetail(parsed.orderNo);
         stopCamera();
         setOpen(false);
         setQrText('');
@@ -573,7 +573,7 @@ const HeaderSearchWithQr = ({
       const txid = String(response?.txid || response?.transaction_id || '');
       setSubmittedTxid(txid);
       message.success(intl.formatMessage({ id: 'qrScan.walletSubmitted' }));
-      const latestOrder = await getProductOrderDetail(
+      const latestOrder = await fetchProductOrderDetail(
         String(confirmOrder.order_no),
       );
       setConfirmOrder(latestOrder);
