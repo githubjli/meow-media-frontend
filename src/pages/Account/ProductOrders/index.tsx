@@ -5,6 +5,33 @@ import { history, useIntl, useModel } from '@umijs/max';
 import { Alert, Card, Empty, Space, Spin, Table, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 
+const resolveStatusLabel = (intl: any, row: ProductOrder) => {
+  const status = String(row.status || '').toLowerCase();
+  const cancelReason = String(row.cancel_reason || '').toLowerCase();
+  if (status === 'cancelled' && cancelReason === 'payment_timeout') {
+    return intl.formatMessage({ id: 'account.productOrders.status.paymentTimeout' });
+  }
+  if (status === 'pending_payment') {
+    return intl.formatMessage({ id: 'account.productOrders.status.pendingPayment' });
+  }
+  if (status === 'paid') {
+    return intl.formatMessage({ id: 'account.productOrders.status.paid' });
+  }
+  if (status === 'shipping') {
+    return intl.formatMessage({ id: 'account.productOrders.status.shipping' });
+  }
+  if (status === 'completed') {
+    return intl.formatMessage({ id: 'account.productOrders.status.completed' });
+  }
+  if (status === 'settled') {
+    return intl.formatMessage({ id: 'account.productOrders.status.settled' });
+  }
+  if (status === 'cancelled') {
+    return intl.formatMessage({ id: 'account.productOrders.status.cancelled' });
+  }
+  return String(row.status || '-').toUpperCase();
+};
+
 export default function AccountProductOrdersPage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
@@ -15,7 +42,9 @@ export default function AccountProductOrdersPage() {
 
   useEffect(() => {
     if (!initialState?.authLoading && !isLoggedIn) {
-      history.replace(`/login?redirect=${encodeURIComponent('/account/product-orders')}`);
+      history.replace(
+        `/login?redirect=${encodeURIComponent('/account/product-orders')}`,
+      );
       return;
     }
     if (!isLoggedIn) return;
@@ -25,7 +54,8 @@ export default function AccountProductOrdersPage() {
       .then((data) => setItems(data))
       .catch((error: any) => {
         setErrorMessage(
-          error?.message || intl.formatMessage({ id: 'account.productOrders.error.load' }),
+          error?.message ||
+            intl.formatMessage({ id: 'account.productOrders.error.load' }),
         );
       })
       .finally(() => setLoading(false));
@@ -42,7 +72,9 @@ export default function AccountProductOrdersPage() {
     <PageContainer title={false}>
       <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 12 }}>
         <Space direction="vertical" size={4}>
-          <h3 style={{ margin: 0 }}>{intl.formatMessage({ id: 'account.productOrders.title' })}</h3>
+          <h3 style={{ margin: 0 }}>
+            {intl.formatMessage({ id: 'account.productOrders.title' })}
+          </h3>
           <span style={{ color: '#8c8c8c' }}>
             {intl.formatMessage({ id: 'account.productOrders.subtitle' })}
           </span>
@@ -57,7 +89,9 @@ export default function AccountProductOrdersPage() {
         </Card>
       ) : items.length === 0 ? (
         <Card variant="borderless" style={{ borderRadius: 20 }}>
-          <Empty description={intl.formatMessage({ id: 'account.productOrders.empty' })} />
+          <Empty
+            description={intl.formatMessage({ id: 'account.productOrders.empty' })}
+          />
         </Card>
       ) : (
         <Card variant="borderless" style={{ borderRadius: 20 }}>
@@ -79,11 +113,23 @@ export default function AccountProductOrdersPage() {
               },
               {
                 title: intl.formatMessage({ id: 'account.productOrders.amount' }),
-                render: (_, row) => `${row.total_amount} ${row.currency || intl.formatMessage({ id: 'account.productOrders.currency.thbLtt' })}`,
+                render: (_, row) =>
+                  `${row.total_amount} ${
+                    row.currency ||
+                    intl.formatMessage({ id: 'account.productOrders.currency.thbLtt' })
+                  }`,
               },
               {
                 title: intl.formatMessage({ id: 'account.productOrders.status' }),
-                render: (_, row) => <Tag>{String(row.status || '-').toUpperCase()}</Tag>,
+                render: (_, row) => <Tag>{resolveStatusLabel(intl, row)}</Tag>,
+              },
+              {
+                title: intl.formatMessage({
+                  id: 'account.productOrders.paymentStatus',
+                }),
+                render: (_, row) => (
+                  <Tag>{String(row.payment_status || '-').toUpperCase()}</Tag>
+                ),
               },
               {
                 title: intl.formatMessage({ id: 'account.productOrders.createdAt' }),

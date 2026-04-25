@@ -21,6 +21,13 @@ import { useEffect, useMemo, useState } from 'react';
 
 const SHIPPING_ALLOWED_STATUSES = new Set(['paid']);
 
+const readBuyerSummary = (row: ProductOrder) =>
+  row.buyer_display_name ||
+  row.buyer_name ||
+  row.buyer_username ||
+  row.buyer_email ||
+  '-';
+
 export default function SellerOrdersPage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
@@ -30,6 +37,7 @@ export default function SellerOrdersPage() {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [search, setSearch] = useState('');
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
 
   const loadOrders = () => {
@@ -37,6 +45,7 @@ export default function SellerOrdersPage() {
     setErrorMessage('');
     listSellerProductOrders({
       status: statusFilter || undefined,
+      search: search || undefined,
     })
       .then((data) => {
         setItems(data as ProductOrder[]);
@@ -100,7 +109,7 @@ export default function SellerOrdersPage() {
       </Card>
 
       <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 12 }}>
-        <Space>
+        <Space wrap>
           <span>{intl.formatMessage({ id: 'seller.orders.filter.status' })}</span>
           <Select
             allowClear
@@ -109,7 +118,9 @@ export default function SellerOrdersPage() {
             onChange={(value) => setStatusFilter(value || '')}
             options={[
               {
-                label: intl.formatMessage({ id: 'seller.orders.status.pending_payment' }),
+                label: intl.formatMessage({
+                  id: 'seller.orders.status.pending_payment',
+                }),
                 value: 'pending_payment',
               },
               {
@@ -133,7 +144,16 @@ export default function SellerOrdersPage() {
                 value: 'cancelled',
               },
             ]}
-            placeholder={intl.formatMessage({ id: 'seller.orders.filter.statusPlaceholder' })}
+            placeholder={intl.formatMessage({
+              id: 'seller.orders.filter.statusPlaceholder',
+            })}
+          />
+          <Input
+            style={{ width: 260 }}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={intl.formatMessage({ id: 'seller.orders.filter.search' })}
+            onPressEnter={loadOrders}
           />
           <Button onClick={loadOrders}>
             {intl.formatMessage({ id: 'common.refresh' })}
@@ -164,6 +184,14 @@ export default function SellerOrdersPage() {
               dataIndex: 'product_title_snapshot',
             },
             {
+              title: intl.formatMessage({ id: 'seller.orders.buyerSummary' }),
+              render: (_, row) => readBuyerSummary(row),
+            },
+            {
+              title: intl.formatMessage({ id: 'seller.orders.quantity' }),
+              dataIndex: 'quantity',
+            },
+            {
               title: intl.formatMessage({ id: 'account.productOrders.amount' }),
               render: (_, row) =>
                 `${row.total_amount} ${
@@ -175,6 +203,18 @@ export default function SellerOrdersPage() {
               title: intl.formatMessage({ id: 'account.productOrders.status' }),
               render: (_, row) => <Tag>{String(row.status || '-').toUpperCase()}</Tag>,
             },
+            {
+              title: intl.formatMessage({
+                id: 'account.productOrders.paymentStatus',
+              }),
+              render: (_, row) => (
+                <Tag>{String(row.payment_status || '-').toUpperCase()}</Tag>
+              ),
+            },
+            {
+              title: intl.formatMessage({ id: 'account.productOrders.createdAt' }),
+              dataIndex: 'created_at',
+            },
           ]}
           pagination={false}
         />
@@ -183,7 +223,7 @@ export default function SellerOrdersPage() {
       <Card
         variant="borderless"
         style={{ borderRadius: 20 }}
-        title={intl.formatMessage({ id: 'seller.orders.markShipped' })}
+        title={intl.formatMessage({ id: 'seller.orders.shipOrder' })}
       >
         <Form layout="vertical" form={form}>
           <Form.Item
@@ -197,7 +237,9 @@ export default function SellerOrdersPage() {
                 label: `${entry.order_no} · ${entry.product_title_snapshot || '-'}`,
                 value: entry.order_no,
               }))}
-              placeholder={intl.formatMessage({ id: 'seller.orders.paidOrderPlaceholder' })}
+              placeholder={intl.formatMessage({
+                id: 'seller.orders.paidOrderPlaceholder',
+              })}
             />
           </Form.Item>
           <Form.Item

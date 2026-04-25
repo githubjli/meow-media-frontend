@@ -23,12 +23,20 @@ export default function AdminProductOrdersPage() {
   const onSubmit = async () => {
     const values = await form.validateFields();
     try {
-      await markProductOrderSettled(values.order_no, {});
-      message.success(intl.formatMessage({ id: 'admin.productOrders.settleSuccess' }));
+      await markProductOrderSettled(values.order_no, {
+        payment_status: values.payment_status || undefined,
+        txid: values.txid || undefined,
+        confirmations: values.confirmations || undefined,
+        cancel_reason: values.cancel_reason || undefined,
+      });
+      message.success(
+        intl.formatMessage({ id: 'admin.productOrders.settleSuccess' }),
+      );
       form.resetFields();
     } catch (error: any) {
       message.error(
-        error?.message || intl.formatMessage({ id: 'admin.productOrders.settleError' }),
+        error?.message ||
+          intl.formatMessage({ id: 'admin.productOrders.settleError' }),
       );
     }
   };
@@ -36,16 +44,49 @@ export default function AdminProductOrdersPage() {
   return (
     <PageContainer title={false}>
       <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 12 }}>
-        <h3 style={{ marginBottom: 6 }}>{intl.formatMessage({ id: 'admin.productOrders.title' })}</h3>
-        <span style={{ color: '#8c8c8c' }}>{intl.formatMessage({ id: 'admin.productOrders.subtitle' })}</span>
+        <h3 style={{ marginBottom: 6 }}>
+          {intl.formatMessage({ id: 'admin.productOrders.title' })}
+        </h3>
+        <span style={{ color: '#8c8c8c' }}>
+          {intl.formatMessage({ id: 'admin.productOrders.subtitle' })}
+        </span>
       </Card>
-      <Alert showIcon type="info" style={{ marginBottom: 12 }} message={intl.formatMessage({ id: 'admin.productOrders.phase1Hint' })} />
+      <Alert
+        showIcon
+        type="info"
+        style={{ marginBottom: 12 }}
+        message={intl.formatMessage({ id: 'admin.productOrders.phase1Hint' })}
+      />
       <Card variant="borderless" style={{ borderRadius: 20 }}>
         <Form layout="vertical" form={form}>
           <Form.Item
             name="order_no"
             label={intl.formatMessage({ id: 'account.productOrders.orderNo' })}
             rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="payment_status"
+            label={intl.formatMessage({ id: 'account.productOrders.paymentStatus' })}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="txid"
+            label={intl.formatMessage({ id: 'account.productOrders.txid' })}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="confirmations"
+            label={intl.formatMessage({ id: 'account.productOrders.confirmations' })}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="cancel_reason"
+            label={intl.formatMessage({ id: 'account.productOrders.cancelReason' })}
           >
             <Input />
           </Form.Item>

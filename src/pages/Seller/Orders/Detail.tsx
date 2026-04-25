@@ -144,6 +144,9 @@ export default function SellerOrderDetailPage() {
               <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.status' })}>
                 <Tag>{String(item.status || '-').toUpperCase()}</Tag>
               </Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'seller.orders.quantity' })}>
+                {item.quantity ?? '-'}
+              </Descriptions.Item>
               <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.amount' })}>
                 {item.total_amount} {item.currency || intl.formatMessage({ id: 'account.productOrders.currency.thbLtt' })}
               </Descriptions.Item>
@@ -153,6 +156,27 @@ export default function SellerOrderDetailPage() {
               <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.payToAddress' })}>
                 <Text copyable>{item.pay_to_address || '-'}</Text>
               </Descriptions.Item>
+            </Descriptions>
+          </Card>
+
+
+
+          {String(item.status || '').toLowerCase() === 'cancelled' &&
+          String(item.cancel_reason || '').toLowerCase() === 'payment_timeout' ? (
+            <Alert
+              showIcon
+              type="warning"
+              message={intl.formatMessage({ id: 'account.productOrders.paymentTimeout' })}
+            />
+          ) : null}
+
+          <Card variant="borderless" style={{ borderRadius: 20 }} title={intl.formatMessage({ id: 'seller.orders.paymentSummary' })}>
+            <Descriptions column={1}>
+              <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.paymentStatus' })}>{String(item.payment_status || '-').toUpperCase()}</Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.txid' })}>{item.txid || '-'}</Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.confirmations' })}>{item.confirmations ?? '-'}</Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.expectedAmount' })}>{item.expected_amount ?? '-'}</Descriptions.Item>
+              <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.actualAmount' })}>{item.actual_amount ?? '-'}</Descriptions.Item>
             </Descriptions>
           </Card>
 
