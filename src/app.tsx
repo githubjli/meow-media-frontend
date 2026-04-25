@@ -1,3 +1,4 @@
+import { getAccountProfile } from '@/services/accountProfile';
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import {
   getProductOrderDetail as fetchProductOrderDetail,
@@ -342,6 +343,8 @@ const HeaderSearchWithQr = ({
   const [walletPassword, setWalletPassword] = useState('');
   const [payingWithWallet, setPayingWithWallet] = useState(false);
   const [submittedTxid, setSubmittedTxid] = useState('');
+  const [profileLinkedWalletId, setProfileLinkedWalletId] = useState('');
+  const [hasFetchedProfileWallet, setHasFetchedProfileWallet] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const zxingControlsRef = useRef<any>(null);
@@ -543,25 +546,63 @@ const HeaderSearchWithQr = ({
   };
 
   const account = currentUser;
-  const hasLinkedWallet = Boolean(
-    account?.linked_wallet_id || account?.wallet_id,
-  );
+  const effectiveLinkedWalletId = String(
+    account?.linked_wallet_id || profileLinkedWalletId || '',
+  ).trim();
+  const hasLinkedWallet = Boolean(effectiveLinkedWalletId);
   const canUseWalletPayment = Boolean(
     hasLinkedWallet &&
       String(confirmOrder?.status || '').toLowerCase() === 'pending_payment',
   );
 
   useEffect(() => {
+    if (!confirmOpen || hasFetchedProfileWallet) return;
+    if (account?.linked_wallet_id) {
+      setHasFetchedProfileWallet(true);
+      return;
+    }
+    if (!account?.email) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const profile = await getAccountProfile();
+        if (cancelled) return;
+        setProfileLinkedWalletId(
+          String(profile?.linked_wallet_id || '').trim(),
+        );
+      } catch (error) {
+        // keep silent; fallback UI will show unavailable state.
+      } finally {
+        if (!cancelled) {
+          setHasFetchedProfileWallet(true);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    confirmOpen,
+    hasFetchedProfileWallet,
+    account?.linked_wallet_id,
+    account?.email,
+  ]);
+
+  useEffect(() => {
     if (!confirmOpen) return;
     console.log('[PAYMENT]', {
       linked_wallet_id: account?.linked_wallet_id,
       primary_user_address: account?.primary_user_address,
+      profile_linked_wallet_id: profileLinkedWalletId,
       canUseWalletPayment,
     });
   }, [
     confirmOpen,
     account?.linked_wallet_id,
     account?.primary_user_address,
+    profileLinkedWalletId,
     canUseWalletPayment,
   ]);
 
@@ -591,10 +632,8 @@ const HeaderSearchWithQr = ({
       const payload: { wallet_id?: string; password: string } = {
         password: walletPassword,
       };
-      if (account?.linked_wallet_id || account?.wallet_id) {
-        payload.wallet_id = String(
-          account?.linked_wallet_id || account?.wallet_id,
-        );
+      if (effectiveLinkedWalletId) {
+        payload.wallet_id = effectiveLinkedWalletId;
       }
       const response = await submitProductOrderWalletPayment(
         String(confirmOrder.order_no),
