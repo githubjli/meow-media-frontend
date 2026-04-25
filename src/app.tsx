@@ -648,13 +648,31 @@ const HeaderSearchWithQr = ({
       setConfirmOrder(latestOrder);
       setWalletPassword('');
     } catch (error: any) {
+      const resolveBackendError = (payload: any): string => {
+        if (!payload) return '';
+        if (typeof payload === 'string') return payload;
+        if (typeof payload.detail === 'string') return payload.detail;
+        if (typeof payload.message === 'string') return payload.message;
+        if (
+          Array.isArray(payload.non_field_errors) &&
+          payload.non_field_errors[0]
+        ) {
+          return String(payload.non_field_errors[0]);
+        }
+        if (Array.isArray(payload.password) && payload.password[0]) {
+          return String(payload.password[0]);
+        }
+        if (Array.isArray(payload.wallet_id) && payload.wallet_id[0]) {
+          return String(payload.wallet_id[0]);
+        }
+        if (payload.error) {
+          return resolveBackendError(payload.error);
+        }
+        return '';
+      };
       const backendError =
-        error?.data?.detail ||
-        error?.data?.message ||
-        error?.data?.non_field_errors?.[0] ||
-        error?.data?.password?.[0] ||
-        error?.data?.wallet_id?.[0] ||
-        '';
+        resolveBackendError(error?.data) ||
+        resolveBackendError(error?.response?.data);
       setConfirmError(
         backendError ||
           error?.message ||
