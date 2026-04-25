@@ -542,9 +542,28 @@ const HeaderSearchWithQr = ({
     await handleParsedQr(value);
   };
 
+  const account = currentUser;
   const hasLinkedWallet = Boolean(
-    currentUser?.linked_wallet_id || currentUser?.primary_user_address,
+    account?.linked_wallet_id || account?.wallet_id,
   );
+  const canUseWalletPayment = Boolean(
+    hasLinkedWallet &&
+      String(confirmOrder?.status || '').toLowerCase() === 'pending_payment',
+  );
+
+  useEffect(() => {
+    if (!confirmOpen) return;
+    console.log('[PAYMENT]', {
+      linked_wallet_id: account?.linked_wallet_id,
+      primary_user_address: account?.primary_user_address,
+      canUseWalletPayment,
+    });
+  }, [
+    confirmOpen,
+    account?.linked_wallet_id,
+    account?.primary_user_address,
+    canUseWalletPayment,
+  ]);
 
   const onCopyText = async (value?: string | number | null) => {
     const content = String(value || '').trim();
@@ -572,8 +591,10 @@ const HeaderSearchWithQr = ({
       const payload: { wallet_id?: string; password: string } = {
         password: walletPassword,
       };
-      if (currentUser?.linked_wallet_id) {
-        payload.wallet_id = String(currentUser.linked_wallet_id);
+      if (account?.linked_wallet_id || account?.wallet_id) {
+        payload.wallet_id = String(
+          account?.linked_wallet_id || account?.wallet_id,
+        );
       }
       const response = await submitProductOrderWalletPayment(
         String(confirmOrder.order_no),
@@ -753,7 +774,7 @@ const HeaderSearchWithQr = ({
               })}
             />
 
-            {hasLinkedWallet ? (
+            {canUseWalletPayment ? (
               <>
                 <Input.Password
                   value={walletPassword}

@@ -853,6 +853,7 @@ export default {
   'account.productOrders.paymentQr': 'Payment QR',
   'account.productOrders.paymentQr.empty': 'Payment QR is not available yet.',
   'account.productOrders.payToAddress': 'Pay to Address',
+  'account.productOrders.paymentAddress': 'Pay to Address',
   'account.productOrders.expectedAmount': 'Expected Amount',
   'account.productOrders.currency': 'Currency',
   'account.productOrders.expiresAt': 'Expires At',
