@@ -924,6 +924,13 @@ export default {
   'qrScan.noOrderNo': 'Parsed payment data has no order number, cannot link to a platform order.',
   'qrScan.productPayment': 'Product payment QR',
 
+  'qrScan.mode.camera': 'Camera scan',
+  'qrScan.mode.manual': 'Paste manually',
+  'qrScan.cameraHint': 'Use rear camera to scan payment QR.',
+  'qrScan.cameraUnavailable': 'Camera scan is unavailable in this browser, please paste QR text manually.',
+  'qrScan.cameraDenied': 'Camera permission denied. Please allow camera access or use manual paste.',
+  'qrScan.emptyManual': 'Please paste QR text first.',
+
   'orderConfirmation.title': 'Order Confirmation',
   'confirmAndPay.title': 'Confirm and Pay',
   'confirmAndPay.notProof': 'This QR is not proof of payment. Backend confirms by chain sync or txid hint.',

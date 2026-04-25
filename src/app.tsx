@@ -53,7 +53,7 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 const { Text } = Typography;
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -316,15 +316,38 @@ export async function getInitialState(): Promise<InitialState> {
 const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
   const intl = getIntl();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'camera' | 'manual'>('camera');
   const [qrText, setQrText] = useState('');
   const [parseError, setParseError] = useState('');
+  const [cameraError, setCameraError] = useState('');
+  const [cameraSupported, setCameraSupported] = useState(true);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const detectorRef = useRef<any>(null);
+  const detectedRef = useRef(false);
 
-  const onSubmitQr = () => {
-    const parsed = parsePaymentQrText(qrText);
+  const stopCamera = () => {
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    detectedRef.current = false;
+  };
+
+  const handleParsedQr = (text: string) => {
+    const parsed = parsePaymentQrText(text);
     if (parsed.orderNo) {
+      stopCamera();
       setOpen(false);
       setQrText('');
       setParseError('');
+      setCameraError('');
       history.push(`/account/product-orders/${parsed.orderNo}`);
       return;
     }
@@ -335,6 +358,107 @@ const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
     }
 
     setParseError(parsed.error || intl.formatMessage({ id: 'qrScan.failed' }));
+  };
+
+  const startCamera = async () => {
+    if (!open || mode !== 'camera') return;
+
+    const hasMediaDevices =
+      typeof navigator !== 'undefined' &&
+      Boolean(navigator.mediaDevices?.getUserMedia);
+    const BarcodeDetectorCtor = (window as any).BarcodeDetector;
+
+    if (!hasMediaDevices || !BarcodeDetectorCtor) {
+      setCameraSupported(false);
+      setMode('manual');
+      setCameraError(intl.formatMessage({ id: 'qrScan.cameraUnavailable' }));
+      return;
+    }
+
+    try {
+      stopCamera();
+      setCameraError('');
+      setParseError('');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+        },
+        audio: false,
+      });
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      detectorRef.current = new BarcodeDetectorCtor({
+        formats: ['qr_code'],
+      });
+
+      const detectLoop = async () => {
+        if (!open || mode !== 'camera' || detectedRef.current) return;
+
+        try {
+          if (videoRef.current && detectorRef.current) {
+            const results = await detectorRef.current.detect(videoRef.current);
+            const first = results?.[0];
+            const value = first?.rawValue;
+            if (value) {
+              detectedRef.current = true;
+              handleParsedQr(value);
+              return;
+            }
+          }
+        } catch (error) {
+          setCameraError(intl.formatMessage({ id: 'qrScan.failed' }));
+        }
+
+        frameRef.current = requestAnimationFrame(detectLoop);
+      };
+
+      frameRef.current = requestAnimationFrame(detectLoop);
+    } catch (error: any) {
+      setCameraSupported(false);
+      setMode('manual');
+      setCameraError(
+        error?.message || intl.formatMessage({ id: 'qrScan.cameraDenied' }),
+      );
+      stopCamera();
+    }
+  };
+
+  useEffect(() => {
+    if (open && mode === 'camera') {
+      startCamera();
+      return;
+    }
+
+    stopCamera();
+  }, [open, mode]);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  const onOpenModal = () => {
+    setParseError('');
+    setCameraError('');
+    setQrText('');
+    setOpen(true);
+    setMode('camera');
+    setCameraSupported(true);
+  };
+
+  const onSubmitManualQr = () => {
+    const value = String(qrText || '').trim();
+    if (!value) {
+      setParseError(intl.formatMessage({ id: 'qrScan.emptyManual' }));
+      return;
+    }
+    handleParsedQr(value);
   };
 
   return (
@@ -364,26 +488,70 @@ const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
             borderRadius: 10,
             color: isDark ? '#EFBC5C' : '#4b5563',
           }}
-          onClick={() => setOpen(true)}
+          onClick={onOpenModal}
         />
       </div>
       <Modal
         title={intl.formatMessage({ id: 'qrScan.modalTitle' })}
         open={open}
-        onCancel={() => setOpen(false)}
-        onOk={onSubmitQr}
-        okText={intl.formatMessage({ id: 'qrScan.scan' })}
+        onCancel={() => {
+          stopCamera();
+          setOpen(false);
+        }}
+        onOk={mode === 'manual' ? onSubmitManualQr : undefined}
+        okText={
+          mode === 'manual'
+            ? intl.formatMessage({ id: 'qrScan.scan' })
+            : undefined
+        }
+        cancelText={intl.formatMessage({ id: 'common.cancel' })}
       >
         <Space direction="vertical" size={8} style={{ width: '100%' }}>
-          <Text type="secondary">
-            {intl.formatMessage({ id: 'qrScan.pasteHint' })}
-          </Text>
-          <Input.TextArea
-            rows={5}
-            value={qrText}
-            onChange={(event) => setQrText(event.target.value)}
-            placeholder={intl.formatMessage({ id: 'qrScan.pastePlaceholder' })}
-          />
+          <Space>
+            <Button
+              type={mode === 'camera' ? 'primary' : 'default'}
+              onClick={() => setMode('camera')}
+              disabled={!cameraSupported}
+            >
+              {intl.formatMessage({ id: 'qrScan.mode.camera' })}
+            </Button>
+            <Button
+              type={mode === 'manual' ? 'primary' : 'default'}
+              onClick={() => setMode('manual')}
+            >
+              {intl.formatMessage({ id: 'qrScan.mode.manual' })}
+            </Button>
+          </Space>
+
+          {mode === 'camera' ? (
+            <>
+              <video
+                ref={videoRef}
+                style={{ width: '100%', borderRadius: 12, background: '#000' }}
+                muted
+                playsInline
+              />
+              <Text type="secondary">
+                {intl.formatMessage({ id: 'qrScan.cameraHint' })}
+              </Text>
+              {cameraError ? (
+                <Alert type="warning" showIcon message={cameraError} />
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Text type="secondary">
+                {intl.formatMessage({ id: 'qrScan.pasteHint' })}
+              </Text>
+              <Input.TextArea
+                rows={5}
+                value={qrText}
+                onChange={(event) => setQrText(event.target.value)}
+                placeholder={intl.formatMessage({ id: 'qrScan.pastePlaceholder' })}
+              />
+            </>
+          )}
+
           {parseError ? <Alert type="error" showIcon message={parseError} /> : null}
         </Space>
       </Modal>
