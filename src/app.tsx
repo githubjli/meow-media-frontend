@@ -18,7 +18,7 @@ import {
   getCanonicalCategorySlug,
   getLocalizedCategoryLabel,
 } from '@/utils/categoryI18n';
-import { parsePaymentQrText } from '@/utils/paymentQr';
+import { parsePaymentQrText as parseProductPaymentQrText } from '@/utils/paymentQr';
 import {
   AlertOutlined,
   BgColorsOutlined,
@@ -386,7 +386,7 @@ const HeaderSearchWithQr = ({
   };
 
   const handleParsedQr = async (text: string) => {
-    const parsed = parsePaymentQrText(text);
+    const parsed = parseProductPaymentQrText(text);
     if (parsed.orderNo) {
       try {
         setLoadingOrder(true);
