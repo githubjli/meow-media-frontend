@@ -472,10 +472,15 @@ const HeaderSearchWithQr = ({
       }
 
       try {
-        const { BrowserMultiFormatReader } = await import('@zxing/browser');
+        const ZXing = await import(
+          /* webpackChunkName: "zxing" */ '@zxing/browser'
+        );
+        console.log('[QR_SCAN] zxing loaded');
+        const { BrowserMultiFormatReader } = ZXing;
         const codeReader = new BrowserMultiFormatReader();
         zxingReaderRef.current = codeReader;
-        zxingControlsRef.current = await codeReader.decodeFromVideoElement(
+        zxingControlsRef.current = await codeReader.decodeFromVideoDevice(
+          undefined,
           videoRef.current as HTMLVideoElement,
           (result) => {
             const value = String(result?.getText?.() || '');
@@ -487,10 +492,13 @@ const HeaderSearchWithQr = ({
           },
         );
       } catch (scanError: any) {
+        console.log('[QR_SCAN] zxing load failed', scanError?.message);
         setCameraError(
           scanError?.message ||
             intl.formatMessage({ id: 'qrScan.scannerInitFailed' }),
         );
+        setMode('manual');
+        stopCamera();
       }
     } catch (error: any) {
       console.log(
