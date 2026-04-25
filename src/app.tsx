@@ -648,8 +648,17 @@ const HeaderSearchWithQr = ({
       setConfirmOrder(latestOrder);
       setWalletPassword('');
     } catch (error: any) {
+      const backendError =
+        error?.data?.detail ||
+        error?.data?.message ||
+        error?.data?.non_field_errors?.[0] ||
+        error?.data?.password?.[0] ||
+        error?.data?.wallet_id?.[0] ||
+        '';
       setConfirmError(
-        error?.message || intl.formatMessage({ id: 'qrScan.walletPayFailed' }),
+        backendError ||
+          error?.message ||
+          intl.formatMessage({ id: 'qrScan.walletPayFailed' }),
       );
     } finally {
       setPayingWithWallet(false);

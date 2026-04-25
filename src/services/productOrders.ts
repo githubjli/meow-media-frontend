@@ -54,10 +54,14 @@ export async function payProductOrderWithWallet(
   orderNo: string,
   payload: { wallet_id?: string; password: string },
 ) {
-  return requestJson<any>(`/api/product-orders/${orderNo}/wallet-pay/`, {
+  return requestJson<any>('/api/wallet-prototype/pay-product-order/', {
     method: 'POST',
     headers: await withAuth(),
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      order_no: orderNo,
+      wallet_id: payload.wallet_id,
+      password: payload.password,
+    }),
   });
 }
 
