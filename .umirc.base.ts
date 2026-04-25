@@ -99,6 +99,7 @@ export default defineConfig({
       hideInMenu: true,
     },
     { path: '/seller/orders', component: './Seller/Orders', hideInMenu: true },
+    { path: '/seller/orders/:order_no', component: './Seller/Orders/Detail', hideInMenu: true },
     {
       path: '/seller/products/:id/edit',
       component: './Seller/Products/Edit',

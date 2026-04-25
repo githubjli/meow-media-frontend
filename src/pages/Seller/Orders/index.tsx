@@ -11,22 +11,43 @@ import {
   Card,
   Form,
   Input,
+  Select,
   Space,
   Table,
   Tag,
   message,
 } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+const SHIPPING_ALLOWED_STATUSES = new Set(['paid']);
 
 export default function SellerOrdersPage() {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const [items, setItems] = useState<ProductOrder[]>([]);
   const [loading, setLoading] = useState(false);
-  const [missingListEndpoint, setMissingListEndpoint] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
+
+  const loadOrders = () => {
+    setLoading(true);
+    setErrorMessage('');
+    listSellerProductOrders({
+      status: statusFilter || undefined,
+    })
+      .then((data) => {
+        setItems(data as ProductOrder[]);
+      })
+      .catch((error: any) => {
+        setErrorMessage(
+          error?.message || intl.formatMessage({ id: 'seller.orders.error.load' }),
+        );
+      })
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     if (!initialState?.authLoading && !isLoggedIn) {
@@ -34,15 +55,8 @@ export default function SellerOrdersPage() {
       return;
     }
     if (!isLoggedIn) return;
-
-    setLoading(true);
-    listSellerProductOrders()
-      .then((data) => {
-        setItems(data as ProductOrder[]);
-      })
-      .catch(() => setMissingListEndpoint(true))
-      .finally(() => setLoading(false));
-  }, [initialState?.authLoading, isLoggedIn]);
+    loadOrders();
+  }, [initialState?.authLoading, isLoggedIn, statusFilter]);
 
   const onShip = async () => {
     const values = await form.validateFields();
@@ -56,6 +70,7 @@ export default function SellerOrdersPage() {
       });
       message.success(intl.formatMessage({ id: 'seller.orders.shipSuccess' }));
       form.resetFields();
+      loadOrders();
     } catch (error: any) {
       message.error(
         error?.message || intl.formatMessage({ id: 'seller.orders.shipError' }),
@@ -65,58 +80,154 @@ export default function SellerOrdersPage() {
     }
   };
 
+  const paidOrders = useMemo(
+    () =>
+      items.filter((entry) =>
+        SHIPPING_ALLOWED_STATUSES.has(String(entry.status || '').toLowerCase()),
+      ),
+    [items],
+  );
+
   return (
     <PageContainer title={false}>
       <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 12 }}>
-        <h3 style={{ marginBottom: 6 }}>{intl.formatMessage({ id: 'seller.orders.title' })}</h3>
-        <span style={{ color: '#8c8c8c' }}>{intl.formatMessage({ id: 'seller.orders.subtitle' })}</span>
+        <h3 style={{ marginBottom: 6 }}>
+          {intl.formatMessage({ id: 'seller.orders.title' })}
+        </h3>
+        <span style={{ color: '#8c8c8c' }}>
+          {intl.formatMessage({ id: 'seller.orders.subtitle' })}
+        </span>
       </Card>
 
-      {missingListEndpoint ? (
-        <Alert
-          type="info"
-          showIcon
-          message={intl.formatMessage({ id: 'seller.orders.missingListEndpoint' })}
-          style={{ marginBottom: 12 }}
-        />
-      ) : (
-        <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 12 }}>
-          <Table
-            loading={loading}
-            rowKey="order_no"
-            dataSource={items}
-            columns={[
-              { title: intl.formatMessage({ id: 'account.productOrders.orderNo' }), dataIndex: 'order_no' },
-              { title: intl.formatMessage({ id: 'account.productOrders.product' }), dataIndex: 'product_title_snapshot' },
+      <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 12 }}>
+        <Space>
+          <span>{intl.formatMessage({ id: 'seller.orders.filter.status' })}</span>
+          <Select
+            allowClear
+            style={{ width: 220 }}
+            value={statusFilter || undefined}
+            onChange={(value) => setStatusFilter(value || '')}
+            options={[
               {
-                title: intl.formatMessage({ id: 'account.productOrders.amount' }),
-                render: (_, row) => `${row.total_amount} ${row.currency || intl.formatMessage({ id: 'account.productOrders.currency.thbLtt' })}`,
+                label: intl.formatMessage({ id: 'seller.orders.status.pending_payment' }),
+                value: 'pending_payment',
               },
               {
-                title: intl.formatMessage({ id: 'account.productOrders.status' }),
-                render: (_, row) => <Tag>{String(row.status || '-').toUpperCase()}</Tag>,
+                label: intl.formatMessage({ id: 'seller.orders.status.paid' }),
+                value: 'paid',
+              },
+              {
+                label: intl.formatMessage({ id: 'seller.orders.status.shipping' }),
+                value: 'shipping',
+              },
+              {
+                label: intl.formatMessage({ id: 'seller.orders.status.completed' }),
+                value: 'completed',
+              },
+              {
+                label: intl.formatMessage({ id: 'seller.orders.status.settled' }),
+                value: 'settled',
+              },
+              {
+                label: intl.formatMessage({ id: 'seller.orders.status.cancelled' }),
+                value: 'cancelled',
               },
             ]}
-            pagination={false}
+            placeholder={intl.formatMessage({ id: 'seller.orders.filter.statusPlaceholder' })}
           />
-        </Card>
-      )}
+          <Button onClick={loadOrders}>
+            {intl.formatMessage({ id: 'common.refresh' })}
+          </Button>
+        </Space>
+      </Card>
 
-      <Card variant="borderless" style={{ borderRadius: 20 }} title={intl.formatMessage({ id: 'seller.orders.markShipped' })}>
+      {errorMessage ? (
+        <Alert type="error" showIcon message={errorMessage} style={{ marginBottom: 12 }} />
+      ) : null}
+
+      <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 12 }}>
+        <Table
+          loading={loading}
+          rowKey="order_no"
+          dataSource={items}
+          onRow={(row) => ({
+            style: { cursor: 'pointer' },
+            onClick: () => history.push(`/seller/orders/${row.order_no}`),
+          })}
+          columns={[
+            {
+              title: intl.formatMessage({ id: 'account.productOrders.orderNo' }),
+              dataIndex: 'order_no',
+            },
+            {
+              title: intl.formatMessage({ id: 'account.productOrders.product' }),
+              dataIndex: 'product_title_snapshot',
+            },
+            {
+              title: intl.formatMessage({ id: 'account.productOrders.amount' }),
+              render: (_, row) =>
+                `${row.total_amount} ${
+                  row.currency ||
+                  intl.formatMessage({ id: 'account.productOrders.currency.thbLtt' })
+                }`,
+            },
+            {
+              title: intl.formatMessage({ id: 'account.productOrders.status' }),
+              render: (_, row) => <Tag>{String(row.status || '-').toUpperCase()}</Tag>,
+            },
+          ]}
+          pagination={false}
+        />
+      </Card>
+
+      <Card
+        variant="borderless"
+        style={{ borderRadius: 20 }}
+        title={intl.formatMessage({ id: 'seller.orders.markShipped' })}
+      >
         <Form layout="vertical" form={form}>
-          <Form.Item name="order_no" label={intl.formatMessage({ id: 'account.productOrders.orderNo' })} rules={[{ required: true }]}>
+          <Form.Item
+            name="order_no"
+            label={intl.formatMessage({ id: 'account.productOrders.orderNo' })}
+            rules={[{ required: true }]}
+          >
+            <Select
+              showSearch
+              options={paidOrders.map((entry) => ({
+                label: `${entry.order_no} · ${entry.product_title_snapshot || '-'}`,
+                value: entry.order_no,
+              }))}
+              placeholder={intl.formatMessage({ id: 'seller.orders.paidOrderPlaceholder' })}
+            />
+          </Form.Item>
+          <Form.Item
+            name="carrier"
+            label={intl.formatMessage({
+              id: 'account.productOrders.shipment.carrier',
+            })}
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
-          <Form.Item name="carrier" label={intl.formatMessage({ id: 'account.productOrders.shipment.carrier' })} rules={[{ required: true }]}>
+          <Form.Item
+            name="tracking_number"
+            label={intl.formatMessage({ id: 'account.productOrders.trackingNumber' })}
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
-          <Form.Item name="tracking_number" label={intl.formatMessage({ id: 'account.productOrders.trackingNumber' })} rules={[{ required: true }]}>
+          <Form.Item
+            name="tracking_url"
+            label={intl.formatMessage({
+              id: 'account.productOrders.shipment.trackingUrl',
+            })}
+          >
             <Input />
           </Form.Item>
-          <Form.Item name="tracking_url" label={intl.formatMessage({ id: 'account.productOrders.shipment.trackingUrl' })}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="shipped_note" label={intl.formatMessage({ id: 'account.productOrders.shipment.note' })}>
+          <Form.Item
+            name="shipped_note"
+            label={intl.formatMessage({ id: 'account.productOrders.shipment.note' })}
+          >
             <Input.TextArea rows={3} />
           </Form.Item>
           <Space>

@@ -12,6 +12,17 @@ const normalizeList = (payload: any): ProductOrder[] => {
   return [];
 };
 
+const buildQuery = (params?: Record<string, any>) => {
+  if (!params) return '';
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    query.set(key, String(value));
+  });
+  const serialized = query.toString();
+  return serialized ? `?${serialized}` : '';
+};
+
 export async function createProductOrder(payload: {
   product_id: string | number;
   quantity: number;
@@ -79,6 +90,25 @@ export async function markProductOrderSettled(
   );
 }
 
-export async function listSellerProductOrders() {
-  return Promise.reject(new Error('seller_product_order_list_endpoint_missing'));
+export async function listSellerProductOrders(
+  params?: {
+    status?: string;
+    page?: number;
+  },
+) {
+  const payload = await requestJson<any>(
+    `/api/seller/product-orders/${buildQuery(params)}`,
+    {
+      method: 'GET',
+      headers: await withAuth(),
+    },
+  );
+  return normalizeList(payload);
+}
+
+export async function getSellerProductOrderDetail(orderNo: string) {
+  return requestJson<ProductOrder>(`/api/seller/product-orders/${orderNo}/`, {
+    method: 'GET',
+    headers: await withAuth(),
+  });
 }
