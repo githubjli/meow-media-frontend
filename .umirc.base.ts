@@ -79,6 +79,7 @@ export default defineConfig({
     { path: '/settings', component: './Account/Settings', hideInMenu: true },
     { path: '/admin/videos', component: './Videos/All', hideInMenu: false },
     { path: '/admin/product-orders', component: './Admin/ProductOrders', hideInMenu: false },
+    { path: '/admin/refund-requests', component: './Admin/RefundRequests', hideInMenu: false },
     { path: '/videos/:id', component: './Videos/Detail', hideInMenu: true },
     { path: '/browse/:id', component: './PublicVideoDetail', hideInMenu: true },
     { path: '/store/:slug', component: './Store/Public', hideInMenu: true },
@@ -100,6 +101,8 @@ export default defineConfig({
     },
     { path: '/seller/orders', component: './Seller/Orders', hideInMenu: true },
     { path: '/seller/orders/:order_no', component: './Seller/Orders/Detail', hideInMenu: true },
+    { path: '/seller/payout-addresses', component: './Seller/PayoutAddresses', hideInMenu: true },
+    { path: '/seller/refund-requests', component: './Seller/RefundRequests', hideInMenu: true },
     {
       path: '/seller/products/:id/edit',
       component: './Seller/Products/Edit',

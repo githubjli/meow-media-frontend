@@ -207,7 +207,14 @@ export default function SellerOrderDetailPage() {
 
           <Card variant="borderless" style={{ borderRadius: 20 }} title={intl.formatMessage({ id: 'seller.orders.payoutSummary' })}>
             <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-              {JSON.stringify(payoutSummary || {}, null, 2)}
+{JSON.stringify({
+                status: payoutSummary?.status || '-',
+                payout_txid: payoutSummary?.payout_txid || payoutSummary?.txid || '-',
+                payout_address: payoutSummary?.payout_address || '-',
+                paid_at: payoutSummary?.paid_at || '-',
+                failure_note: payoutSummary?.failure_note || '-',
+                raw: payoutSummary || {},
+              }, null, 2)}
             </pre>
           </Card>
 

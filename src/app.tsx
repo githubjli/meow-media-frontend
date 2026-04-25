@@ -5,6 +5,7 @@ import {
 } from '@/services/publicCategories';
 import { getMyStore } from '@/services/store';
 import { clearStoredTokens } from '@/utils/auth';
+import { parsePaymentQrText } from '@/utils/paymentQr';
 import {
   getCanonicalCategorySlug,
   getLocalizedCategoryLabel,
@@ -23,6 +24,7 @@ import {
   NotificationOutlined,
   PlayCircleOutlined,
   PlaySquareOutlined,
+  QrcodeOutlined,
   QuestionCircleOutlined,
   ReadOutlined,
   SettingOutlined,
@@ -37,19 +39,21 @@ import {
 import type { RunTimeLayoutConfig } from '@umijs/max';
 import { getIntl, history, setLocale } from '@umijs/max';
 import {
+  Alert,
   Avatar,
   Button,
   ConfigProvider,
   Dropdown,
   Input,
   message,
+  Modal,
   Space,
   Tag,
   theme,
   Tooltip,
   Typography,
 } from 'antd';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 const { Text } = Typography;
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -308,6 +312,85 @@ export async function getInitialState(): Promise<InitialState> {
   };
 }
 
+
+const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
+  const intl = getIntl();
+  const [open, setOpen] = useState(false);
+  const [qrText, setQrText] = useState('');
+  const [parseError, setParseError] = useState('');
+
+  const onSubmitQr = () => {
+    const parsed = parsePaymentQrText(qrText);
+    if (parsed.orderNo) {
+      setOpen(false);
+      setQrText('');
+      setParseError('');
+      history.push(`/account/product-orders/${parsed.orderNo}`);
+      return;
+    }
+
+    if (parsed.address || parsed.amount) {
+      setParseError(intl.formatMessage({ id: 'qrScan.noOrderNo' }));
+      return;
+    }
+
+    setParseError(parsed.error || intl.formatMessage({ id: 'qrScan.failed' }));
+  };
+
+  return (
+    <>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          width: '100%',
+          padding: '0 20px',
+          gap: 8,
+        }}
+      >
+        <Input.Search
+          placeholder={intl.formatMessage({ id: 'search.global.placeholder' })}
+          allowClear
+          style={{ maxWidth: 560, width: '100%', borderRadius: 12 }}
+          size="middle"
+          onSearch={(value) => console.log('Searching for:', value)}
+        />
+        <Button
+          type="text"
+          icon={<QrcodeOutlined style={{ fontSize: 16 }} />}
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            color: isDark ? '#EFBC5C' : '#4b5563',
+          }}
+          onClick={() => setOpen(true)}
+        />
+      </div>
+      <Modal
+        title={intl.formatMessage({ id: 'qrScan.modalTitle' })}
+        open={open}
+        onCancel={() => setOpen(false)}
+        onOk={onSubmitQr}
+        okText={intl.formatMessage({ id: 'qrScan.scan' })}
+      >
+        <Space direction="vertical" size={8} style={{ width: '100%' }}>
+          <Text type="secondary">
+            {intl.formatMessage({ id: 'qrScan.pasteHint' })}
+          </Text>
+          <Input.TextArea
+            rows={5}
+            value={qrText}
+            onChange={(event) => setQrText(event.target.value)}
+            placeholder={intl.formatMessage({ id: 'qrScan.pastePlaceholder' })}
+          />
+          {parseError ? <Alert type="error" showIcon message={parseError} /> : null}
+        </Space>
+      </Modal>
+    </>
+  );
+};
+
 export const layout: RunTimeLayoutConfig = ({
   initialState,
   setInitialState,
@@ -560,6 +643,18 @@ export const layout: RunTimeLayoutConfig = ({
                 icon: <ShoppingOutlined />,
                 className: 'sidebar-menu-item sidebar-menu-item-category',
               },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.payoutAddresses' }),
+                path: '/seller/payout-addresses',
+                icon: <DollarOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.refundRequests' }),
+                path: '/seller/refund-requests',
+                icon: <NotificationOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
             ],
           }
         : null;
@@ -603,28 +698,7 @@ export const layout: RunTimeLayoutConfig = ({
         </span>
       </div>
     ),
-    headerContentRender: () => (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          width: '100%',
-          padding: '0 20px',
-        }}
-      >
-        <Input.Search
-          placeholder={intl.formatMessage({ id: 'search.global.placeholder' })}
-          allowClear
-          style={{
-            maxWidth: 560,
-            width: '100%',
-            borderRadius: 12,
-          }}
-          size="middle"
-          onSearch={(value) => console.log('Searching for:', value)}
-        />
-      </div>
-    ),
+    headerContentRender: () => <HeaderSearchWithQr isDark={isDark} />,
     rightContentRender: () => {
       const utilityButtonStyle = {
         width: 30,
@@ -808,6 +882,18 @@ export const layout: RunTimeLayoutConfig = ({
                           label: intl.formatMessage({ id: 'nav.sellerOrders' }),
                           onClick: () => history.push('/seller/orders'),
                         } as const,
+                        {
+                          key: 'seller-payout-addresses',
+                          icon: <DollarOutlined />,
+                          label: intl.formatMessage({ id: 'nav.sellerPayoutAddresses' }),
+                          onClick: () => history.push('/seller/payout-addresses'),
+                        } as const,
+                        {
+                          key: 'seller-refund-requests',
+                          icon: <NotificationOutlined />,
+                          label: intl.formatMessage({ id: 'nav.sellerRefundRequests' }),
+                          onClick: () => history.push('/seller/refund-requests'),
+                        } as const,
                       ]
                     : []),
                   {
@@ -895,6 +981,12 @@ export const layout: RunTimeLayoutConfig = ({
                           icon: <ShoppingOutlined />,
                           label: intl.formatMessage({ id: 'admin.productOrders.title' }),
                           onClick: () => history.push('/admin/product-orders'),
+                        },
+                        {
+                          key: 'admin-refund-requests',
+                          icon: <NotificationOutlined />,
+                          label: intl.formatMessage({ id: 'admin.refundRequests.title' }),
+                          onClick: () => history.push('/admin/refund-requests'),
                         },
                       ] as const)
                     : []),

@@ -948,4 +948,51 @@ export default {
   'seller.orders.shipOrder': 'Ship Order',
   'seller.orders.paymentSummary': 'Payment Summary',
 
+
+  'common.add': 'Add',
+  'common.active': 'Active',
+
+  'qrScan.scan': 'Scan QR',
+  'qrScan.modalTitle': 'Scan Payment QR',
+  'qrScan.pasteHint': 'Paste QR text manually if camera scanning is unavailable.',
+  'qrScan.pastePlaceholder': 'Paste QR text',
+  'qrScan.failed': 'QR scan failed.',
+  'qrScan.noOrderNo': 'Parsed payment data has no order number, cannot link to a platform order.',
+  'qrScan.productPayment': 'Product payment QR',
+
+  'orderConfirmation.title': 'Order Confirmation',
+  'confirmAndPay.title': 'Confirm and Pay',
+  'confirmAndPay.notProof': 'This QR is not proof of payment. Backend confirms by chain sync or txid hint.',
+
+  'refundRequests.title': 'Refund Requests',
+  'refundRequests.request': 'Request Refund',
+  'refundRequests.requestSuccess': 'Refund request submitted.',
+  'refundRequests.status': 'Refund Status',
+  'refundRequests.latest': 'Latest Refund Request',
+  'refundRequests.reason': 'Reason',
+  'refundRequests.amount': 'Requested Amount',
+  'refundRequests.approve': 'Approve Refund',
+  'refundRequests.reject': 'Reject Refund',
+  'refundRequests.markRefunded': 'Mark Refunded',
+  'refundRequests.refundTxid': 'Refund TXID',
+
+  'seller.payoutAddresses.title': 'Payout Addresses',
+  'seller.payoutAddresses.blockchain': 'Blockchain',
+  'seller.payoutAddresses.token': 'Token',
+  'seller.payoutAddresses.address': 'Address',
+  'seller.payoutAddresses.label': 'Label',
+  'seller.payoutAddresses.default': 'Default Payout Address',
+
+  'menu.seller.payoutAddresses': 'Payout Addresses',
+  'menu.seller.refundRequests': 'Refund Requests',
+  'nav.sellerPayoutAddresses': 'Payout Addresses',
+  'nav.sellerRefundRequests': 'Refund Requests',
+
+  'admin.refundRequests.title': 'Admin Refund Requests',
+
+  'payout.auto': 'Auto payout',
+  'payout.status': 'Payout Status',
+  'token.ltt': 'LTT',
+  'token.thbLtt': 'THB-LTT',
+
 };

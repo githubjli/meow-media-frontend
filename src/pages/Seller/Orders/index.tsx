@@ -212,6 +212,10 @@ export default function SellerOrdersPage() {
               ),
             },
             {
+              title: intl.formatMessage({ id: 'payout.status' }),
+              render: (_, row) => <Tag>{String(row.payout?.status || '-').toUpperCase()}</Tag>,
+            },
+            {
               title: intl.formatMessage({ id: 'account.productOrders.createdAt' }),
               dataIndex: 'created_at',
             },
