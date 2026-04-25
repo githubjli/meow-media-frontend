@@ -1,3 +1,4 @@
+import BuyNowButton from '@/components/product-order/BuyNowButton';
 import type { LiveProductBinding } from '@/types/liveProduct';
 import { PushpinFilled, ShopOutlined } from '@ant-design/icons';
 import { history, useIntl } from '@umijs/max';
@@ -57,6 +58,7 @@ export default function LiveProductCard({
           }`.trim()}
         </Text>
         <Space size={8} wrap>
+          <BuyNowButton productId={product.id} buttonType="default" />
           {store?.slug ? (
             <Button
               type="link"
