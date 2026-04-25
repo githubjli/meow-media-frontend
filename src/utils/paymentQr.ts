@@ -91,6 +91,16 @@ export const parsePaymentQrText = (qrText: string): ParsedPaymentQr => {
     };
   }
 
+  if (value.startsWith('{')) {
+    const jsonResult = tryParseJson(value);
+    if (jsonResult) return jsonResult;
+    return {
+      raw: value,
+      format: 'json',
+      error: 'Unable to parse payment QR payload JSON.',
+    };
+  }
+
   const jsonResult = tryParseJson(value);
   if (jsonResult) return jsonResult;
 

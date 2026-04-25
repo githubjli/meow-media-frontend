@@ -46,11 +46,28 @@ export default function AccountProductOrderDetailPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [item, setItem] = useState<ProductOrder | null>(null);
   const [hintForm] = Form.useForm<{ txid: string }>();
-  const [refundForm] = Form.useForm<{ reason: string; requested_amount: string }>();
+  const [refundForm] = Form.useForm<{
+    reason: string;
+    requested_amount: string;
+  }>();
   const [refundOpen, setRefundOpen] = useState(false);
   const [refundSubmitting, setRefundSubmitting] = useState(false);
   const [refunds, setRefunds] = useState<RefundRequest[]>([]);
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
+  const paymentQrPayload = useMemo(() => {
+    if (!item) return '';
+    const directPayload = item.qr_payload || item.qr_text || item.payment_uri;
+    if (directPayload) return directPayload;
+    return {
+      version: item.version || '1',
+      type: 'product_payment',
+      pay_to_address: item.pay_to_address || '',
+      expected_amount: item.expected_amount,
+      order_no: item.order_no,
+      expires_at: item.expires_at,
+      currency: item.currency,
+    };
+  }, [item]);
 
   const loadDetail = () => {
     if (!params.order_no) return;
@@ -76,7 +93,9 @@ export default function AccountProductOrderDetailPage() {
   useEffect(() => {
     if (!initialState?.authLoading && !isLoggedIn) {
       history.replace(
-        `/login?redirect=${encodeURIComponent(`/account/product-orders/${params.order_no || ''}`)}`,
+        `/login?redirect=${encodeURIComponent(
+          `/account/product-orders/${params.order_no || ''}`,
+        )}`,
       );
       return;
     }
@@ -96,7 +115,9 @@ export default function AccountProductOrderDetailPage() {
     try {
       await confirmProductOrderReceived(item.order_no);
       message.success(
-        intl.formatMessage({ id: 'account.productOrders.confirmReceivedSuccess' }),
+        intl.formatMessage({
+          id: 'account.productOrders.confirmReceivedSuccess',
+        }),
       );
       loadDetail();
     } finally {
@@ -111,7 +132,9 @@ export default function AccountProductOrderDetailPage() {
     try {
       await submitProductOrderTxHint(item.order_no, { txid: values.txid });
       message.success(
-        intl.formatMessage({ id: 'account.productOrders.txHint.submitSuccess' }),
+        intl.formatMessage({
+          id: 'account.productOrders.txHint.submitSuccess',
+        }),
       );
       hintForm.resetFields();
       loadDetail();
@@ -126,7 +149,9 @@ export default function AccountProductOrderDetailPage() {
     setRefundSubmitting(true);
     try {
       await createBuyerProductRefundRequest(item.order_no, values);
-      message.success(intl.formatMessage({ id: 'refundRequests.requestSuccess' }));
+      message.success(
+        intl.formatMessage({ id: 'refundRequests.requestSuccess' }),
+      );
       setRefundOpen(false);
       refundForm.resetFields();
       loadDetail();
@@ -136,10 +161,15 @@ export default function AccountProductOrderDetailPage() {
   };
 
   const normalizedStatus = String(item?.status || '').toLowerCase();
-  const normalizedPaymentStatus = String(item?.payment_status || '').toLowerCase();
+  const normalizedPaymentStatus = String(
+    item?.payment_status || '',
+  ).toLowerCase();
   const isPaymentTimeoutCancelled =
-    normalizedStatus === 'cancelled' && item?.cancel_reason === 'payment_timeout';
-  const canRequestRefund = ['paid', 'shipping', 'completed'].includes(normalizedStatus) && normalizedStatus !== 'settled';
+    normalizedStatus === 'cancelled' &&
+    item?.cancel_reason === 'payment_timeout';
+  const canRequestRefund =
+    ['paid', 'shipping', 'completed'].includes(normalizedStatus) &&
+    normalizedStatus !== 'settled';
   const activeRefundExists =
     Boolean(item?.active_refund_request_exists) ||
     refunds.some((entry) => String(entry.status).toLowerCase() === 'requested');
@@ -156,83 +186,245 @@ export default function AccountProductOrderDetailPage() {
       ) : !item ? (
         <Card variant="borderless" style={{ borderRadius: 20 }}>
           <Empty
-            description={intl.formatMessage({ id: 'account.productOrders.empty' })}
+            description={intl.formatMessage({
+              id: 'account.productOrders.empty',
+            })}
           />
         </Card>
       ) : (
         <Space direction="vertical" size={12} style={{ width: '100%' }}>
           <Card variant="borderless" style={{ borderRadius: 20 }}>
-            <Descriptions column={1} title={intl.formatMessage({ id: 'orderConfirmation.title' })}>
-              <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.orderNo' })}>
+            <Descriptions
+              column={1}
+              title={intl.formatMessage({ id: 'orderConfirmation.title' })}
+            >
+              <Descriptions.Item
+                label={intl.formatMessage({
+                  id: 'account.productOrders.orderNo',
+                })}
+              >
                 <Space>
                   <Text>{item.order_no}</Text>
-                  <Button size="small" icon={<CopyOutlined />} onClick={() => copyValue(item.order_no)} />
+                  <Button
+                    size="small"
+                    icon={<CopyOutlined />}
+                    onClick={() => copyValue(item.order_no)}
+                  />
                 </Space>
               </Descriptions.Item>
-              <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.product' })}>{item.product_title_snapshot}</Descriptions.Item>
-              <Descriptions.Item label={intl.formatMessage({ id: 'confirmAndPay.title' })}>{item.total_amount} {item.currency || intl.formatMessage({ id: 'account.productOrders.currency.thbLtt' })}</Descriptions.Item>
-              <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.status' })}><Tag>{String(item.status || '-').toUpperCase()}</Tag></Descriptions.Item>
-              <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.paymentStatus' })}><Tag>{String(item.payment_status || '-').toUpperCase()}</Tag></Descriptions.Item>
+              <Descriptions.Item
+                label={intl.formatMessage({
+                  id: 'account.productOrders.product',
+                })}
+              >
+                {item.product_title_snapshot}
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={intl.formatMessage({ id: 'confirmAndPay.title' })}
+              >
+                {item.total_amount}{' '}
+                {item.currency ||
+                  intl.formatMessage({
+                    id: 'account.productOrders.currency.thbLtt',
+                  })}
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={intl.formatMessage({
+                  id: 'account.productOrders.status',
+                })}
+              >
+                <Tag>{String(item.status || '-').toUpperCase()}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={intl.formatMessage({
+                  id: 'account.productOrders.paymentStatus',
+                })}
+              >
+                <Tag>{String(item.payment_status || '-').toUpperCase()}</Tag>
+              </Descriptions.Item>
             </Descriptions>
           </Card>
 
           {isPaymentTimeoutCancelled ? (
-            <Alert showIcon type="error" message={intl.formatMessage({ id: 'account.productOrders.paymentTimeout' })} />
+            <Alert
+              showIcon
+              type="error"
+              message={intl.formatMessage({
+                id: 'account.productOrders.paymentTimeout',
+              })}
+            />
           ) : null}
 
-          {normalizedStatus === 'pending_payment' && !isPaymentTimeoutCancelled ? (
-            <Card variant="borderless" style={{ borderRadius: 20 }} title={intl.formatMessage({ id: 'confirmAndPay.title' })}>
+          {normalizedStatus === 'pending_payment' &&
+          !isPaymentTimeoutCancelled ? (
+            <Card
+              variant="borderless"
+              style={{ borderRadius: 20 }}
+              title={intl.formatMessage({ id: 'confirmAndPay.title' })}
+            >
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Descriptions column={1}>
-                  <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.payToAddress' })}><Space><Text>{item.pay_to_address || '-'}</Text><Button size="small" icon={<CopyOutlined />} onClick={() => copyValue(item.pay_to_address)} /></Space></Descriptions.Item>
-                  <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.expectedAmount' })}><Space><Text>{item.expected_amount}</Text><Button size="small" icon={<CopyOutlined />} onClick={() => copyValue(item.expected_amount)} /></Space></Descriptions.Item>
-                  <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.expiresAt' })}>{item.expires_at || '-'}</Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.payToAddress',
+                    })}
+                  >
+                    <Space>
+                      <Text>{item.pay_to_address || '-'}</Text>
+                      <Button
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => copyValue(item.pay_to_address)}
+                      />
+                    </Space>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.expectedAmount',
+                    })}
+                  >
+                    <Space>
+                      <Text>{item.expected_amount}</Text>
+                      <Button
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => copyValue(item.expected_amount)}
+                      />
+                    </Space>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.expiresAt',
+                    })}
+                  >
+                    {item.expires_at || '-'}
+                  </Descriptions.Item>
                 </Descriptions>
-                <Alert showIcon type="warning" message={intl.formatMessage({ id: 'confirmAndPay.notProof' })} />
-                <QrCodePanel payload={item.qr_payload || item.qr_text || item.payment_uri} emptyText={intl.formatMessage({ id: 'account.productOrders.paymentQr.empty' })} />
+                <Alert
+                  showIcon
+                  type="warning"
+                  message={intl.formatMessage({ id: 'confirmAndPay.notProof' })}
+                />
+                <QrCodePanel
+                  payload={paymentQrPayload}
+                  emptyText={intl.formatMessage({
+                    id: 'account.productOrders.paymentQr.empty',
+                  })}
+                />
               </Space>
             </Card>
           ) : null}
 
-          {normalizedStatus === 'pending_payment' && !isPaymentTimeoutCancelled ? (
-            <Card variant="borderless" style={{ borderRadius: 20 }} title={intl.formatMessage({ id: 'account.productOrders.txHint.title' })}>
+          {normalizedStatus === 'pending_payment' &&
+          !isPaymentTimeoutCancelled ? (
+            <Card
+              variant="borderless"
+              style={{ borderRadius: 20 }}
+              title={intl.formatMessage({
+                id: 'account.productOrders.txHint.title',
+              })}
+            >
               <Form form={hintForm} layout="vertical">
-                <Form.Item name="txid" label={intl.formatMessage({ id: 'account.productOrders.txidHint' })} rules={[{ required: true }]}><Input /></Form.Item>
-                <Button type="primary" icon={<SendOutlined />} onClick={onSubmitTxHint} loading={hintLoading}>{intl.formatMessage({ id: 'account.productOrders.submitTxid' })}</Button>
+                <Form.Item
+                  name="txid"
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.txidHint',
+                  })}
+                  rules={[{ required: true }]}
+                >
+                  <Input />
+                </Form.Item>
+                <Button
+                  type="primary"
+                  icon={<SendOutlined />}
+                  onClick={onSubmitTxHint}
+                  loading={hintLoading}
+                >
+                  {intl.formatMessage({
+                    id: 'account.productOrders.submitTxid',
+                  })}
+                </Button>
               </Form>
             </Card>
           ) : null}
 
-          {(normalizedPaymentStatus === 'underpaid' || normalizedPaymentStatus === 'overpaid' || normalizedPaymentStatus === 'paid') ? (
+          {normalizedPaymentStatus === 'underpaid' ||
+          normalizedPaymentStatus === 'overpaid' ||
+          normalizedPaymentStatus === 'paid' ? (
             <Alert
               showIcon
-              type={normalizedPaymentStatus === 'underpaid' ? 'warning' : 'success'}
+              type={
+                normalizedPaymentStatus === 'underpaid' ? 'warning' : 'success'
+              }
               message={
                 normalizedPaymentStatus === 'underpaid'
-                  ? intl.formatMessage({ id: 'account.productOrders.payment.underpaid' })
+                  ? intl.formatMessage({
+                      id: 'account.productOrders.payment.underpaid',
+                    })
                   : normalizedPaymentStatus === 'overpaid'
-                  ? intl.formatMessage({ id: 'account.productOrders.payment.overpaid' })
-                  : intl.formatMessage({ id: 'account.productOrders.payment.paid' })
+                  ? intl.formatMessage({
+                      id: 'account.productOrders.payment.overpaid',
+                    })
+                  : intl.formatMessage({
+                      id: 'account.productOrders.payment.paid',
+                    })
               }
-              description={`${intl.formatMessage({ id: 'account.productOrders.txid' })}: ${item.txid || '-'} · ${intl.formatMessage({ id: 'account.productOrders.confirmations' })}: ${item.confirmations ?? '-'}`}
+              description={`${intl.formatMessage({
+                id: 'account.productOrders.txid',
+              })}: ${item.txid || '-'} · ${intl.formatMessage({
+                id: 'account.productOrders.confirmations',
+              })}: ${item.confirmations ?? '-'}`}
             />
           ) : null}
 
           {String(item.status) === 'shipping' ? (
             <Card variant="borderless" style={{ borderRadius: 20 }}>
-              <Button type="primary" icon={<CheckCircleOutlined />} loading={actionLoading} onClick={onConfirmReceived}>{intl.formatMessage({ id: 'account.productOrders.confirmReceived' })}</Button>
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                loading={actionLoading}
+                onClick={onConfirmReceived}
+              >
+                {intl.formatMessage({
+                  id: 'account.productOrders.confirmReceived',
+                })}
+              </Button>
             </Card>
           ) : null}
 
           {canRequestRefund ? (
             <Card variant="borderless" style={{ borderRadius: 20 }}>
               <Space direction="vertical" style={{ width: '100%' }}>
-                <Button type="default" onClick={() => setRefundOpen(true)} disabled={activeRefundExists}>{intl.formatMessage({ id: 'refundRequests.request' })}</Button>
+                <Button
+                  type="default"
+                  onClick={() => setRefundOpen(true)}
+                  disabled={activeRefundExists}
+                >
+                  {intl.formatMessage({ id: 'refundRequests.request' })}
+                </Button>
                 {latestRefund ? (
                   <Descriptions column={1} size="small">
-                    <Descriptions.Item label={intl.formatMessage({ id: 'refundRequests.latest' })}>{String(latestRefund.status || '-').toUpperCase()}</Descriptions.Item>
-                    <Descriptions.Item label={intl.formatMessage({ id: 'refundRequests.reason' })}>{latestRefund.reason || '-'}</Descriptions.Item>
-                    <Descriptions.Item label={intl.formatMessage({ id: 'refundRequests.amount' })}>{latestRefund.requested_amount || '-'}</Descriptions.Item>
+                    <Descriptions.Item
+                      label={intl.formatMessage({
+                        id: 'refundRequests.latest',
+                      })}
+                    >
+                      {String(latestRefund.status || '-').toUpperCase()}
+                    </Descriptions.Item>
+                    <Descriptions.Item
+                      label={intl.formatMessage({
+                        id: 'refundRequests.reason',
+                      })}
+                    >
+                      {latestRefund.reason || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item
+                      label={intl.formatMessage({
+                        id: 'refundRequests.amount',
+                      })}
+                    >
+                      {latestRefund.requested_amount || '-'}
+                    </Descriptions.Item>
                   </Descriptions>
                 ) : null}
               </Space>
@@ -240,11 +432,35 @@ export default function AccountProductOrderDetailPage() {
           ) : null}
 
           {item.shipment ? (
-            <Card variant="borderless" style={{ borderRadius: 20 }} title={intl.formatMessage({ id: 'account.productOrders.shipment' })}>
+            <Card
+              variant="borderless"
+              style={{ borderRadius: 20 }}
+              title={intl.formatMessage({
+                id: 'account.productOrders.shipment',
+              })}
+            >
               <Descriptions column={1}>
-                <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.shipment.carrier' })}>{item.shipment.carrier || '-'}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.trackingNumber' })}>{item.shipment.tracking_number || '-'}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'account.productOrders.shipment.trackingUrl' })}>{item.shipment.tracking_url || '-'}</Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.shipment.carrier',
+                  })}
+                >
+                  {item.shipment.carrier || '-'}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.trackingNumber',
+                  })}
+                >
+                  {item.shipment.tracking_number || '-'}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.shipment.trackingUrl',
+                  })}
+                >
+                  {item.shipment.tracking_url || '-'}
+                </Descriptions.Item>
               </Descriptions>
             </Card>
           ) : null}
@@ -258,9 +474,24 @@ export default function AccountProductOrderDetailPage() {
         confirmLoading={refundSubmitting}
         title={intl.formatMessage({ id: 'refundRequests.request' })}
       >
-        <Form form={refundForm} layout="vertical" initialValues={{ requested_amount: item?.total_amount }}>
-          <Form.Item name="reason" label={intl.formatMessage({ id: 'refundRequests.reason' })} rules={[{ required: true }]}><Input.TextArea rows={3} /></Form.Item>
-          <Form.Item name="requested_amount" label={intl.formatMessage({ id: 'refundRequests.amount' })}><Input /></Form.Item>
+        <Form
+          form={refundForm}
+          layout="vertical"
+          initialValues={{ requested_amount: item?.total_amount }}
+        >
+          <Form.Item
+            name="reason"
+            label={intl.formatMessage({ id: 'refundRequests.reason' })}
+            rules={[{ required: true }]}
+          >
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item
+            name="requested_amount"
+            label={intl.formatMessage({ id: 'refundRequests.amount' })}
+          >
+            <Input />
+          </Form.Item>
         </Form>
       </Modal>
     </PageContainer>

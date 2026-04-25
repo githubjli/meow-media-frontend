@@ -386,6 +386,7 @@ const HeaderSearchWithQr = ({
   };
 
   const handleParsedQr = async (text: string) => {
+    console.log('[QR_SCAN] raw text:', text);
     const parsed = parseProductPaymentQrText(text);
     if (parsed.orderNo) {
       try {
