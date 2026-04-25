@@ -5,6 +5,7 @@ import {
 } from '@/services/publicCategories';
 import { getMyStore } from '@/services/store';
 import { clearStoredTokens } from '@/utils/auth';
+import { parsePaymentQrText } from '@/utils/paymentQr';
 import {
   getCanonicalCategorySlug,
   getLocalizedCategoryLabel,
@@ -23,10 +24,12 @@ import {
   NotificationOutlined,
   PlayCircleOutlined,
   PlaySquareOutlined,
+  QrcodeOutlined,
   QuestionCircleOutlined,
   ReadOutlined,
   SettingOutlined,
   ShopOutlined,
+  ShoppingOutlined,
   SunOutlined,
   ThunderboltOutlined,
   UploadOutlined,
@@ -36,19 +39,21 @@ import {
 import type { RunTimeLayoutConfig } from '@umijs/max';
 import { getIntl, history, setLocale } from '@umijs/max';
 import {
+  Alert,
   Avatar,
   Button,
   ConfigProvider,
   Dropdown,
   Input,
   message,
+  Modal,
   Space,
   Tag,
   theme,
   Tooltip,
   Typography,
 } from 'antd';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 const { Text } = Typography;
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -307,6 +312,253 @@ export async function getInitialState(): Promise<InitialState> {
   };
 }
 
+
+const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
+  const intl = getIntl();
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'camera' | 'manual'>('camera');
+  const [qrText, setQrText] = useState('');
+  const [parseError, setParseError] = useState('');
+  const [cameraError, setCameraError] = useState('');
+  const [cameraSupported, setCameraSupported] = useState(true);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const detectorRef = useRef<any>(null);
+  const detectedRef = useRef(false);
+
+  const stopCamera = () => {
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    detectedRef.current = false;
+  };
+
+  const handleParsedQr = (text: string) => {
+    const parsed = parsePaymentQrText(text);
+    if (parsed.orderNo) {
+      stopCamera();
+      setOpen(false);
+      setQrText('');
+      setParseError('');
+      setCameraError('');
+      history.push(`/account/product-orders/${parsed.orderNo}`);
+      return;
+    }
+
+    if (parsed.address || parsed.amount) {
+      setParseError(intl.formatMessage({ id: 'qrScan.noOrderNo' }));
+      return;
+    }
+
+    setParseError(parsed.error || intl.formatMessage({ id: 'qrScan.failed' }));
+  };
+
+  const startCamera = async () => {
+    if (!open || mode !== 'camera') return;
+
+    const hasMediaDevices =
+      typeof navigator !== 'undefined' &&
+      Boolean(navigator.mediaDevices?.getUserMedia);
+    const BarcodeDetectorCtor = (window as any).BarcodeDetector;
+
+    if (!hasMediaDevices || !BarcodeDetectorCtor) {
+      setCameraSupported(false);
+      setMode('manual');
+      setCameraError(intl.formatMessage({ id: 'qrScan.cameraUnavailable' }));
+      return;
+    }
+
+    try {
+      stopCamera();
+      setCameraError('');
+      setParseError('');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+        },
+        audio: false,
+      });
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      detectorRef.current = new BarcodeDetectorCtor({
+        formats: ['qr_code'],
+      });
+
+      const detectLoop = async () => {
+        if (!open || mode !== 'camera' || detectedRef.current) return;
+
+        try {
+          if (videoRef.current && detectorRef.current) {
+            const results = await detectorRef.current.detect(videoRef.current);
+            const first = results?.[0];
+            const value = first?.rawValue;
+            if (value) {
+              detectedRef.current = true;
+              handleParsedQr(value);
+              return;
+            }
+          }
+        } catch (error) {
+          setCameraError(intl.formatMessage({ id: 'qrScan.failed' }));
+        }
+
+        frameRef.current = requestAnimationFrame(detectLoop);
+      };
+
+      frameRef.current = requestAnimationFrame(detectLoop);
+    } catch (error: any) {
+      setCameraSupported(false);
+      setMode('manual');
+      setCameraError(
+        error?.message || intl.formatMessage({ id: 'qrScan.cameraDenied' }),
+      );
+      stopCamera();
+    }
+  };
+
+  useEffect(() => {
+    if (open && mode === 'camera') {
+      startCamera();
+      return;
+    }
+
+    stopCamera();
+  }, [open, mode]);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  const onOpenModal = () => {
+    setParseError('');
+    setCameraError('');
+    setQrText('');
+    setOpen(true);
+    setMode('camera');
+    setCameraSupported(true);
+  };
+
+  const onSubmitManualQr = () => {
+    const value = String(qrText || '').trim();
+    if (!value) {
+      setParseError(intl.formatMessage({ id: 'qrScan.emptyManual' }));
+      return;
+    }
+    handleParsedQr(value);
+  };
+
+  return (
+    <>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          width: '100%',
+          padding: '0 20px',
+          gap: 8,
+        }}
+      >
+        <Input.Search
+          placeholder={intl.formatMessage({ id: 'search.global.placeholder' })}
+          allowClear
+          style={{ maxWidth: 560, width: '100%', borderRadius: 12 }}
+          size="middle"
+          onSearch={(value) => console.log('Searching for:', value)}
+        />
+        <Button
+          type="text"
+          icon={<QrcodeOutlined style={{ fontSize: 16 }} />}
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            color: isDark ? '#EFBC5C' : '#4b5563',
+          }}
+          onClick={onOpenModal}
+        />
+      </div>
+      <Modal
+        title={intl.formatMessage({ id: 'qrScan.modalTitle' })}
+        open={open}
+        onCancel={() => {
+          stopCamera();
+          setOpen(false);
+        }}
+        onOk={mode === 'manual' ? onSubmitManualQr : undefined}
+        okText={
+          mode === 'manual'
+            ? intl.formatMessage({ id: 'qrScan.scan' })
+            : undefined
+        }
+        cancelText={intl.formatMessage({ id: 'common.cancel' })}
+      >
+        <Space direction="vertical" size={8} style={{ width: '100%' }}>
+          <Space>
+            <Button
+              type={mode === 'camera' ? 'primary' : 'default'}
+              onClick={() => setMode('camera')}
+              disabled={!cameraSupported}
+            >
+              {intl.formatMessage({ id: 'qrScan.mode.camera' })}
+            </Button>
+            <Button
+              type={mode === 'manual' ? 'primary' : 'default'}
+              onClick={() => setMode('manual')}
+            >
+              {intl.formatMessage({ id: 'qrScan.mode.manual' })}
+            </Button>
+          </Space>
+
+          {mode === 'camera' ? (
+            <>
+              <video
+                ref={videoRef}
+                style={{ width: '100%', borderRadius: 12, background: '#000' }}
+                muted
+                playsInline
+              />
+              <Text type="secondary">
+                {intl.formatMessage({ id: 'qrScan.cameraHint' })}
+              </Text>
+              {cameraError ? (
+                <Alert type="warning" showIcon message={cameraError} />
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Text type="secondary">
+                {intl.formatMessage({ id: 'qrScan.pasteHint' })}
+              </Text>
+              <Input.TextArea
+                rows={5}
+                value={qrText}
+                onChange={(event) => setQrText(event.target.value)}
+                placeholder={intl.formatMessage({ id: 'qrScan.pastePlaceholder' })}
+              />
+            </>
+          )}
+
+          {parseError ? <Alert type="error" showIcon message={parseError} /> : null}
+        </Space>
+      </Modal>
+    </>
+  );
+};
+
 export const layout: RunTimeLayoutConfig = ({
   initialState,
   setInitialState,
@@ -553,6 +805,24 @@ export const layout: RunTimeLayoutConfig = ({
                 icon: <PlaySquareOutlined />,
                 className: 'sidebar-menu-item sidebar-menu-item-category',
               },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.orders' }),
+                path: '/seller/orders',
+                icon: <ShoppingOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.payoutAddresses' }),
+                path: '/seller/payout-addresses',
+                icon: <DollarOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.refundRequests' }),
+                path: '/seller/refund-requests',
+                icon: <NotificationOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
             ],
           }
         : null;
@@ -596,28 +866,7 @@ export const layout: RunTimeLayoutConfig = ({
         </span>
       </div>
     ),
-    headerContentRender: () => (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          width: '100%',
-          padding: '0 20px',
-        }}
-      >
-        <Input.Search
-          placeholder={intl.formatMessage({ id: 'search.global.placeholder' })}
-          allowClear
-          style={{
-            maxWidth: 560,
-            width: '100%',
-            borderRadius: 12,
-          }}
-          size="middle"
-          onSearch={(value) => console.log('Searching for:', value)}
-        />
-      </div>
-    ),
+    headerContentRender: () => <HeaderSearchWithQr isDark={isDark} />,
     rightContentRender: () => {
       const utilityButtonStyle = {
         width: 30,
@@ -795,6 +1044,24 @@ export const layout: RunTimeLayoutConfig = ({
                           label: intl.formatMessage({ id: 'nav.myStore' }),
                           onClick: () => history.push('/seller/store'),
                         } as const,
+                        {
+                          key: 'seller-orders',
+                          icon: <ShoppingOutlined />,
+                          label: intl.formatMessage({ id: 'nav.sellerOrders' }),
+                          onClick: () => history.push('/seller/orders'),
+                        } as const,
+                        {
+                          key: 'seller-payout-addresses',
+                          icon: <DollarOutlined />,
+                          label: intl.formatMessage({ id: 'nav.sellerPayoutAddresses' }),
+                          onClick: () => history.push('/seller/payout-addresses'),
+                        } as const,
+                        {
+                          key: 'seller-refund-requests',
+                          icon: <NotificationOutlined />,
+                          label: intl.formatMessage({ id: 'nav.sellerRefundRequests' }),
+                          onClick: () => history.push('/seller/refund-requests'),
+                        } as const,
                       ]
                     : []),
                   {
@@ -808,6 +1075,18 @@ export const layout: RunTimeLayoutConfig = ({
                     icon: <DollarOutlined />,
                     label: intl.formatMessage({ id: 'nav.mySubscription' }),
                     onClick: () => history.push('/account/subscription'),
+                  },
+                  {
+                    key: 'my-shipping-addresses',
+                    icon: <HomeOutlined />,
+                    label: intl.formatMessage({ id: 'nav.shippingAddresses' }),
+                    onClick: () => history.push('/account/shipping-addresses'),
+                  },
+                  {
+                    key: 'my-product-orders',
+                    icon: <ShoppingOutlined />,
+                    label: intl.formatMessage({ id: 'nav.productOrders' }),
+                    onClick: () => history.push('/account/product-orders'),
                   },
                   {
                     type: 'divider',
@@ -864,6 +1143,18 @@ export const layout: RunTimeLayoutConfig = ({
                           icon: <SettingOutlined />,
                           label: intl.formatMessage({ id: 'nav.allVideos' }),
                           onClick: () => history.push('/admin/videos'),
+                        },
+                        {
+                          key: 'admin-product-orders',
+                          icon: <ShoppingOutlined />,
+                          label: intl.formatMessage({ id: 'admin.productOrders.title' }),
+                          onClick: () => history.push('/admin/product-orders'),
+                        },
+                        {
+                          key: 'admin-refund-requests',
+                          icon: <NotificationOutlined />,
+                          label: intl.formatMessage({ id: 'admin.refundRequests.title' }),
+                          onClick: () => history.push('/admin/refund-requests'),
                         },
                       ] as const)
                     : []),
