@@ -50,6 +50,17 @@ export async function getProductOrderDetail(orderNo: string) {
   });
 }
 
+export async function payProductOrderWithWallet(
+  orderNo: string,
+  payload: { wallet_id?: string; password: string },
+) {
+  return requestJson<any>(`/api/product-orders/${orderNo}/wallet-pay/`, {
+    method: 'POST',
+    headers: await withAuth(),
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function confirmProductOrderReceived(orderNo: string) {
   return requestJson<ProductOrder>(
     `/api/product-orders/${orderNo}/confirm-received/`,

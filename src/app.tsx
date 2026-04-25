@@ -3,6 +3,10 @@ import {
   listPublicCategories,
   type PublicCategory,
 } from '@/services/publicCategories';
+import {
+  getProductOrderDetail,
+  payProductOrderWithWallet,
+} from '@/services/productOrders';
 import { getMyStore } from '@/services/store';
 import { clearStoredTokens } from '@/utils/auth';
 import { parsePaymentQrText } from '@/utils/paymentQr';
@@ -19,6 +23,7 @@ import {
   DollarOutlined,
   GlobalOutlined,
   HomeOutlined,
+  LockOutlined,
   LogoutOutlined,
   MoonOutlined,
   NotificationOutlined,
@@ -313,14 +318,27 @@ export async function getInitialState(): Promise<InitialState> {
 }
 
 
-const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
+const HeaderSearchWithQr = ({
+  isDark,
+  currentUser,
+}: {
+  isDark?: boolean;
+  currentUser?: CurrentUser | null;
+}) => {
   const intl = getIntl();
   const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [mode, setMode] = useState<'camera' | 'manual'>('camera');
   const [qrText, setQrText] = useState('');
   const [parseError, setParseError] = useState('');
   const [cameraError, setCameraError] = useState('');
   const [cameraSupported, setCameraSupported] = useState(true);
+  const [loadingOrder, setLoadingOrder] = useState(false);
+  const [confirmOrder, setConfirmOrder] = useState<any>(null);
+  const [confirmError, setConfirmError] = useState('');
+  const [walletPassword, setWalletPassword] = useState('');
+  const [payingWithWallet, setPayingWithWallet] = useState(false);
+  const [submittedTxid, setSubmittedTxid] = useState('');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const frameRef = useRef<number | null>(null);
@@ -340,15 +358,31 @@ const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
     detectedRef.current = false;
   };
 
-  const handleParsedQr = (text: string) => {
+  const handleParsedQr = async (text: string) => {
     const parsed = parsePaymentQrText(text);
     if (parsed.orderNo) {
-      stopCamera();
-      setOpen(false);
-      setQrText('');
-      setParseError('');
-      setCameraError('');
-      history.push(`/account/product-orders/${parsed.orderNo}`);
+      try {
+        setLoadingOrder(true);
+        setParseError('');
+        const orderDetail = await getProductOrderDetail(parsed.orderNo);
+        stopCamera();
+        setOpen(false);
+        setQrText('');
+        setParseError('');
+        setCameraError('');
+        setConfirmError('');
+        setWalletPassword('');
+        setSubmittedTxid('');
+        setConfirmOrder(orderDetail);
+        setConfirmOpen(true);
+      } catch (error: any) {
+        setParseError(
+          error?.message ||
+            intl.formatMessage({ id: 'qrScan.loadOrderDetailFailed' }),
+        );
+      } finally {
+        setLoadingOrder(false);
+      }
       return;
     }
 
@@ -406,7 +440,7 @@ const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
             const value = first?.rawValue;
             if (value) {
               detectedRef.current = true;
-              handleParsedQr(value);
+              void handleParsedQr(value);
               return;
             }
           }
@@ -452,13 +486,63 @@ const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
     setCameraSupported(true);
   };
 
-  const onSubmitManualQr = () => {
+  const onSubmitManualQr = async () => {
     const value = String(qrText || '').trim();
     if (!value) {
       setParseError(intl.formatMessage({ id: 'qrScan.emptyManual' }));
       return;
     }
-    handleParsedQr(value);
+    await handleParsedQr(value);
+  };
+
+  const hasLinkedWallet = Boolean(
+    currentUser?.linked_wallet_id || currentUser?.primary_user_address,
+  );
+
+  const onCopyText = async (value?: string | number | null) => {
+    const content = String(value || '').trim();
+    if (!content) return;
+    try {
+      await navigator.clipboard.writeText(content);
+      message.success(intl.formatMessage({ id: 'qrScan.copied' }));
+    } catch (error) {
+      message.error(intl.formatMessage({ id: 'qrScan.copyFailed' }));
+    }
+  };
+
+  const onPayWithLinkedWallet = async () => {
+    if (!confirmOrder?.order_no) return;
+    if (!walletPassword) {
+      setConfirmError(intl.formatMessage({ id: 'qrScan.walletPasswordRequired' }));
+      return;
+    }
+
+    setPayingWithWallet(true);
+    setConfirmError('');
+    try {
+      const payload: { wallet_id?: string; password: string } = {
+        password: walletPassword,
+      };
+      if (currentUser?.linked_wallet_id) {
+        payload.wallet_id = String(currentUser.linked_wallet_id);
+      }
+      const response = await payProductOrderWithWallet(
+        String(confirmOrder.order_no),
+        payload,
+      );
+      const txid = String(response?.txid || response?.transaction_id || '');
+      setSubmittedTxid(txid);
+      message.success(intl.formatMessage({ id: 'qrScan.walletSubmitted' }));
+      const latestOrder = await getProductOrderDetail(String(confirmOrder.order_no));
+      setConfirmOrder(latestOrder);
+      setWalletPassword('');
+    } catch (error: any) {
+      setConfirmError(
+        error?.message || intl.formatMessage({ id: 'qrScan.walletPayFailed' }),
+      );
+    } finally {
+      setPayingWithWallet(false);
+    }
   };
 
   return (
@@ -505,6 +589,7 @@ const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
             : undefined
         }
         cancelText={intl.formatMessage({ id: 'common.cancel' })}
+        confirmLoading={loadingOrder}
       >
         <Space direction="vertical" size={8} style={{ width: '100%' }}>
           <Space>
@@ -554,6 +639,119 @@ const HeaderSearchWithQr = ({ isDark }: { isDark?: boolean }) => {
 
           {parseError ? <Alert type="error" showIcon message={parseError} /> : null}
         </Space>
+      </Modal>
+      <Modal
+        title={intl.formatMessage({ id: 'qrScan.confirmModal.title' })}
+        open={confirmOpen}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setConfirmError('');
+          setWalletPassword('');
+        }}
+        footer={null}
+      >
+        {confirmOrder ? (
+          <Space direction="vertical" size={10} style={{ width: '100%' }}>
+            <Text>
+              {intl.formatMessage({ id: 'account.productOrders.product' })}:{' '}
+              <Text strong>{confirmOrder.product_title_snapshot || '-'}</Text>
+            </Text>
+            <Text>
+              {intl.formatMessage({ id: 'account.productOrders.orderNo' })}:{' '}
+              <Text strong>{confirmOrder.order_no || '-'}</Text>
+            </Text>
+            <Text>
+              {intl.formatMessage({ id: 'account.productOrders.expectedAmount' })}:{' '}
+              <Text strong>{String(confirmOrder.expected_amount || '-')}</Text>
+            </Text>
+            <Text>
+              {intl.formatMessage({ id: 'account.productOrders.currency' })}:{' '}
+              <Text strong>{confirmOrder.currency || 'THB-LTT'}</Text>
+            </Text>
+            <Text>
+              {intl.formatMessage({ id: 'account.productOrders.paymentAddress' })}:{' '}
+              <Text strong>{confirmOrder.pay_to_address || '-'}</Text>
+            </Text>
+            <Text>
+              {intl.formatMessage({ id: 'account.productOrders.expiresAt' })}:{' '}
+              <Text strong>{confirmOrder.expires_at || '-'}</Text>
+            </Text>
+            <Text>
+              {intl.formatMessage({ id: 'account.productOrders.paymentStatus' })}:{' '}
+              <Text strong>{String(confirmOrder.payment_status || '-')}</Text>
+            </Text>
+            <Alert
+              type="warning"
+              showIcon
+              message={intl.formatMessage({ id: 'qrScan.confirmModal.notProof' })}
+            />
+
+            {hasLinkedWallet ? (
+              <>
+                <Input.Password
+                  value={walletPassword}
+                  onChange={(event) => setWalletPassword(event.target.value)}
+                  placeholder={intl.formatMessage({
+                    id: 'qrScan.confirmModal.walletPasswordPlaceholder',
+                  })}
+                  prefix={<LockOutlined />}
+                />
+                <Button
+                  type="primary"
+                  loading={payingWithWallet}
+                  onClick={onPayWithLinkedWallet}
+                >
+                  {intl.formatMessage({ id: 'qrScan.confirmModal.payWithWallet' })}
+                </Button>
+              </>
+            ) : (
+              <Alert
+                type="info"
+                showIcon
+                message={intl.formatMessage({
+                  id: 'qrScan.confirmModal.walletUnavailable',
+                })}
+              />
+            )}
+
+            {submittedTxid ? (
+              <Alert
+                type="success"
+                showIcon
+                message={intl.formatMessage({
+                  id: 'qrScan.confirmModal.txSubmitted',
+                })}
+                description={submittedTxid}
+              />
+            ) : null}
+            {submittedTxid ? (
+              <Alert
+                type="info"
+                showIcon
+                message={intl.formatMessage({
+                  id: 'qrScan.confirmModal.waitingVerification',
+                })}
+              />
+            ) : null}
+            {confirmError ? <Alert type="error" showIcon message={confirmError} /> : null}
+
+            <Space wrap>
+              <Button
+                onClick={() =>
+                  history.push(`/account/product-orders/${confirmOrder.order_no}`)
+                }
+              >
+                {intl.formatMessage({ id: 'qrScan.confirmModal.viewDetail' })}
+              </Button>
+              <Button onClick={() => onCopyText(confirmOrder.pay_to_address)}>
+                {intl.formatMessage({ id: 'qrScan.confirmModal.copyAddress' })}
+              </Button>
+              <Button onClick={() => onCopyText(confirmOrder.expected_amount)}>
+                {intl.formatMessage({ id: 'qrScan.confirmModal.copyAmount' })}
+              </Button>
+            </Space>
+          </Space>
+        ) : null}
       </Modal>
     </>
   );
@@ -866,7 +1064,9 @@ export const layout: RunTimeLayoutConfig = ({
         </span>
       </div>
     ),
-    headerContentRender: () => <HeaderSearchWithQr isDark={isDark} />,
+    headerContentRender: () => (
+      <HeaderSearchWithQr isDark={isDark} currentUser={currentUser} />
+    ),
     rightContentRender: () => {
       const utilityButtonStyle = {
         width: 30,
