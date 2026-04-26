@@ -929,6 +929,9 @@ export default {
   'seller.orders.filter.search': 'Search',
   'seller.orders.quantity': 'Quantity',
   'seller.orders.shipOrder': 'Ship Order',
+  'seller.orders.shippingAddressUnavailable': 'No shipping address available.',
+  'seller.orders.payoutAddress': 'Payout Address',
+  'seller.orders.payoutFailureNote': 'Payout Failure Note',
   'seller.orders.paymentSummary': 'Payment Summary',
 
   'common.add': 'Add',
