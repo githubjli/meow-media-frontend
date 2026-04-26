@@ -124,18 +124,31 @@ export default function AccountProductOrderDetailPage() {
 
   const onConfirmReceived = async () => {
     if (!item?.order_no) return;
-    setActionLoading(true);
-    try {
-      await confirmProductOrderReceived(item.order_no);
-      message.success(
-        intl.formatMessage({
-          id: 'account.productOrders.confirmReceivedSuccess',
-        }),
-      );
-      loadDetail();
-    } finally {
-      setActionLoading(false);
-    }
+    if (String(item.status || '').toLowerCase() === 'completed') return;
+    Modal.confirm({
+      title: intl.formatMessage({
+        id: 'account.productOrders.confirmReceived',
+      }),
+      content: intl.formatMessage({
+        id: 'account.productOrders.confirmReceivedPrompt',
+      }),
+      okText: intl.formatMessage({ id: 'common.yes' }),
+      cancelText: intl.formatMessage({ id: 'common.cancel' }),
+      onOk: async () => {
+        setActionLoading(true);
+        try {
+          await confirmProductOrderReceived(item.order_no);
+          message.success(
+            intl.formatMessage({
+              id: 'account.productOrders.completedSuccess',
+            }),
+          );
+          loadDetail();
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
   const onSubmitTxHint = async () => {
@@ -441,18 +454,79 @@ export default function AccountProductOrderDetailPage() {
             />
           ) : null}
 
-          {String(item.status) === 'shipping' ? (
+          {normalizedStatus === 'shipping' ? (
+            <Card
+              variant="borderless"
+              style={{ borderRadius: 20 }}
+              title={intl.formatMessage({
+                id: 'account.productOrders.shipment',
+              })}
+            >
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Descriptions column={1}>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.shipment.carrier',
+                    })}
+                  >
+                    {item.shipment?.carrier || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.trackingNumber',
+                    })}
+                  >
+                    {item.shipment?.tracking_number || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.shipment.trackingUrl',
+                    })}
+                  >
+                    {item.shipment?.tracking_url || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.shipment.note',
+                    })}
+                  >
+                    {item.shipment?.shipped_note || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.shippedAt',
+                    })}
+                  >
+                    {item.shipped_at || '-'}
+                  </Descriptions.Item>
+                </Descriptions>
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  loading={actionLoading}
+                  disabled={actionLoading || normalizedStatus === 'completed'}
+                  onClick={onConfirmReceived}
+                >
+                  {intl.formatMessage({
+                    id: 'account.productOrders.confirmReceived',
+                  })}
+                </Button>
+              </Space>
+            </Card>
+          ) : null}
+
+          {normalizedStatus === 'completed' ? (
             <Card variant="borderless" style={{ borderRadius: 20 }}>
-              <Button
-                type="primary"
-                icon={<CheckCircleOutlined />}
-                loading={actionLoading}
-                onClick={onConfirmReceived}
-              >
-                {intl.formatMessage({
-                  id: 'account.productOrders.confirmReceived',
+              <Alert
+                type="success"
+                showIcon
+                message={intl.formatMessage({
+                  id: 'account.productOrders.completedState',
                 })}
-              </Button>
+                description={`${intl.formatMessage({
+                  id: 'account.productOrders.completedAt',
+                })}: ${item.completed_at || '-'}`}
+              />
             </Card>
           ) : null}
 
@@ -495,7 +569,7 @@ export default function AccountProductOrderDetailPage() {
             </Card>
           ) : null}
 
-          {item.shipment ? (
+          {item.shipment && normalizedStatus !== 'shipping' ? (
             <Card
               variant="borderless"
               style={{ borderRadius: 20 }}
@@ -524,6 +598,20 @@ export default function AccountProductOrderDetailPage() {
                   })}
                 >
                   {item.shipment.tracking_url || '-'}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.shipment.note',
+                  })}
+                >
+                  {item.shipment.shipped_note || '-'}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.shippedAt',
+                  })}
+                >
+                  {item.shipped_at || '-'}
                 </Descriptions.Item>
               </Descriptions>
             </Card>

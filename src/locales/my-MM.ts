@@ -876,6 +876,11 @@ export default {
     'QR/payment data is not proof of payment. Backend confirms by chain/payment status.',
   'account.productOrders.confirmReceived': 'Confirm Received',
   'account.productOrders.confirmReceivedSuccess': 'Order marked as received.',
+  'account.productOrders.confirmReceivedPrompt':
+    'Confirm that you have received this order?',
+  'account.productOrders.completedSuccess': 'Order completed.',
+  'account.productOrders.completedState': 'Order completed.',
+  'account.productOrders.completedAt': 'Completed At',
   'account.productOrders.error.load': 'Unable to load product orders.',
   'account.productOrders.error.detail': 'Unable to load product order detail.',
   'account.productOrders.error.confirmReceived':
