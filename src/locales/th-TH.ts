@@ -920,9 +920,24 @@ export default {
   'account.productOrders.txHint.title': 'TXID Hint',
   'account.productOrders.txidHint': 'TXID hint',
   'account.productOrders.submitTxid': 'Submit TXID',
+  'account.productOrders.copyTxid': 'Copy TXID',
   'account.productOrders.refreshPaymentStatus': 'Refresh payment status',
   'account.productOrders.txHint.submitSuccess': 'TXID hint submitted.',
   'account.productOrders.txHint.submitError': 'Unable to submit TXID hint.',
+  'account.productOrders.walletPayment.password': 'Wallet password',
+  'account.productOrders.walletPayment.pay': 'Pay with linked wallet',
+  'account.productOrders.walletPayment.success':
+    'Payment submitted. Waiting for on-chain confirmation.',
+  'account.productOrders.walletPayment.submitted':
+    'Payment submitted. Waiting for on-chain confirmation.',
+  'account.productOrders.walletPayment.error.insufficientFunds':
+    'Your linked wallet does not have enough spendable balance.',
+  'account.productOrders.walletPayment.error.lockedWallet':
+    'Wallet could not be unlocked. Please check your password.',
+  'account.productOrders.walletPayment.error.timeout':
+    'Wallet service timed out. Please try again.',
+  'account.productOrders.walletPayment.error.default':
+    'Unable to submit payment from linked wallet.',
   'account.productOrders.paymentVerification': 'Payment Verification',
   'account.productOrders.matched': 'Matched',
   'account.productOrders.txid': 'TXID',

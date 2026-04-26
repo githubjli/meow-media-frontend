@@ -2,6 +2,7 @@ import QrCodePanel from '@/components/QrCodePanel';
 import {
   confirmProductOrderReceived,
   getProductOrderDetail,
+  payProductOrderWithWallet,
   submitProductOrderTxHint,
 } from '@/services/productOrders';
 import {
@@ -13,6 +14,7 @@ import type { RefundRequest } from '@/types/refundRequest';
 import {
   CheckCircleOutlined,
   CopyOutlined,
+  ReloadOutlined,
   SendOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
@@ -47,6 +49,7 @@ export default function AccountProductOrderDetailPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [item, setItem] = useState<ProductOrder | null>(null);
   const [hintForm] = Form.useForm<{ txid: string }>();
+  const [walletPayForm] = Form.useForm<{ password: string }>();
   const [refundForm] = Form.useForm<{
     reason: string;
     requested_amount: string;
@@ -55,6 +58,8 @@ export default function AccountProductOrderDetailPage() {
   const [refundSubmitting, setRefundSubmitting] = useState(false);
   const [refunds, setRefunds] = useState<RefundRequest[]>([]);
   const [showQrPayload, setShowQrPayload] = useState(false);
+  const [walletPayLoading, setWalletPayLoading] = useState(false);
+  const [submittedTxid, setSubmittedTxid] = useState<string>('');
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
   const screens = Grid.useBreakpoint();
   const paymentQrPayload = useMemo(() => {
@@ -82,11 +87,11 @@ export default function AccountProductOrderDetailPage() {
   }, [paymentQrPayload]);
   const paymentQrSize = screens.md ? 240 : 200;
 
-  const loadDetail = () => {
+  const loadDetail = async () => {
     if (!params.order_no) return;
     setLoading(true);
     setErrorMessage('');
-    Promise.all([
+    return Promise.all([
       getProductOrderDetail(params.order_no),
       listBuyerProductRefundRequests(params.order_no).catch(() => []),
     ])
@@ -169,6 +174,64 @@ export default function AccountProductOrderDetailPage() {
     }
   };
 
+  const walletPaymentErrorMessage = (error: any) => {
+    const normalized = String(
+      error?.message || error?.detail || error?.error || '',
+    ).toLowerCase();
+    if (
+      normalized.includes('insufficient') ||
+      normalized.includes('not enough') ||
+      normalized.includes('spendable balance')
+    ) {
+      return intl.formatMessage({
+        id: 'account.productOrders.walletPayment.error.insufficientFunds',
+      });
+    }
+    if (
+      normalized.includes('unlock') ||
+      normalized.includes('locked') ||
+      normalized.includes('password')
+    ) {
+      return intl.formatMessage({
+        id: 'account.productOrders.walletPayment.error.lockedWallet',
+      });
+    }
+    if (normalized.includes('timeout') || normalized.includes('timed out')) {
+      return intl.formatMessage({
+        id: 'account.productOrders.walletPayment.error.timeout',
+      });
+    }
+    return intl.formatMessage({
+      id: 'account.productOrders.walletPayment.error.default',
+    });
+  };
+
+  const onPayWithLinkedWallet = async () => {
+    if (!item?.order_no || effectiveTxid) return;
+    const values = await walletPayForm.validateFields();
+    setWalletPayLoading(true);
+    try {
+      const result = await payProductOrderWithWallet(item.order_no, {
+        password: values.password,
+      });
+      const returnedTxid = String(
+        result?.txid || result?.payment_order?.txid || '',
+      );
+      if (returnedTxid) setSubmittedTxid(returnedTxid);
+      message.success(
+        intl.formatMessage({
+          id: 'account.productOrders.walletPayment.success',
+        }),
+      );
+      walletPayForm.resetFields();
+      await loadDetail();
+    } catch (error) {
+      message.error(walletPaymentErrorMessage(error));
+    } finally {
+      setWalletPayLoading(false);
+    }
+  };
+
   const onSubmitRefund = async () => {
     if (!item?.order_no) return;
     const values = await refundForm.validateFields();
@@ -190,6 +253,34 @@ export default function AccountProductOrderDetailPage() {
   const normalizedPaymentStatus = String(
     item?.payment_status || '',
   ).toLowerCase();
+  const paymentOrderStatus = String(
+    item?.payment_order?.status || item?.payment_status || '',
+  ).toLowerCase();
+  const effectiveTxid = String(
+    item?.payment_order?.txid || item?.txid || submittedTxid || '',
+  );
+  const paymentOrderStatusLabel =
+    paymentOrderStatus === 'paid'
+      ? intl.formatMessage({ id: 'account.productOrders.status.paid' })
+      : paymentOrderStatus === 'pending' && effectiveTxid
+      ? intl.formatMessage({
+          id: 'account.productOrders.payment.submittedConfirming',
+        })
+      : paymentOrderStatus === 'pending'
+      ? intl.formatMessage({
+          id: 'account.productOrders.status.pendingPayment',
+        })
+      : paymentOrderStatus === 'failed'
+      ? intl.formatMessage({ id: 'account.productOrders.payment.failed' })
+      : paymentOrderStatus === 'expired'
+      ? intl.formatMessage({ id: 'account.productOrders.paymentExpired' })
+      : paymentOrderStatus === 'underpaid'
+      ? intl.formatMessage({ id: 'account.productOrders.payment.underpaid' })
+      : paymentOrderStatus === 'overpaid'
+      ? intl.formatMessage({ id: 'account.productOrders.payment.overpaid' })
+      : paymentOrderStatus === 'cancelled'
+      ? intl.formatMessage({ id: 'account.productOrders.status.cancelled' })
+      : '-';
   const isPaymentTimeoutCancelled =
     normalizedStatus === 'cancelled' &&
     item?.cancel_reason === 'payment_timeout';
@@ -266,7 +357,7 @@ export default function AccountProductOrderDetailPage() {
                   id: 'account.productOrders.paymentStatus',
                 })}
               >
-                <Tag>{String(item.payment_status || '-').toUpperCase()}</Tag>
+                <Tag>{paymentOrderStatusLabel}</Tag>
               </Descriptions.Item>
             </Descriptions>
           </Card>
@@ -401,7 +492,68 @@ export default function AccountProductOrderDetailPage() {
                 id: 'account.productOrders.txHint.title',
               })}
             >
-              <Form form={hintForm} layout="vertical">
+              <Form form={walletPayForm} layout="vertical">
+                {effectiveTxid ? (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Alert
+                      showIcon
+                      type="info"
+                      message={intl.formatMessage({
+                        id: 'account.productOrders.walletPayment.submitted',
+                      })}
+                    />
+                    <Space wrap>
+                      <Text>
+                        {intl.formatMessage({
+                          id: 'account.productOrders.txid',
+                        })}
+                        : {effectiveTxid}
+                      </Text>
+                      <Button
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => copyValue(effectiveTxid)}
+                      >
+                        {intl.formatMessage({
+                          id: 'account.productOrders.copyTxid',
+                        })}
+                      </Button>
+                    </Space>
+                    <Button
+                      icon={<ReloadOutlined />}
+                      onClick={loadDetail}
+                      disabled={walletPayLoading}
+                    >
+                      {intl.formatMessage({
+                        id: 'account.productOrders.refreshPaymentStatus',
+                      })}
+                    </Button>
+                  </Space>
+                ) : (
+                  <>
+                    <Form.Item
+                      name="password"
+                      label={intl.formatMessage({
+                        id: 'account.productOrders.walletPayment.password',
+                      })}
+                      rules={[{ required: true }]}
+                    >
+                      <Input.Password />
+                    </Form.Item>
+                    <Button
+                      type="primary"
+                      onClick={onPayWithLinkedWallet}
+                      loading={walletPayLoading}
+                      disabled={walletPayLoading}
+                    >
+                      {intl.formatMessage({
+                        id: 'account.productOrders.walletPayment.pay',
+                      })}
+                    </Button>
+                  </>
+                )}
+              </Form>
+              <Form form={hintForm} layout="vertical" style={{ marginTop: 16 }}>
                 <Form.Item
                   name="txid"
                   label={intl.formatMessage({
