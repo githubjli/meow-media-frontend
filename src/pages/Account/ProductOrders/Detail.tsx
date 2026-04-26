@@ -368,7 +368,8 @@ export default function AccountProductOrderDetailPage() {
                       padding: 10,
                       borderRadius: 8,
                       background: 'rgba(0,0,0,0.04)',
-                      overflowX: 'auto',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
                     }}
                   >
                     {paymentQrPayloadText}
