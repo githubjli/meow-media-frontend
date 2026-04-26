@@ -3,6 +3,7 @@ import {
   shipSellerProductOrder,
 } from '@/services/productOrders';
 import type { ProductOrder } from '@/types/productOrder';
+import { CopyOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel, useParams } from '@umijs/max';
 import {
@@ -148,6 +149,12 @@ export default function SellerOrderDetailPage() {
     } finally {
       setShippingLoading(false);
     }
+  };
+
+  const copyValue = async (value?: string | null) => {
+    if (!value) return;
+    await navigator.clipboard.writeText(String(value));
+    message.success(intl.formatMessage({ id: 'common.copied' }));
   };
 
   return (
@@ -512,31 +519,50 @@ export default function SellerOrderDetailPage() {
                 <Descriptions column={1}>
                   <Descriptions.Item
                     label={intl.formatMessage({
-                      id: 'account.productOrders.status',
+                      id: 'seller.orders.payoutStatus',
                     })}
                   >
                     {String(payoutSummary?.status || '-').toUpperCase()}
                   </Descriptions.Item>
                   <Descriptions.Item
                     label={intl.formatMessage({
-                      id: 'account.productOrders.txid',
+                      id: 'seller.orders.payoutTxid',
                     })}
                   >
                     {payoutSummary?.payout_txid || payoutSummary?.txid ? (
-                      <Text copyable>
-                        {String(
-                          payoutSummary?.payout_txid ||
-                            payoutSummary?.txid ||
-                            '-',
-                        )}
-                      </Text>
+                      <Space wrap>
+                        <Text>
+                          {String(
+                            payoutSummary?.payout_txid ||
+                              payoutSummary?.txid ||
+                              '-',
+                          )}
+                        </Text>
+                        <Button
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() =>
+                            copyValue(
+                              String(
+                                payoutSummary?.payout_txid ||
+                                  payoutSummary?.txid ||
+                                  '',
+                              ),
+                            )
+                          }
+                        >
+                          {intl.formatMessage({
+                            id: 'account.productOrders.copyTxid',
+                          })}
+                        </Button>
+                      </Space>
                     ) : (
                       '-'
                     )}
                   </Descriptions.Item>
                   <Descriptions.Item
                     label={intl.formatMessage({
-                      id: 'seller.orders.payoutAddress',
+                      id: 'seller.orders.payoutAddressLabel',
                     })}
                   >
                     <Text style={{ wordBreak: 'break-word' }}>
