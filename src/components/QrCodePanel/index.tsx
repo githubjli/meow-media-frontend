@@ -19,6 +19,16 @@ const resolveQrPayload = (payload?: unknown) => {
   }
 };
 
+const resolveQrPayload = (payload?: unknown) => {
+  if (typeof payload === 'string') return payload;
+  if (!payload) return '';
+  try {
+    return JSON.stringify(payload);
+  } catch (error) {
+    return String(payload);
+  }
+};
+
 const buildQrImageUrl = (payload: string, size: number) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
     payload,
