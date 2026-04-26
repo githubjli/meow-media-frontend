@@ -6,6 +6,17 @@ type QrCodePanelProps = {
   payload?: unknown;
   size?: number;
   emptyText?: string;
+  showPayloadText?: boolean;
+};
+
+const resolveQrPayload = (payload?: unknown) => {
+  if (typeof payload === 'string') return payload;
+  if (!payload) return '';
+  try {
+    return JSON.stringify(payload);
+  } catch (error) {
+    return String(payload);
+  }
 };
 
 const resolveQrPayload = (payload?: unknown) => {
@@ -27,6 +38,7 @@ export default function QrCodePanel({
   payload,
   size = 220,
   emptyText = 'QR code is not available yet.',
+  showPayloadText = true,
 }: QrCodePanelProps) {
   const qrValue = resolveQrPayload(payload);
   const hasPayload = Boolean(qrValue);
@@ -53,7 +65,9 @@ export default function QrCodePanel({
         style={{ objectFit: 'contain', borderRadius: 10 }}
         preview={false}
       />
-      {hasPayload ? <Text type="secondary">{qrValue}</Text> : null}
+      {hasPayload && showPayloadText ? (
+        <Text type="secondary">{qrValue}</Text>
+      ) : null}
     </Space>
   );
 }

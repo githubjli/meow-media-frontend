@@ -24,6 +24,7 @@ import {
   Descriptions,
   Empty,
   Form,
+  Grid,
   Input,
   Modal,
   Space,
@@ -53,7 +54,9 @@ export default function AccountProductOrderDetailPage() {
   const [refundOpen, setRefundOpen] = useState(false);
   const [refundSubmitting, setRefundSubmitting] = useState(false);
   const [refunds, setRefunds] = useState<RefundRequest[]>([]);
+  const [showQrPayload, setShowQrPayload] = useState(false);
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
+  const screens = Grid.useBreakpoint();
   const paymentQrPayload = useMemo(() => {
     if (!item) return '';
     const directPayload = item.qr_payload || item.qr_text || item.payment_uri;
@@ -68,6 +71,16 @@ export default function AccountProductOrderDetailPage() {
       currency: item.currency,
     };
   }, [item]);
+  const paymentQrPayloadText = useMemo(() => {
+    if (!paymentQrPayload) return '';
+    if (typeof paymentQrPayload === 'string') return paymentQrPayload;
+    try {
+      return JSON.stringify(paymentQrPayload, null, 2);
+    } catch (error) {
+      return String(paymentQrPayload);
+    }
+  }, [paymentQrPayload]);
+  const paymentQrSize = screens.md ? 240 : 200;
 
   const loadDetail = () => {
     if (!params.order_no) return;
@@ -269,48 +282,98 @@ export default function AccountProductOrderDetailPage() {
                       id: 'account.productOrders.payToAddress',
                     })}
                   >
-                    <Space>
-                      <Text>{item.pay_to_address || '-'}</Text>
-                      <Button
-                        size="small"
-                        icon={<CopyOutlined />}
-                        onClick={() => copyValue(item.pay_to_address)}
-                      />
-                    </Space>
+                    <Text style={{ wordBreak: 'break-all' }}>
+                      {item.pay_to_address || '-'}
+                    </Text>
                   </Descriptions.Item>
                   <Descriptions.Item
                     label={intl.formatMessage({
                       id: 'account.productOrders.expectedAmount',
                     })}
                   >
-                    <Space>
-                      <Text>{item.expected_amount}</Text>
-                      <Button
-                        size="small"
-                        icon={<CopyOutlined />}
-                        onClick={() => copyValue(item.expected_amount)}
-                      />
-                    </Space>
+                    <Text strong>{item.expected_amount}</Text>
                   </Descriptions.Item>
                   <Descriptions.Item
                     label={intl.formatMessage({
                       id: 'account.productOrders.expiresAt',
                     })}
                   >
-                    {item.expires_at || '-'}
+                    <Text type="secondary">{item.expires_at || '-'}</Text>
                   </Descriptions.Item>
                 </Descriptions>
+                <Space wrap size={8}>
+                  <Button
+                    size="small"
+                    icon={<CopyOutlined />}
+                    onClick={() => copyValue(item.pay_to_address)}
+                  >
+                    {intl.formatMessage({
+                      id: 'account.productOrders.copyAddress',
+                    })}
+                  </Button>
+                  <Button
+                    size="small"
+                    icon={<CopyOutlined />}
+                    onClick={() => copyValue(item.expected_amount)}
+                  >
+                    {intl.formatMessage({
+                      id: 'account.productOrders.copyAmount',
+                    })}
+                  </Button>
+                  <Button
+                    size="small"
+                    icon={<CopyOutlined />}
+                    onClick={() => copyValue(paymentQrPayloadText)}
+                  >
+                    {intl.formatMessage({
+                      id: 'account.productOrders.copyQrPayload',
+                    })}
+                  </Button>
+                </Space>
                 <Alert
                   showIcon
                   type="warning"
                   message={intl.formatMessage({ id: 'confirmAndPay.notProof' })}
+                  style={{
+                    background: '#fffbe6',
+                    borderColor: '#ffe58f',
+                  }}
                 />
                 <QrCodePanel
                   payload={paymentQrPayload}
+                  size={paymentQrSize}
+                  showPayloadText={false}
                   emptyText={intl.formatMessage({
                     id: 'account.productOrders.paymentQr.empty',
                   })}
                 />
+                <Button
+                  type="link"
+                  size="small"
+                  style={{ alignSelf: 'center', paddingInline: 0 }}
+                  onClick={() => setShowQrPayload((value) => !value)}
+                >
+                  {intl.formatMessage({
+                    id: showQrPayload
+                      ? 'account.productOrders.qrPayload.hide'
+                      : 'account.productOrders.qrPayload.show',
+                  })}
+                </Button>
+                {showQrPayload ? (
+                  <pre
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                      padding: 10,
+                      borderRadius: 8,
+                      background: 'rgba(0,0,0,0.04)',
+                      overflowX: 'auto',
+                    }}
+                  >
+                    {paymentQrPayloadText}
+                  </pre>
+                ) : null}
               </Space>
             </Card>
           ) : null}
