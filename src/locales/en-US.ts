@@ -873,6 +873,9 @@ export default {
   'account.productOrders.completedSuccess': 'Order completed.',
   'account.productOrders.completedState': 'Order completed.',
   'account.productOrders.completedAt': 'Completed At',
+  'account.productOrders.waitingSellerShip': 'Waiting for seller to ship.',
+  'account.productOrders.settledState': 'Order settled.',
+  'account.productOrders.cancelledState': 'Order cancelled.',
   'account.productOrders.error.load': 'Unable to load product orders.',
   'account.productOrders.error.detail': 'Unable to load product order detail.',
   'account.productOrders.error.confirmReceived':

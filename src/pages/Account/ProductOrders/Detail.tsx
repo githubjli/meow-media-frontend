@@ -129,7 +129,11 @@ export default function AccountProductOrderDetailPage() {
 
   const onConfirmReceived = async () => {
     if (!item?.order_no) return;
-    if (String(item.status || '').toLowerCase() === 'completed') return;
+    if (
+      ['completed', 'settled'].includes(String(item.status || '').toLowerCase())
+    ) {
+      return;
+    }
     Modal.confirm({
       title: intl.formatMessage({
         id: 'account.productOrders.confirmReceived',
@@ -149,6 +153,12 @@ export default function AccountProductOrderDetailPage() {
             }),
           );
           loadDetail();
+        } catch (error) {
+          message.error(
+            intl.formatMessage({
+              id: 'account.productOrders.error.confirmReceived',
+            }),
+          );
         } finally {
           setActionLoading(false);
         }
@@ -656,7 +666,7 @@ export default function AccountProductOrderDetailPage() {
                   type="primary"
                   icon={<CheckCircleOutlined />}
                   loading={actionLoading}
-                  disabled={actionLoading || normalizedStatus === 'completed'}
+                  disabled={actionLoading}
                   onClick={onConfirmReceived}
                 >
                   {intl.formatMessage({
@@ -678,6 +688,42 @@ export default function AccountProductOrderDetailPage() {
                 description={`${intl.formatMessage({
                   id: 'account.productOrders.completedAt',
                 })}: ${item.completed_at || '-'}`}
+              />
+            </Card>
+          ) : null}
+
+          {normalizedStatus === 'paid' ? (
+            <Card variant="borderless" style={{ borderRadius: 20 }}>
+              <Alert
+                showIcon
+                type="info"
+                message={intl.formatMessage({
+                  id: 'account.productOrders.waitingSellerShip',
+                })}
+              />
+            </Card>
+          ) : null}
+
+          {normalizedStatus === 'settled' ? (
+            <Card variant="borderless" style={{ borderRadius: 20 }}>
+              <Alert
+                showIcon
+                type="success"
+                message={intl.formatMessage({
+                  id: 'account.productOrders.settledState',
+                })}
+              />
+            </Card>
+          ) : null}
+
+          {normalizedStatus === 'cancelled' ? (
+            <Card variant="borderless" style={{ borderRadius: 20 }}>
+              <Alert
+                showIcon
+                type="warning"
+                message={intl.formatMessage({
+                  id: 'account.productOrders.cancelledState',
+                })}
               />
             </Card>
           ) : null}
