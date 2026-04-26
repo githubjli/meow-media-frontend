@@ -618,6 +618,7 @@ const HeaderSearchWithQr = ({
   };
 
   const onPayWithLinkedWallet = async () => {
+    if (payingWithWallet) return;
     if (!confirmOrder?.order_no) return;
     if (!walletPassword) {
       setConfirmError(
@@ -670,12 +671,22 @@ const HeaderSearchWithQr = ({
         }
         return '';
       };
+      const sanitizePaymentError = (value: string) => {
+        const text = String(value || '').trim();
+        if (!text) return '';
+        const hasInternalFieldLeak =
+          /wallet_id|funding_account_ids|change_account_id/i.test(text);
+        if (hasInternalFieldLeak) {
+          return '';
+        }
+        return text;
+      };
       const backendError =
         resolveBackendError(error?.data) ||
         resolveBackendError(error?.response?.data);
       setConfirmError(
-        backendError ||
-          error?.message ||
+        sanitizePaymentError(backendError) ||
+          sanitizePaymentError(error?.message) ||
           intl.formatMessage({ id: 'qrScan.walletPayFailed' }),
       );
     } finally {
@@ -853,6 +864,7 @@ const HeaderSearchWithQr = ({
                 <Button
                   type="primary"
                   loading={payingWithWallet}
+                  disabled={payingWithWallet || !walletPassword}
                   onClick={onPayWithLinkedWallet}
                 >
                   {intl.formatMessage({
