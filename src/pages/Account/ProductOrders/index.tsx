@@ -2,17 +2,21 @@ import { listMyProductOrders } from '@/services/productOrders';
 import type { ProductOrder } from '@/types/productOrder';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel } from '@umijs/max';
-import { Alert, Card, Empty, Space, Spin, Table, Tag } from 'antd';
+import { Alert, Button, Card, Empty, Space, Spin, Table, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 
 const resolveStatusLabel = (intl: any, row: ProductOrder) => {
   const status = String(row.status || '').toLowerCase();
   const cancelReason = String(row.cancel_reason || '').toLowerCase();
   if (status === 'cancelled' && cancelReason === 'payment_timeout') {
-    return intl.formatMessage({ id: 'account.productOrders.status.paymentTimeout' });
+    return intl.formatMessage({
+      id: 'account.productOrders.status.paymentTimeout',
+    });
   }
   if (status === 'pending_payment') {
-    return intl.formatMessage({ id: 'account.productOrders.status.pendingPayment' });
+    return intl.formatMessage({
+      id: 'account.productOrders.status.pendingPayment',
+    });
   }
   if (status === 'paid') {
     return intl.formatMessage({ id: 'account.productOrders.status.paid' });
@@ -30,6 +34,43 @@ const resolveStatusLabel = (intl: any, row: ProductOrder) => {
     return intl.formatMessage({ id: 'account.productOrders.status.cancelled' });
   }
   return String(row.status || '-').toUpperCase();
+};
+
+const resolveDerivedPaymentStatus = (intl: any, row: ProductOrder) => {
+  const paymentStatus = String(row.payment_status || '').toLowerCase();
+  const hasTxid = Boolean(String(row.txid || '').trim());
+
+  if (paymentStatus === 'paid') {
+    return intl.formatMessage({ id: 'account.productOrders.payment.paid' });
+  }
+  if (paymentStatus === 'pending' && hasTxid) {
+    return intl.formatMessage({
+      id: 'account.productOrders.payment.submittedConfirming',
+    });
+  }
+  if (paymentStatus === 'pending') {
+    return intl.formatMessage({
+      id: 'account.productOrders.status.pendingPayment',
+    });
+  }
+  if (paymentStatus === 'underpaid') {
+    return intl.formatMessage({
+      id: 'account.productOrders.payment.underpaid',
+    });
+  }
+  if (paymentStatus === 'overpaid') {
+    return intl.formatMessage({ id: 'account.productOrders.payment.overpaid' });
+  }
+  if (paymentStatus === 'failed') {
+    return intl.formatMessage({ id: 'account.productOrders.payment.failed' });
+  }
+  if (paymentStatus === 'expired') {
+    return intl.formatMessage({ id: 'account.productOrders.paymentExpired' });
+  }
+  if (paymentStatus === 'cancelled') {
+    return intl.formatMessage({ id: 'account.productOrders.status.cancelled' });
+  }
+  return String(row.payment_status || '-').toUpperCase();
 };
 
 export default function AccountProductOrdersPage() {
@@ -81,7 +122,9 @@ export default function AccountProductOrdersPage() {
         </Space>
       </Card>
 
-      {errorMessage ? <Alert type="error" showIcon message={errorMessage} /> : null}
+      {errorMessage ? (
+        <Alert type="error" showIcon message={errorMessage} />
+      ) : null}
 
       {loading ? (
         <Card variant="borderless" style={{ borderRadius: 20 }}>
@@ -90,7 +133,9 @@ export default function AccountProductOrdersPage() {
       ) : items.length === 0 ? (
         <Card variant="borderless" style={{ borderRadius: 20 }}>
           <Empty
-            description={intl.formatMessage({ id: 'account.productOrders.empty' })}
+            description={intl.formatMessage({
+              id: 'account.productOrders.empty',
+            })}
           />
         </Card>
       ) : (
@@ -99,28 +144,39 @@ export default function AccountProductOrdersPage() {
             rowKey="order_no"
             dataSource={items}
             onRow={(row) => ({
-              onClick: () => history.push(`/account/product-orders/${row.order_no}`),
+              onClick: () =>
+                history.push(`/account/product-orders/${row.order_no}`),
               style: { cursor: 'pointer' },
             })}
             columns={[
               {
-                title: intl.formatMessage({ id: 'account.productOrders.orderNo' }),
+                title: intl.formatMessage({
+                  id: 'account.productOrders.orderNo',
+                }),
                 dataIndex: 'order_no',
               },
               {
-                title: intl.formatMessage({ id: 'account.productOrders.product' }),
+                title: intl.formatMessage({
+                  id: 'account.productOrders.product',
+                }),
                 dataIndex: 'product_title_snapshot',
               },
               {
-                title: intl.formatMessage({ id: 'account.productOrders.amount' }),
+                title: intl.formatMessage({
+                  id: 'account.productOrders.amount',
+                }),
                 render: (_, row) =>
                   `${row.total_amount} ${
                     row.currency ||
-                    intl.formatMessage({ id: 'account.productOrders.currency.thbLtt' })
+                    intl.formatMessage({
+                      id: 'account.productOrders.currency.thbLtt',
+                    })
                   }`,
               },
               {
-                title: intl.formatMessage({ id: 'account.productOrders.status' }),
+                title: intl.formatMessage({
+                  id: 'account.productOrders.status',
+                }),
                 render: (_, row) => <Tag>{resolveStatusLabel(intl, row)}</Tag>,
               },
               {
@@ -128,12 +184,41 @@ export default function AccountProductOrdersPage() {
                   id: 'account.productOrders.paymentStatus',
                 }),
                 render: (_, row) => (
-                  <Tag>{String(row.payment_status || '-').toUpperCase()}</Tag>
+                  <Tag>{resolveDerivedPaymentStatus(intl, row)}</Tag>
                 ),
               },
               {
-                title: intl.formatMessage({ id: 'account.productOrders.createdAt' }),
+                title: intl.formatMessage({ id: 'account.productOrders.txid' }),
+                render: (_, row) =>
+                  row.txid ? (
+                    <Tag color="processing">
+                      {`${String(row.txid).slice(0, 8)}...${String(
+                        row.txid,
+                      ).slice(-6)}`}
+                    </Tag>
+                  ) : (
+                    '-'
+                  ),
+              },
+              {
+                title: intl.formatMessage({
+                  id: 'account.productOrders.createdAt',
+                }),
                 render: (_, row) => formatDate(row.created_at),
+              },
+              {
+                title: intl.formatMessage({ id: 'common.view' }),
+                render: (_, row) => (
+                  <Button
+                    size="small"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      history.push(`/account/product-orders/${row.order_no}`);
+                    }}
+                  >
+                    {intl.formatMessage({ id: 'common.view' })}
+                  </Button>
+                ),
               },
             ]}
           />

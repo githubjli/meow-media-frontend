@@ -796,6 +796,7 @@ export default {
   'common.delete': 'Delete',
   'common.required': 'This field is required.',
   'common.copied': 'Copied.',
+  'common.copy': 'Copy',
 
   'nav.shippingAddresses': 'Shipping Addresses',
   'nav.productOrders': 'Product Orders',
@@ -929,6 +930,7 @@ export default {
   'account.productOrders.txHint.title': 'TXID Hint',
   'account.productOrders.txidHint': 'TXID hint',
   'account.productOrders.submitTxid': 'Submit TXID',
+  'account.productOrders.refreshPaymentStatus': 'Refresh payment status',
   'account.productOrders.txHint.submitSuccess': 'TXID hint submitted.',
   'account.productOrders.txHint.submitError': 'Unable to submit TXID hint.',
   'account.productOrders.paymentVerification': 'Payment Verification',
@@ -940,6 +942,8 @@ export default {
     'Payment received but amount is insufficient. Please contact support or wait for backend handling.',
   'account.productOrders.payment.overpaid': 'Overpaid amount detected.',
   'account.productOrders.payment.paid': 'Payment verified as paid.',
+  'account.productOrders.payment.submittedConfirming': 'Submitted / Confirming',
+  'account.productOrders.payment.failed': 'Payment failed.',
   'account.productOrders.paymentExpired': 'Payment expired.',
   'account.productOrders.paymentTimeout':
     'Payment timeout. This order is cancelled.',

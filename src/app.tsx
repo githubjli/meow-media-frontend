@@ -554,6 +554,10 @@ const HeaderSearchWithQr = ({
     hasLinkedWallet &&
       String(confirmOrder?.status || '').toLowerCase() === 'pending_payment',
   );
+  const effectiveTxid = String(
+    submittedTxid || confirmOrder?.txid || '',
+  ).trim();
+  const canSubmitWalletPayment = Boolean(canUseWalletPayment && !effectiveTxid);
 
   useEffect(() => {
     if (!confirmOpen || hasFetchedProfileWallet) return;
@@ -620,6 +624,7 @@ const HeaderSearchWithQr = ({
   const onPayWithLinkedWallet = async () => {
     if (payingWithWallet) return;
     if (!confirmOrder?.order_no) return;
+    if (effectiveTxid) return;
     if (!walletPassword) {
       setConfirmError(
         intl.formatMessage({ id: 'qrScan.walletPasswordRequired' }),
@@ -691,6 +696,21 @@ const HeaderSearchWithQr = ({
       );
     } finally {
       setPayingWithWallet(false);
+    }
+  };
+
+  const onRefreshPaymentStatus = async () => {
+    if (!confirmOrder?.order_no) return;
+    setLoadingOrder(true);
+    try {
+      const latestOrder = await fetchProductOrderDetail(
+        String(confirmOrder.order_no),
+      );
+      setConfirmOrder(latestOrder);
+    } catch (error: any) {
+      setConfirmError(error?.message || '');
+    } finally {
+      setLoadingOrder(false);
     }
   };
 
@@ -864,7 +884,11 @@ const HeaderSearchWithQr = ({
                 <Button
                   type="primary"
                   loading={payingWithWallet}
-                  disabled={payingWithWallet || !walletPassword}
+                  disabled={
+                    payingWithWallet ||
+                    !walletPassword ||
+                    !canSubmitWalletPayment
+                  }
                   onClick={onPayWithLinkedWallet}
                 >
                   {intl.formatMessage({
@@ -882,17 +906,27 @@ const HeaderSearchWithQr = ({
               />
             )}
 
-            {submittedTxid ? (
+            {effectiveTxid ? (
               <Alert
                 type="success"
                 showIcon
                 message={intl.formatMessage({
                   id: 'qrScan.confirmModal.txSubmitted',
                 })}
-                description={submittedTxid}
+                description={
+                  <Space>
+                    <Text code>{effectiveTxid}</Text>
+                    <Button
+                      size="small"
+                      onClick={() => onCopyText(effectiveTxid)}
+                    >
+                      {intl.formatMessage({ id: 'common.copy' })}
+                    </Button>
+                  </Space>
+                }
               />
             ) : null}
-            {submittedTxid ? (
+            {effectiveTxid ? (
               <Alert
                 type="info"
                 showIcon
@@ -906,6 +940,11 @@ const HeaderSearchWithQr = ({
             ) : null}
 
             <Space wrap>
+              <Button loading={loadingOrder} onClick={onRefreshPaymentStatus}>
+                {intl.formatMessage({
+                  id: 'account.productOrders.refreshPaymentStatus',
+                })}
+              </Button>
               <Button
                 onClick={() =>
                   history.push(
