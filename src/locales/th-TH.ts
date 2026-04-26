@@ -847,6 +847,7 @@ export default {
   'account.productOrders.expectedAmount': 'Expected Amount',
   'account.productOrders.currency': 'Currency',
   'account.productOrders.expiresAt': 'Expires At',
+  'account.productOrders.paidAt': 'Paid At',
   'account.productOrders.paymentReminder':
     'QR/payment data is not proof of payment. Backend confirms by chain/payment status.',
   'account.productOrders.confirmReceived': 'Confirm Received',
@@ -945,6 +946,10 @@ export default {
   'seller.orders.payoutAddress': 'Payout Address',
   'seller.orders.payoutFailureNote': 'Payout Failure Note',
   'seller.orders.paymentSummary': 'Payment Summary',
+  'seller.orders.paymentOrder': 'Payment Order',
+  'seller.orders.waitingBuyerPayment': 'Waiting for buyer payment.',
+  'seller.orders.shippingInProgress': 'Shipment is in progress.',
+  'seller.orders.finalStatusReached': 'Order reached final status.',
 
   'common.add': 'Add',
   'common.active': 'Active',

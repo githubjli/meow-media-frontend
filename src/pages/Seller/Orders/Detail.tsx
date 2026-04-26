@@ -121,7 +121,8 @@ export default function SellerOrderDetailPage() {
 
   const payoutSummary = useMemo(() => item?.payout || null, [item]);
 
-  const canShip = String(item?.status || '').toLowerCase() === 'paid';
+  const normalizedStatus = String(item?.status || '').toLowerCase();
+  const canShip = normalizedStatus === 'paid';
 
   const onShip = async () => {
     if (!item?.order_no) return;
@@ -241,6 +242,13 @@ export default function SellerOrderDetailPage() {
             <Descriptions column={1}>
               <Descriptions.Item
                 label={intl.formatMessage({
+                  id: 'account.productOrders.status',
+                })}
+              >
+                <Tag>{String(item.status || '-').toUpperCase()}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item
+                label={intl.formatMessage({
                   id: 'account.productOrders.paymentStatus',
                 })}
               >
@@ -273,6 +281,61 @@ export default function SellerOrderDetailPage() {
                 {item.actual_amount ?? '-'}
               </Descriptions.Item>
             </Descriptions>
+            {isObject(item.payment_order) ? (
+              <Descriptions
+                column={1}
+                size="small"
+                style={{ marginTop: 12 }}
+                title={intl.formatMessage({ id: 'seller.orders.paymentOrder' })}
+              >
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.status',
+                  })}
+                >
+                  {String(item.payment_order?.status || '-').toUpperCase()}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.txid',
+                  })}
+                >
+                  {item.payment_order?.txid ? (
+                    <Text copyable>{String(item.payment_order.txid)}</Text>
+                  ) : (
+                    '-'
+                  )}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.confirmations',
+                  })}
+                >
+                  {item.payment_order?.confirmations ?? '-'}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.expectedAmount',
+                  })}
+                >
+                  {item.payment_order?.expected_amount_lbc ?? '-'}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.actualAmount',
+                  })}
+                >
+                  {item.payment_order?.actual_amount_lbc ?? '-'}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.paidAt',
+                  })}
+                >
+                  {item.payment_order?.paid_at || '-'}
+                </Descriptions.Item>
+              </Descriptions>
+            ) : null}
           </Card>
 
           <Card
@@ -407,6 +470,13 @@ export default function SellerOrderDetailPage() {
               >
                 {item.shipment?.shipped_note || '-'}
               </Descriptions.Item>
+              <Descriptions.Item
+                label={intl.formatMessage({
+                  id: 'account.productOrders.shippedAt',
+                })}
+              >
+                {item.shipment?.shipped_at || item.shipped_at || '-'}
+              </Descriptions.Item>
             </Descriptions>
           </Card>
 
@@ -461,60 +531,85 @@ export default function SellerOrderDetailPage() {
             style={{ borderRadius: 20 }}
             title={intl.formatMessage({ id: 'seller.orders.markShipped' })}
           >
-            {!canShip ? (
+            {normalizedStatus === 'pending_payment' ? (
+              <Alert
+                showIcon
+                type="info"
+                message={intl.formatMessage({
+                  id: 'seller.orders.waitingBuyerPayment',
+                })}
+                style={{ marginBottom: 12 }}
+              />
+            ) : normalizedStatus === 'paid' ? (
+              <Form layout="vertical" form={form}>
+                <Form.Item
+                  name="carrier"
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.shipment.carrier',
+                  })}
+                  rules={[{ required: true }]}
+                >
+                  <Input />
+                </Form.Item>
+                <Form.Item
+                  name="tracking_number"
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.trackingNumber',
+                  })}
+                  rules={[{ required: true }]}
+                >
+                  <Input />
+                </Form.Item>
+                <Form.Item
+                  name="tracking_url"
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.shipment.trackingUrl',
+                  })}
+                >
+                  <Input />
+                </Form.Item>
+                <Form.Item
+                  name="shipped_note"
+                  label={intl.formatMessage({
+                    id: 'account.productOrders.shipment.note',
+                  })}
+                >
+                  <Input.TextArea rows={3} />
+                </Form.Item>
+                <Button
+                  type="primary"
+                  onClick={onShip}
+                  loading={shippingLoading}
+                >
+                  {intl.formatMessage({ id: 'seller.orders.markShipped' })}
+                </Button>
+              </Form>
+            ) : normalizedStatus === 'shipping' ? (
+              <Alert
+                showIcon
+                type="info"
+                message={intl.formatMessage({
+                  id: 'seller.orders.shippingInProgress',
+                })}
+              />
+            ) : normalizedStatus === 'completed' ||
+              normalizedStatus === 'settled' ? (
+              <Alert
+                showIcon
+                type="success"
+                message={intl.formatMessage({
+                  id: 'seller.orders.finalStatusReached',
+                })}
+              />
+            ) : (
               <Alert
                 showIcon
                 type="info"
                 message={intl.formatMessage({
                   id: 'seller.orders.shipOnlyWhenPaid',
                 })}
-                style={{ marginBottom: 12 }}
               />
-            ) : null}
-            <Form layout="vertical" form={form}>
-              <Form.Item
-                name="carrier"
-                label={intl.formatMessage({
-                  id: 'account.productOrders.shipment.carrier',
-                })}
-                rules={[{ required: true }]}
-              >
-                <Input disabled={!canShip} />
-              </Form.Item>
-              <Form.Item
-                name="tracking_number"
-                label={intl.formatMessage({
-                  id: 'account.productOrders.trackingNumber',
-                })}
-                rules={[{ required: true }]}
-              >
-                <Input disabled={!canShip} />
-              </Form.Item>
-              <Form.Item
-                name="tracking_url"
-                label={intl.formatMessage({
-                  id: 'account.productOrders.shipment.trackingUrl',
-                })}
-              >
-                <Input disabled={!canShip} />
-              </Form.Item>
-              <Form.Item
-                name="shipped_note"
-                label={intl.formatMessage({
-                  id: 'account.productOrders.shipment.note',
-                })}
-              >
-                <Input.TextArea rows={3} disabled={!canShip} />
-              </Form.Item>
-              <Button
-                type="primary"
-                onClick={onShip}
-                loading={shippingLoading}
-                disabled={!canShip}
-              >
-                {intl.formatMessage({ id: 'seller.orders.markShipped' })}
-              </Button>
-            </Form>
+            )}
           </Card>
         </Space>
       )}
