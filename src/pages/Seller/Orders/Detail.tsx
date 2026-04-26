@@ -119,7 +119,10 @@ export default function SellerOrderDetailPage() {
     };
   }, [item]);
 
-  const payoutSummary = useMemo(() => item?.payout || null, [item]);
+  const payoutSummary = useMemo(
+    () => item?.seller_payout || item?.payout || null,
+    [item],
+  );
 
   const normalizedStatus = String(item?.status || '').toLowerCase();
   const canShip = normalizedStatus === 'paid';
@@ -485,45 +488,88 @@ export default function SellerOrderDetailPage() {
             style={{ borderRadius: 20 }}
             title={intl.formatMessage({ id: 'seller.orders.payoutSummary' })}
           >
-            <Descriptions column={1}>
-              <Descriptions.Item
-                label={intl.formatMessage({
-                  id: 'account.productOrders.status',
-                })}
-              >
-                {String(payoutSummary?.status || '-').toUpperCase()}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={intl.formatMessage({ id: 'account.productOrders.txid' })}
-              >
-                {payoutSummary?.payout_txid || payoutSummary?.txid || '-'}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={intl.formatMessage({
-                  id: 'seller.orders.payoutAddress',
-                })}
-              >
-                <Text style={{ wordBreak: 'break-word' }}>
-                  {payoutSummary?.payout_address || '-'}
-                </Text>
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={intl.formatMessage({
-                  id: 'account.productOrders.paidAt',
-                })}
-              >
-                {payoutSummary?.paid_at || '-'}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={intl.formatMessage({
-                  id: 'seller.orders.payoutFailureNote',
-                })}
-              >
-                <Text style={{ wordBreak: 'break-word' }}>
-                  {payoutSummary?.failure_note || '-'}
-                </Text>
-              </Descriptions.Item>
-            </Descriptions>
+            <Space direction="vertical" size={10} style={{ width: '100%' }}>
+              {normalizedStatus === 'completed' &&
+              !(payoutSummary?.payout_txid || payoutSummary?.txid) ? (
+                <Alert
+                  showIcon
+                  type="info"
+                  message={intl.formatMessage({
+                    id: 'seller.orders.payout.waitingSettlement',
+                  })}
+                />
+              ) : null}
+              {normalizedStatus === 'settled' ? (
+                <Alert
+                  showIcon
+                  type="success"
+                  message={intl.formatMessage({
+                    id: 'seller.orders.payout.settled',
+                  })}
+                />
+              ) : null}
+              {payoutSummary ? (
+                <Descriptions column={1}>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.status',
+                    })}
+                  >
+                    {String(payoutSummary?.status || '-').toUpperCase()}
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.txid',
+                    })}
+                  >
+                    {payoutSummary?.payout_txid || payoutSummary?.txid ? (
+                      <Text copyable>
+                        {String(
+                          payoutSummary?.payout_txid ||
+                            payoutSummary?.txid ||
+                            '-',
+                        )}
+                      </Text>
+                    ) : (
+                      '-'
+                    )}
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'seller.orders.payoutAddress',
+                    })}
+                  >
+                    <Text style={{ wordBreak: 'break-word' }}>
+                      {payoutSummary?.payout_address || '-'}
+                    </Text>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'account.productOrders.paidAt',
+                    })}
+                  >
+                    {payoutSummary?.paid_at || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={intl.formatMessage({
+                      id: 'seller.orders.payoutFailureNote',
+                    })}
+                  >
+                    <Text style={{ wordBreak: 'break-word' }}>
+                      {payoutSummary?.failure_note || '-'}
+                    </Text>
+                  </Descriptions.Item>
+                </Descriptions>
+              ) : (
+                <Alert
+                  showIcon
+                  type="info"
+                  message={intl.formatMessage({
+                    id: 'seller.orders.payout.noRecord',
+                  })}
+                />
+              )}
+            </Space>
           </Card>
 
           <Card
