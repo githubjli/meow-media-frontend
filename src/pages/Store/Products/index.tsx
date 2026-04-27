@@ -1,3 +1,4 @@
+import BuyNowButton from '@/components/product-order/BuyNowButton';
 import { getPublicStoreProducts } from '@/services/product';
 import { getPublicStore } from '@/services/store';
 import type { Product } from '@/types/product';
@@ -153,6 +154,9 @@ export default function PublicStoreProductsPage() {
                         ? intl.formatMessage({ id: 'store.products.inStock' })
                         : intl.formatMessage({ id: 'store.products.soldOut' })}
                     </Tag>
+                    {item.stock_quantity > 0 ? (
+                      <BuyNowButton productId={item.id} />
+                    ) : null}
                   </Space>
                 </Card>
               </Col>
