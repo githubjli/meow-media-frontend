@@ -75,6 +75,11 @@ const LANGUAGE_LABELS: Record<string, string> = {
   'my-MM': 'မြန်မာ',
 };
 const SUPPORTED_LOCALES = new Set(Object.keys(LANGUAGE_LABELS));
+const debugLog = (...args: any[]) => {
+  if (process.env.NODE_ENV !== 'development') return;
+  // eslint-disable-next-line no-console
+  console.log(...args);
+};
 
 const resolveSupportedLocale = (value?: string | null) => {
   const normalized = String(value || '').toLowerCase();
@@ -393,7 +398,7 @@ const HeaderSearchWithQr = ({
   };
 
   const handleParsedQr = async (text: string) => {
-    console.log('[QR_SCAN] raw text:', text);
+    debugLog('[QR_SCAN] raw text:', text);
     const tryShortSignedPayload = () => {
       try {
         const parsed = JSON.parse(String(text || ''));
@@ -486,8 +491,8 @@ const HeaderSearchWithQr = ({
   const startCameraScan = async () => {
     if (!open) return;
 
-    console.log('[QR_SCAN] secure context', window.isSecureContext);
-    console.log(
+    debugLog('[QR_SCAN] secure context', window.isSecureContext);
+    debugLog(
       '[QR_SCAN] mediaDevices exists',
       Boolean(navigator.mediaDevices?.getUserMedia),
     );
@@ -511,14 +516,14 @@ const HeaderSearchWithQr = ({
       setCameraError('');
       setParseError('');
       setMode('camera');
-      console.log('[QR_SCAN] getUserMedia start');
+      debugLog('[QR_SCAN] getUserMedia start');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: 'environment' },
         },
         audio: false,
       });
-      console.log('[QR_SCAN] getUserMedia success');
+      debugLog('[QR_SCAN] getUserMedia success');
       streamRef.current = stream;
 
       if (videoRef.current) {
@@ -543,7 +548,7 @@ const HeaderSearchWithQr = ({
         const ZXing = await import(
           /* webpackChunkName: "zxing" */ '@zxing/browser'
         );
-        console.log('[QR_SCAN] zxing loaded');
+        debugLog('[QR_SCAN] zxing loaded');
         const { BrowserMultiFormatReader } = ZXing;
         const codeReader = new BrowserMultiFormatReader();
         zxingReaderRef.current = codeReader;
@@ -554,13 +559,13 @@ const HeaderSearchWithQr = ({
             const value = String(result?.getText?.() || '');
             if (!value || detectedRef.current) return;
             detectedRef.current = true;
-            console.log('[QR_SCAN] decoded text', value);
+            debugLog('[QR_SCAN] decoded text', value);
             stopCamera();
             void handleParsedQr(value);
           },
         );
       } catch (scanError: any) {
-        console.log('[QR_SCAN] zxing load failed', scanError?.message);
+        debugLog('[QR_SCAN] zxing load failed', scanError?.message);
         setCameraError(
           scanError?.message ||
             intl.formatMessage({ id: 'qrScan.scannerInitFailed' }),
@@ -569,7 +574,7 @@ const HeaderSearchWithQr = ({
         stopCamera();
       }
     } catch (error: any) {
-      console.log(
+      debugLog(
         '[QR_SCAN] getUserMedia error name/message',
         error?.name,
         error?.message,
@@ -795,7 +800,7 @@ const HeaderSearchWithQr = ({
 
   useEffect(() => {
     if (!confirmOpen) return;
-    console.log('[PAYMENT]', {
+    debugLog('[PAYMENT]', {
       linked_wallet_id: account?.linked_wallet_id,
       primary_user_address: account?.primary_user_address,
       profile_linked_wallet_id: profileLinkedWalletId,
@@ -929,7 +934,7 @@ const HeaderSearchWithQr = ({
           allowClear
           style={{ maxWidth: 560, width: '100%', borderRadius: 12 }}
           size="middle"
-          onSearch={(value) => console.log('Searching for:', value)}
+          onSearch={(value) => debugLog('Searching for:', value)}
         />
         <Button
           type="text"
