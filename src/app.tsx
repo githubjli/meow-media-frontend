@@ -1,3 +1,4 @@
+import HeaderSearchWithQr from '@/components/layout/HeaderSearchWithQr';
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import {
   listPublicCategories,
@@ -27,6 +28,7 @@ import {
   ReadOutlined,
   SettingOutlined,
   ShopOutlined,
+  ShoppingOutlined,
   SunOutlined,
   ThunderboltOutlined,
   UploadOutlined,
@@ -40,7 +42,6 @@ import {
   Button,
   ConfigProvider,
   Dropdown,
-  Input,
   message,
   Space,
   Tag,
@@ -58,7 +59,6 @@ const LANGUAGE_LABELS: Record<string, string> = {
   'my-MM': 'မြန်မာ',
 };
 const SUPPORTED_LOCALES = new Set(Object.keys(LANGUAGE_LABELS));
-
 const resolveSupportedLocale = (value?: string | null) => {
   const normalized = String(value || '').toLowerCase();
 
@@ -553,6 +553,24 @@ export const layout: RunTimeLayoutConfig = ({
                 icon: <PlaySquareOutlined />,
                 className: 'sidebar-menu-item sidebar-menu-item-category',
               },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.orders' }),
+                path: '/seller/orders',
+                icon: <ShoppingOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.payoutAddresses' }),
+                path: '/seller/payout-addresses',
+                icon: <DollarOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
+              {
+                name: intl.formatMessage({ id: 'menu.seller.refundRequests' }),
+                path: '/seller/refund-requests',
+                icon: <NotificationOutlined />,
+                className: 'sidebar-menu-item sidebar-menu-item-category',
+              },
             ],
           }
         : null;
@@ -597,26 +615,7 @@ export const layout: RunTimeLayoutConfig = ({
       </div>
     ),
     headerContentRender: () => (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          width: '100%',
-          padding: '0 20px',
-        }}
-      >
-        <Input.Search
-          placeholder={intl.formatMessage({ id: 'search.global.placeholder' })}
-          allowClear
-          style={{
-            maxWidth: 560,
-            width: '100%',
-            borderRadius: 12,
-          }}
-          size="middle"
-          onSearch={(value) => console.log('Searching for:', value)}
-        />
-      </div>
+      <HeaderSearchWithQr isDark={isDark} currentUser={currentUser} />
     ),
     rightContentRender: () => {
       const utilityButtonStyle = {
@@ -795,6 +794,30 @@ export const layout: RunTimeLayoutConfig = ({
                           label: intl.formatMessage({ id: 'nav.myStore' }),
                           onClick: () => history.push('/seller/store'),
                         } as const,
+                        {
+                          key: 'seller-orders',
+                          icon: <ShoppingOutlined />,
+                          label: intl.formatMessage({ id: 'nav.sellerOrders' }),
+                          onClick: () => history.push('/seller/orders'),
+                        } as const,
+                        {
+                          key: 'seller-payout-addresses',
+                          icon: <DollarOutlined />,
+                          label: intl.formatMessage({
+                            id: 'nav.sellerPayoutAddresses',
+                          }),
+                          onClick: () =>
+                            history.push('/seller/payout-addresses'),
+                        } as const,
+                        {
+                          key: 'seller-refund-requests',
+                          icon: <NotificationOutlined />,
+                          label: intl.formatMessage({
+                            id: 'nav.sellerRefundRequests',
+                          }),
+                          onClick: () =>
+                            history.push('/seller/refund-requests'),
+                        } as const,
                       ]
                     : []),
                   {
@@ -808,6 +831,18 @@ export const layout: RunTimeLayoutConfig = ({
                     icon: <DollarOutlined />,
                     label: intl.formatMessage({ id: 'nav.mySubscription' }),
                     onClick: () => history.push('/account/subscription'),
+                  },
+                  {
+                    key: 'my-shipping-addresses',
+                    icon: <HomeOutlined />,
+                    label: intl.formatMessage({ id: 'nav.shippingAddresses' }),
+                    onClick: () => history.push('/account/shipping-addresses'),
+                  },
+                  {
+                    key: 'my-product-orders',
+                    icon: <ShoppingOutlined />,
+                    label: intl.formatMessage({ id: 'nav.productOrders' }),
+                    onClick: () => history.push('/account/product-orders'),
                   },
                   {
                     type: 'divider',
@@ -864,6 +899,22 @@ export const layout: RunTimeLayoutConfig = ({
                           icon: <SettingOutlined />,
                           label: intl.formatMessage({ id: 'nav.allVideos' }),
                           onClick: () => history.push('/admin/videos'),
+                        },
+                        {
+                          key: 'admin-product-orders',
+                          icon: <ShoppingOutlined />,
+                          label: intl.formatMessage({
+                            id: 'admin.productOrders.title',
+                          }),
+                          onClick: () => history.push('/admin/product-orders'),
+                        },
+                        {
+                          key: 'admin-refund-requests',
+                          icon: <NotificationOutlined />,
+                          label: intl.formatMessage({
+                            id: 'admin.refundRequests.title',
+                          }),
+                          onClick: () => history.push('/admin/refund-requests'),
                         },
                       ] as const)
                     : []),
