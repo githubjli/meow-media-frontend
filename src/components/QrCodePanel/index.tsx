@@ -3,12 +3,23 @@ import { Empty, Image, Space, Typography } from 'antd';
 const { Text } = Typography;
 
 type QrCodePanelProps = {
-  payload?: string;
+  payload?: unknown;
   size?: number;
   emptyText?: string;
+  showPayloadText?: boolean;
 };
 
-const buildQrImageUrl = (payload: string, size: number) =>
+export const resolveQrPayload = (payload?: unknown) => {
+  if (typeof payload === 'string') return payload;
+  if (!payload) return '';
+  try {
+    return JSON.stringify(payload);
+  } catch (error) {
+    return String(payload);
+  }
+};
+
+export const buildQrImageUrl = (payload: string, size: number) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
     payload,
   )}`;
@@ -17,9 +28,11 @@ export default function QrCodePanel({
   payload,
   size = 220,
   emptyText = 'QR code is not available yet.',
+  showPayloadText = true,
 }: QrCodePanelProps) {
-  const hasPayload = Boolean(payload);
-  const previewUrl = hasPayload ? buildQrImageUrl(String(payload), size) : '';
+  const qrValue = resolveQrPayload(payload);
+  const hasPayload = Boolean(qrValue);
+  const previewUrl = hasPayload ? buildQrImageUrl(qrValue, size) : '';
 
   if (!previewUrl) {
     return (
@@ -42,7 +55,9 @@ export default function QrCodePanel({
         style={{ objectFit: 'contain', borderRadius: 10 }}
         preview={false}
       />
-      {hasPayload ? <Text type="secondary">{String(payload)}</Text> : null}
+      {hasPayload && showPayloadText ? (
+        <Text type="secondary">{qrValue}</Text>
+      ) : null}
     </Space>
   );
 }
