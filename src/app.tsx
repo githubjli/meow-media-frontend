@@ -595,7 +595,7 @@ const HeaderSearchWithQr = ({
       img.src = objectUrl;
     });
 
-    const maxSize = 1600;
+    const maxSize = 2400;
     const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
     const width = Math.max(1, Math.round(image.width * scale));
     const height = Math.max(1, Math.round(image.height * scale));
@@ -613,31 +613,75 @@ const HeaderSearchWithQr = ({
       throw new Error('image_decode_failed');
     }
 
+    const buildPaddedCanvas = (
+      baseCanvas: HTMLCanvasElement,
+      padding: number,
+      scaleFactor = 1,
+    ) => {
+      const padded = document.createElement('canvas');
+      const targetWidth = Math.max(
+        1,
+        Math.round(baseCanvas.width * scaleFactor),
+      );
+      const targetHeight = Math.max(
+        1,
+        Math.round(baseCanvas.height * scaleFactor),
+      );
+      padded.width = targetWidth + padding * 2;
+      padded.height = targetHeight + padding * 2;
+      const paddedContext = padded.getContext('2d');
+      if (!paddedContext) return null;
+      paddedContext.fillStyle = '#ffffff';
+      paddedContext.fillRect(0, 0, padded.width, padded.height);
+      paddedContext.drawImage(
+        baseCanvas,
+        padding,
+        padding,
+        targetWidth,
+        targetHeight,
+      );
+      return padded;
+    };
+
     const ZXing = await import(
       /* webpackChunkName: "zxing" */ '@zxing/browser'
     );
     const { BrowserMultiFormatReader } = ZXing;
-    const codeReader = new BrowserMultiFormatReader();
-    const scaledImage = await new Promise<HTMLImageElement>(
-      (resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          resolve(img);
-        };
-        img.onerror = () => {
-          reject(new Error('image_load_failed'));
-        };
-        img.src = canvas.toDataURL('image/png');
-      },
-    );
-    const result = await codeReader
-      .decodeFromImageElement(scaledImage)
-      .catch(() => null);
-    codeReader.reset?.();
-    if (!result?.getText?.()) {
-      throw new Error('qr_not_found');
+    const decodeCanvas = async (targetCanvas: HTMLCanvasElement) => {
+      const codeReader = new BrowserMultiFormatReader();
+      try {
+        const targetImage = await new Promise<HTMLImageElement>(
+          (resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+              resolve(img);
+            };
+            img.onerror = () => {
+              reject(new Error('image_load_failed'));
+            };
+            img.src = targetCanvas.toDataURL('image/png');
+          },
+        );
+        const result = await codeReader
+          .decodeFromImageElement(targetImage)
+          .catch(() => null);
+        return String(result?.getText?.() || '').trim();
+      } finally {
+        codeReader.reset?.();
+      }
+    };
+
+    const paddedCanvas = buildPaddedCanvas(canvas, 32);
+    const enlargedPaddedCanvas = buildPaddedCanvas(canvas, 32, 1.25);
+    const candidates = [canvas, paddedCanvas, enlargedPaddedCanvas].filter(
+      Boolean,
+    ) as HTMLCanvasElement[];
+
+    for (const candidate of candidates) {
+      const decoded = await decodeCanvas(candidate);
+      if (decoded) return decoded;
     }
-    return String(result.getText());
+    throw new Error('qr_not_found');
   };
 
   const onUploadImageFile = async (file?: File | null) => {

@@ -146,7 +146,42 @@ export default function AccountProductOrderDetailPage() {
     const fileName = `meow-payment-qr-${item?.order_no || 'order'}.png`;
     try {
       const response = await fetch(qrImageUrl);
-      const blob = await response.blob();
+      const sourceBlob = await response.blob();
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(sourceBlob);
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(img);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error('image_load_failed'));
+        };
+        img.src = objectUrl;
+      });
+
+      const quietZone = 32;
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width + quietZone * 2;
+      canvas.height = image.height + quietZone * 2;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        throw new Error('canvas_unavailable');
+      }
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, quietZone, quietZone, image.width, image.height);
+
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((value) => {
+          if (!value) {
+            reject(new Error('to_blob_failed'));
+            return;
+          }
+          resolve(value);
+        }, 'image/png');
+      });
       const file = new File([blob], fileName, { type: 'image/png' });
       const canUseShare =
         typeof navigator !== 'undefined' &&
