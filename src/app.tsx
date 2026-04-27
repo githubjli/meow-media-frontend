@@ -2,6 +2,7 @@ import { getAccountProfile } from '@/services/accountProfile';
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import {
   getProductOrderDetail as fetchProductOrderDetail,
+  resolvePaymentQr,
   payProductOrderWithWallet as submitProductOrderWalletPayment,
 } from '@/services/productOrders';
 import {
@@ -393,6 +394,56 @@ const HeaderSearchWithQr = ({
 
   const handleParsedQr = async (text: string) => {
     console.log('[QR_SCAN] raw text:', text);
+    const tryShortSignedPayload = () => {
+      try {
+        const parsed = JSON.parse(String(text || ''));
+        if (!parsed || typeof parsed !== 'object') return null;
+        const isShortProductQr =
+          parsed.v !== undefined &&
+          String(parsed.t || '') === 'product_payment' &&
+          String(parsed.o || '').trim() &&
+          String(parsed.s || '').trim();
+        if (!isShortProductQr) return null;
+        return parsed;
+      } catch (error) {
+        return null;
+      }
+    };
+    const shortPayload = tryShortSignedPayload();
+    if (shortPayload) {
+      try {
+        setLoadingOrder(true);
+        setParseError('');
+        const resolved = await resolvePaymentQr(text);
+        const normalizedTxid = String(resolved?.txid || '').trim();
+        setOpen(false);
+        stopCamera();
+        setQrText('');
+        setSelectedImageName('');
+        setConfirmError('');
+        setWalletPassword('');
+        setSubmittedTxid(normalizedTxid);
+        setConfirmOrder({
+          ...resolved,
+          product_title_snapshot: resolved?.product_title || '-',
+          order_no: resolved?.order_no || shortPayload.o,
+          status:
+            resolved?.status ||
+            (String(resolved?.payment_status || '').toLowerCase() === 'paid'
+              ? 'paid'
+              : 'pending_payment'),
+        });
+        setConfirmOpen(true);
+      } catch (error) {
+        setParseError(
+          intl.formatMessage({ id: 'qrScan.resolve.invalidExpired' }),
+        );
+      } finally {
+        setLoadingOrder(false);
+      }
+      return;
+    }
+
     const parsed = parseProductPaymentQrText(text);
     if (parsed.orderNo) {
       try {
@@ -610,7 +661,7 @@ const HeaderSearchWithQr = ({
           intl.formatMessage({ id: 'qrScan.upload.imageLoadFailed' }),
         );
       } else if (error?.message === 'qr_not_found') {
-        setParseError(intl.formatMessage({ id: 'qrScan.upload.noQrFound' }));
+        setParseError(intl.formatMessage({ id: 'qrScan.upload.noQrDetected' }));
       } else {
         setParseError(intl.formatMessage({ id: 'qrScan.upload.decodeFailed' }));
       }

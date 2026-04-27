@@ -1056,7 +1056,10 @@ export default {
   'qrScan.upload.unsupportedFileType': 'Please choose a supported image file.',
   'qrScan.upload.imageLoadFailed': 'Unable to load this image file.',
   'qrScan.upload.noQrFound': 'No valid payment QR code found in this image.',
+  'qrScan.upload.noQrDetected':
+    'No QR code was detected. Please upload a clearer image or crop the screenshot around the QR code.',
   'qrScan.upload.decodeFailed': 'No valid payment QR code found in this image.',
+  'qrScan.resolve.invalidExpired': 'This payment QR is invalid or expired.',
   'qrScan.loadOrderDetailFailed':
     'Unable to load product order detail from scanned QR.',
   'qrScan.copied': 'Copied.',

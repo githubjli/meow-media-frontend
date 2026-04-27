@@ -65,6 +65,14 @@ export async function payProductOrderWithWallet(
   });
 }
 
+export async function resolvePaymentQr(payload: string) {
+  return requestJson<any>('/api/payment-qr/resolve/', {
+    method: 'POST',
+    headers: await withAuth(),
+    body: JSON.stringify({ payload }),
+  });
+}
+
 export async function confirmProductOrderReceived(orderNo: string) {
   return requestJson<ProductOrder>(
     `/api/product-orders/${orderNo}/confirm-received/`,
