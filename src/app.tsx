@@ -1,4 +1,4 @@
-import { getAccountProfile } from '@/services/accountProfile';
+import HeaderSearchWithQr from '@/components/layout/HeaderSearchWithQr';
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import {
   getProductOrderDetail as fetchProductOrderDetail,
@@ -56,7 +56,6 @@ import {
   Button,
   ConfigProvider,
   Dropdown,
-  Input,
   message,
   Modal,
   Space,
@@ -75,12 +74,6 @@ const LANGUAGE_LABELS: Record<string, string> = {
   'my-MM': 'မြန်မာ',
 };
 const SUPPORTED_LOCALES = new Set(Object.keys(LANGUAGE_LABELS));
-const debugLog = (...args: any[]) => {
-  if (process.env.NODE_ENV !== 'development') return;
-  // eslint-disable-next-line no-console
-  console.log(...args);
-};
-
 const resolveSupportedLocale = (value?: string | null) => {
   const normalized = String(value || '').toLowerCase();
 
