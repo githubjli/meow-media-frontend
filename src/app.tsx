@@ -1,4 +1,5 @@
 import HeaderSearchWithQr from '@/components/layout/HeaderSearchWithQr';
+// Header QR payment scanner is implemented in src/components/layout/HeaderSearchWithQr.tsx
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import {
   getProductOrderDetail as fetchProductOrderDetail,
