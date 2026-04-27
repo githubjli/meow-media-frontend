@@ -139,3 +139,25 @@ export async function getSellerProductOrderDetail(orderNo: string) {
     headers: await withAuth(),
   });
 }
+
+export async function listAdminProductOrders(params?: {
+  status?: string;
+  search?: string;
+  page?: number;
+}) {
+  const payload = await requestJson<any>(
+    `/api/admin/product-orders/${buildQuery(params)}`,
+    {
+      method: 'GET',
+      headers: await withAuth(),
+    },
+  );
+  return normalizeList(payload);
+}
+
+export async function getAdminProductOrderDetail(orderNo: string) {
+  return requestJson<ProductOrder>(`/api/admin/product-orders/${orderNo}/`, {
+    method: 'GET',
+    headers: await withAuth(),
+  });
+}

@@ -565,9 +565,26 @@ export default function SellerOrderDetailPage() {
                       id: 'seller.orders.payoutAddressLabel',
                     })}
                   >
-                    <Text style={{ wordBreak: 'break-word' }}>
-                      {payoutSummary?.payout_address || '-'}
-                    </Text>
+                    {payoutSummary?.payout_address ? (
+                      <Space wrap>
+                        <Text style={{ wordBreak: 'break-word' }}>
+                          {payoutSummary?.payout_address || '-'}
+                        </Text>
+                        <Button
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() =>
+                            copyValue(
+                              String(payoutSummary?.payout_address || ''),
+                            )
+                          }
+                        >
+                          {intl.formatMessage({ id: 'common.copy' })}
+                        </Button>
+                      </Space>
+                    ) : (
+                      '-'
+                    )}
                   </Descriptions.Item>
                   <Descriptions.Item
                     label={intl.formatMessage({
