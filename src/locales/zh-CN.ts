@@ -999,6 +999,7 @@ export default {
 
   'qrScan.mode.camera': 'Camera scan',
   'qrScan.mode.manual': 'Paste manually',
+  'qrScan.mode.upload': 'Upload image',
   'qrScan.cameraHint': 'Use rear camera to scan payment QR.',
   'qrScan.cameraUnavailable':
     'Camera scan is unavailable in this browser, please paste QR text manually.',
@@ -1010,6 +1011,16 @@ export default {
   'qrScan.scannerInitFailed':
     'Camera opened, but QR scanner initialization failed.',
   'qrScan.emptyManual': 'Please paste QR text first.',
+  'qrScan.invalidPayload': 'No valid payment QR code found in this image.',
+  'qrScan.upload.hint': 'Choose a saved QR code image from your device.',
+  'qrScan.upload.choose': 'Choose image',
+  'qrScan.upload.selected': 'Selected image: {filename}',
+  'qrScan.upload.detected': 'QR code detected. Please confirm payment details.',
+  'qrScan.upload.pasteFallback': 'Paste QR text instead',
+  'qrScan.upload.unsupportedFileType': 'Please choose a supported image file.',
+  'qrScan.upload.imageLoadFailed': 'Unable to load this image file.',
+  'qrScan.upload.noQrFound': 'No valid payment QR code found in this image.',
+  'qrScan.upload.decodeFailed': 'No valid payment QR code found in this image.',
   'qrScan.loadOrderDetailFailed':
     'Unable to load product order detail from scanned QR.',
   'qrScan.copied': 'Copied.',

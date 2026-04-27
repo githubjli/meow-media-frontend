@@ -333,8 +333,10 @@ const HeaderSearchWithQr = ({
   const intl = getIntl();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [mode, setMode] = useState<'camera' | 'manual'>('camera');
+  const [mode, setMode] = useState<'camera' | 'upload' | 'manual'>('camera');
   const [qrText, setQrText] = useState('');
+  const [selectedImageName, setSelectedImageName] = useState('');
+  const [decodingImage, setDecodingImage] = useState(false);
   const [parseError, setParseError] = useState('');
   const [cameraError, setCameraError] = useState('');
   const [loadingOrder, setLoadingOrder] = useState(false);
@@ -346,6 +348,7 @@ const HeaderSearchWithQr = ({
   const [profileLinkedWalletId, setProfileLinkedWalletId] = useState('');
   const [hasFetchedProfileWallet, setHasFetchedProfileWallet] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const zxingControlsRef = useRef<any>(null);
   const zxingReaderRef = useRef<any>(null);
@@ -422,7 +425,11 @@ const HeaderSearchWithQr = ({
       return;
     }
 
-    setParseError(parsed.error || intl.formatMessage({ id: 'qrScan.failed' }));
+    setParseError(
+      parsed.error
+        ? intl.formatMessage({ id: 'qrScan.invalidPayload' })
+        : intl.formatMessage({ id: 'qrScan.failed' }),
+    );
   };
 
   const startCameraScan = async () => {
@@ -438,12 +445,12 @@ const HeaderSearchWithQr = ({
       setCameraError(
         intl.formatMessage({ id: 'qrScan.cameraInsecureContext' }),
       );
-      setMode('manual');
+      setMode('upload');
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
       setCameraError(intl.formatMessage({ id: 'qrScan.cameraUnsupported' }));
-      setMode('manual');
+      setMode('upload');
       return;
     }
 
@@ -467,8 +474,14 @@ const HeaderSearchWithQr = ({
         videoRef.current.srcObject = stream;
         await new Promise<void>((resolve) => {
           const element = videoRef.current;
-          if (!element) return resolve();
-          if (element.readyState >= 1) return resolve();
+          if (!element) {
+            resolve();
+            return;
+          }
+          if (element.readyState >= 1) {
+            resolve();
+            return;
+          }
           element.onloadedmetadata = () => resolve();
           setTimeout(() => resolve(), 500);
         });
@@ -501,7 +514,7 @@ const HeaderSearchWithQr = ({
           scanError?.message ||
             intl.formatMessage({ id: 'qrScan.scannerInitFailed' }),
         );
-        setMode('manual');
+        setMode('upload');
         stopCamera();
       }
     } catch (error: any) {
@@ -511,8 +524,98 @@ const HeaderSearchWithQr = ({
         error?.message,
       );
       setCameraError(mapGetUserMediaError(error));
-      setMode('manual');
+      setMode('upload');
       stopCamera();
+    }
+  };
+
+  const decodeQrFromImageFile = async (file: File) => {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(img);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('image_load_failed'));
+      };
+      img.src = objectUrl;
+    });
+
+    const maxSize = 1600;
+    const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('image_decode_failed');
+    }
+    context.drawImage(image, 0, 0, width, height);
+    const imageData = context.getImageData(0, 0, width, height);
+    if (!imageData?.data?.length) {
+      throw new Error('image_decode_failed');
+    }
+
+    const ZXing = await import(
+      /* webpackChunkName: "zxing" */ '@zxing/browser'
+    );
+    const { BrowserMultiFormatReader } = ZXing;
+    const codeReader = new BrowserMultiFormatReader();
+    const scaledImage = await new Promise<HTMLImageElement>(
+      (resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          resolve(img);
+        };
+        img.onerror = () => {
+          reject(new Error('image_load_failed'));
+        };
+        img.src = canvas.toDataURL('image/png');
+      },
+    );
+    const result = await codeReader
+      .decodeFromImageElement(scaledImage)
+      .catch(() => null);
+    codeReader.reset?.();
+    if (!result?.getText?.()) {
+      throw new Error('qr_not_found');
+    }
+    return String(result.getText());
+  };
+
+  const onUploadImageFile = async (file?: File | null) => {
+    if (!file) return;
+    if (!String(file.type || '').startsWith('image/')) {
+      setParseError(
+        intl.formatMessage({ id: 'qrScan.upload.unsupportedFileType' }),
+      );
+      return;
+    }
+    setParseError('');
+    setSelectedImageName(file.name);
+    setDecodingImage(true);
+    try {
+      const decoded = await decodeQrFromImageFile(file);
+      message.success(intl.formatMessage({ id: 'qrScan.upload.detected' }));
+      await handleParsedQr(decoded);
+    } catch (error: any) {
+      if (error?.message === 'image_load_failed') {
+        setParseError(
+          intl.formatMessage({ id: 'qrScan.upload.imageLoadFailed' }),
+        );
+      } else if (error?.message === 'qr_not_found') {
+        setParseError(intl.formatMessage({ id: 'qrScan.upload.noQrFound' }));
+      } else {
+        setParseError(intl.formatMessage({ id: 'qrScan.upload.decodeFailed' }));
+      }
+    } finally {
+      setDecodingImage(false);
     }
   };
 
@@ -532,8 +635,9 @@ const HeaderSearchWithQr = ({
     setParseError('');
     setCameraError('');
     setQrText('');
+    setSelectedImageName('');
     setOpen(true);
-    setMode('manual');
+    setMode('upload');
   };
 
   const onSubmitManualQr = async () => {
@@ -772,10 +876,10 @@ const HeaderSearchWithQr = ({
               {intl.formatMessage({ id: 'qrScan.mode.camera' })}
             </Button>
             <Button
-              type={mode === 'manual' ? 'primary' : 'default'}
-              onClick={() => setMode('manual')}
+              type={mode === 'upload' ? 'primary' : 'default'}
+              onClick={() => setMode('upload')}
             >
-              {intl.formatMessage({ id: 'qrScan.mode.manual' })}
+              {intl.formatMessage({ id: 'qrScan.mode.upload' })}
             </Button>
           </Space>
 
@@ -794,6 +898,45 @@ const HeaderSearchWithQr = ({
               {cameraError ? (
                 <Alert type="warning" showIcon message={cameraError} />
               ) : null}
+            </>
+          ) : mode === 'upload' ? (
+            <>
+              <Text type="secondary">
+                {intl.formatMessage({ id: 'qrScan.upload.hint' })}
+              </Text>
+              <input
+                ref={uploadInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  void onUploadImageFile(file);
+                  event.currentTarget.value = '';
+                }}
+              />
+              <Button
+                icon={<UploadOutlined />}
+                loading={decodingImage}
+                onClick={() => uploadInputRef.current?.click()}
+              >
+                {intl.formatMessage({ id: 'qrScan.upload.choose' })}
+              </Button>
+              {selectedImageName ? (
+                <Text type="secondary">
+                  {intl.formatMessage(
+                    { id: 'qrScan.upload.selected' },
+                    { filename: selectedImageName },
+                  )}
+                </Text>
+              ) : null}
+              <Button
+                type="link"
+                size="small"
+                onClick={() => setMode('manual')}
+              >
+                {intl.formatMessage({ id: 'qrScan.upload.pasteFallback' })}
+              </Button>
             </>
           ) : (
             <>
