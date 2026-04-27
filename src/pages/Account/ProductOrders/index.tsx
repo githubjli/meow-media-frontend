@@ -1,77 +1,13 @@
 import { listMyProductOrders } from '@/services/productOrders';
 import type { ProductOrder } from '@/types/productOrder';
+import {
+  getPaymentOrderStatusLabel,
+  getProductOrderStatusLabel,
+} from '@/utils/productOrderStatus';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel } from '@umijs/max';
 import { Alert, Button, Card, Empty, Space, Spin, Table, Tag } from 'antd';
 import { useEffect, useState } from 'react';
-
-const resolveStatusLabel = (intl: any, row: ProductOrder) => {
-  const status = String(row.status || '').toLowerCase();
-  const cancelReason = String(row.cancel_reason || '').toLowerCase();
-  if (status === 'cancelled' && cancelReason === 'payment_timeout') {
-    return intl.formatMessage({
-      id: 'account.productOrders.status.paymentTimeout',
-    });
-  }
-  if (status === 'pending_payment') {
-    return intl.formatMessage({
-      id: 'account.productOrders.status.pendingPayment',
-    });
-  }
-  if (status === 'paid') {
-    return intl.formatMessage({ id: 'account.productOrders.status.paid' });
-  }
-  if (status === 'shipping') {
-    return intl.formatMessage({ id: 'account.productOrders.status.shipping' });
-  }
-  if (status === 'completed') {
-    return intl.formatMessage({ id: 'account.productOrders.status.completed' });
-  }
-  if (status === 'settled') {
-    return intl.formatMessage({ id: 'account.productOrders.status.settled' });
-  }
-  if (status === 'cancelled') {
-    return intl.formatMessage({ id: 'account.productOrders.status.cancelled' });
-  }
-  return String(row.status || '-').toUpperCase();
-};
-
-const resolveDerivedPaymentStatus = (intl: any, row: ProductOrder) => {
-  const paymentStatus = String(row.payment_status || '').toLowerCase();
-  const hasTxid = Boolean(String(row.txid || '').trim());
-
-  if (paymentStatus === 'paid') {
-    return intl.formatMessage({ id: 'account.productOrders.payment.paid' });
-  }
-  if (paymentStatus === 'pending' && hasTxid) {
-    return intl.formatMessage({
-      id: 'account.productOrders.payment.submittedConfirming',
-    });
-  }
-  if (paymentStatus === 'pending') {
-    return intl.formatMessage({
-      id: 'account.productOrders.status.pendingPayment',
-    });
-  }
-  if (paymentStatus === 'underpaid') {
-    return intl.formatMessage({
-      id: 'account.productOrders.payment.underpaid',
-    });
-  }
-  if (paymentStatus === 'overpaid') {
-    return intl.formatMessage({ id: 'account.productOrders.payment.overpaid' });
-  }
-  if (paymentStatus === 'failed') {
-    return intl.formatMessage({ id: 'account.productOrders.payment.failed' });
-  }
-  if (paymentStatus === 'expired') {
-    return intl.formatMessage({ id: 'account.productOrders.paymentExpired' });
-  }
-  if (paymentStatus === 'cancelled') {
-    return intl.formatMessage({ id: 'account.productOrders.status.cancelled' });
-  }
-  return String(row.payment_status || '-').toUpperCase();
-};
 
 export default function AccountProductOrdersPage() {
   const intl = useIntl();
@@ -177,14 +113,22 @@ export default function AccountProductOrdersPage() {
                 title: intl.formatMessage({
                   id: 'account.productOrders.status',
                 }),
-                render: (_, row) => <Tag>{resolveStatusLabel(intl, row)}</Tag>,
+                render: (_, row) => (
+                  <Tag>{getProductOrderStatusLabel(row.status, intl)}</Tag>
+                ),
               },
               {
                 title: intl.formatMessage({
                   id: 'account.productOrders.paymentStatus',
                 }),
                 render: (_, row) => (
-                  <Tag>{resolveDerivedPaymentStatus(intl, row)}</Tag>
+                  <Tag>
+                    {getPaymentOrderStatusLabel(
+                      row.payment_status,
+                      row.txid,
+                      intl,
+                    )}
+                  </Tag>
                 ),
               },
               {

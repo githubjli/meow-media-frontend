@@ -15,6 +15,7 @@ import {
 } from '@/services/refundRequests';
 import type { ProductOrder } from '@/types/productOrder';
 import type { RefundRequest } from '@/types/refundRequest';
+import { getPaymentOrderStatusLabel } from '@/utils/productOrderStatus';
 import {
   CheckCircleOutlined,
   CopyOutlined,
@@ -361,28 +362,11 @@ export default function AccountProductOrderDetailPage() {
   const effectiveTxid = String(
     item?.payment_order?.txid || item?.txid || submittedTxid || '',
   );
-  const paymentOrderStatusLabel =
-    paymentOrderStatus === 'paid'
-      ? intl.formatMessage({ id: 'account.productOrders.status.paid' })
-      : paymentOrderStatus === 'pending' && effectiveTxid
-      ? intl.formatMessage({
-          id: 'account.productOrders.payment.submittedConfirming',
-        })
-      : paymentOrderStatus === 'pending'
-      ? intl.formatMessage({
-          id: 'account.productOrders.status.pendingPayment',
-        })
-      : paymentOrderStatus === 'failed'
-      ? intl.formatMessage({ id: 'account.productOrders.payment.failed' })
-      : paymentOrderStatus === 'expired'
-      ? intl.formatMessage({ id: 'account.productOrders.paymentExpired' })
-      : paymentOrderStatus === 'underpaid'
-      ? intl.formatMessage({ id: 'account.productOrders.payment.underpaid' })
-      : paymentOrderStatus === 'overpaid'
-      ? intl.formatMessage({ id: 'account.productOrders.payment.overpaid' })
-      : paymentOrderStatus === 'cancelled'
-      ? intl.formatMessage({ id: 'account.productOrders.status.cancelled' })
-      : '-';
+  const paymentOrderStatusLabel = getPaymentOrderStatusLabel(
+    paymentOrderStatus,
+    effectiveTxid,
+    intl,
+  );
   const isPaymentTimeoutCancelled =
     normalizedStatus === 'cancelled' &&
     item?.cancel_reason === 'payment_timeout';

@@ -3,6 +3,11 @@ import {
   shipSellerProductOrder,
 } from '@/services/productOrders';
 import type { ProductOrder } from '@/types/productOrder';
+import {
+  getPaymentOrderStatusLabel,
+  getProductOrderStatusLabel,
+  getSellerPayoutStatusLabel,
+} from '@/utils/productOrderStatus';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel } from '@umijs/max';
 import {
@@ -52,7 +57,8 @@ export default function SellerOrdersPage() {
       })
       .catch((error: any) => {
         setErrorMessage(
-          error?.message || intl.formatMessage({ id: 'seller.orders.error.load' }),
+          error?.message ||
+            intl.formatMessage({ id: 'seller.orders.error.load' }),
         );
       })
       .finally(() => setLoading(false));
@@ -60,7 +66,9 @@ export default function SellerOrdersPage() {
 
   useEffect(() => {
     if (!initialState?.authLoading && !isLoggedIn) {
-      history.replace(`/login?redirect=${encodeURIComponent('/seller/orders')}`);
+      history.replace(
+        `/login?redirect=${encodeURIComponent('/seller/orders')}`,
+      );
       return;
     }
     if (!isLoggedIn) return;
@@ -110,7 +118,9 @@ export default function SellerOrdersPage() {
 
       <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 12 }}>
         <Space wrap>
-          <span>{intl.formatMessage({ id: 'seller.orders.filter.status' })}</span>
+          <span>
+            {intl.formatMessage({ id: 'seller.orders.filter.status' })}
+          </span>
           <Select
             allowClear
             style={{ width: 220 }}
@@ -128,19 +138,27 @@ export default function SellerOrdersPage() {
                 value: 'paid',
               },
               {
-                label: intl.formatMessage({ id: 'seller.orders.status.shipping' }),
+                label: intl.formatMessage({
+                  id: 'seller.orders.status.shipping',
+                }),
                 value: 'shipping',
               },
               {
-                label: intl.formatMessage({ id: 'seller.orders.status.completed' }),
+                label: intl.formatMessage({
+                  id: 'seller.orders.status.completed',
+                }),
                 value: 'completed',
               },
               {
-                label: intl.formatMessage({ id: 'seller.orders.status.settled' }),
+                label: intl.formatMessage({
+                  id: 'seller.orders.status.settled',
+                }),
                 value: 'settled',
               },
               {
-                label: intl.formatMessage({ id: 'seller.orders.status.cancelled' }),
+                label: intl.formatMessage({
+                  id: 'seller.orders.status.cancelled',
+                }),
                 value: 'cancelled',
               },
             ]}
@@ -152,7 +170,9 @@ export default function SellerOrdersPage() {
             style={{ width: 260 }}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder={intl.formatMessage({ id: 'seller.orders.filter.search' })}
+            placeholder={intl.formatMessage({
+              id: 'seller.orders.filter.search',
+            })}
             onPressEnter={loadOrders}
           />
           <Button onClick={loadOrders}>
@@ -162,7 +182,12 @@ export default function SellerOrdersPage() {
       </Card>
 
       {errorMessage ? (
-        <Alert type="error" showIcon message={errorMessage} style={{ marginBottom: 12 }} />
+        <Alert
+          type="error"
+          showIcon
+          message={errorMessage}
+          style={{ marginBottom: 12 }}
+        />
       ) : null}
 
       <Card variant="borderless" style={{ borderRadius: 20, marginBottom: 12 }}>
@@ -176,11 +201,15 @@ export default function SellerOrdersPage() {
           })}
           columns={[
             {
-              title: intl.formatMessage({ id: 'account.productOrders.orderNo' }),
+              title: intl.formatMessage({
+                id: 'account.productOrders.orderNo',
+              }),
               dataIndex: 'order_no',
             },
             {
-              title: intl.formatMessage({ id: 'account.productOrders.product' }),
+              title: intl.formatMessage({
+                id: 'account.productOrders.product',
+              }),
               dataIndex: 'product_title_snapshot',
             },
             {
@@ -196,27 +225,43 @@ export default function SellerOrdersPage() {
               render: (_, row) =>
                 `${row.total_amount} ${
                   row.currency ||
-                  intl.formatMessage({ id: 'account.productOrders.currency.thbLtt' })
+                  intl.formatMessage({
+                    id: 'account.productOrders.currency.thbLtt',
+                  })
                 }`,
             },
             {
               title: intl.formatMessage({ id: 'account.productOrders.status' }),
-              render: (_, row) => <Tag>{String(row.status || '-').toUpperCase()}</Tag>,
+              render: (_, row) => (
+                <Tag>{getProductOrderStatusLabel(row.status, intl)}</Tag>
+              ),
             },
             {
               title: intl.formatMessage({
                 id: 'account.productOrders.paymentStatus',
               }),
               render: (_, row) => (
-                <Tag>{String(row.payment_status || '-').toUpperCase()}</Tag>
+                <Tag>
+                  {getPaymentOrderStatusLabel(
+                    row.payment_status,
+                    row.txid,
+                    intl,
+                  )}
+                </Tag>
               ),
             },
             {
               title: intl.formatMessage({ id: 'payout.status' }),
-              render: (_, row) => <Tag>{String(row.payout?.status || '-').toUpperCase()}</Tag>,
+              render: (_, row) => (
+                <Tag>
+                  {getSellerPayoutStatusLabel(row.payout?.status, intl)}
+                </Tag>
+              ),
             },
             {
-              title: intl.formatMessage({ id: 'account.productOrders.createdAt' }),
+              title: intl.formatMessage({
+                id: 'account.productOrders.createdAt',
+              }),
               dataIndex: 'created_at',
             },
           ]}
@@ -238,7 +283,9 @@ export default function SellerOrdersPage() {
             <Select
               showSearch
               options={paidOrders.map((entry) => ({
-                label: `${entry.order_no} · ${entry.product_title_snapshot || '-'}`,
+                label: `${entry.order_no} · ${
+                  entry.product_title_snapshot || '-'
+                }`,
                 value: entry.order_no,
               }))}
               placeholder={intl.formatMessage({
@@ -257,7 +304,9 @@ export default function SellerOrdersPage() {
           </Form.Item>
           <Form.Item
             name="tracking_number"
-            label={intl.formatMessage({ id: 'account.productOrders.trackingNumber' })}
+            label={intl.formatMessage({
+              id: 'account.productOrders.trackingNumber',
+            })}
             rules={[{ required: true }]}
           >
             <Input />
@@ -272,7 +321,9 @@ export default function SellerOrdersPage() {
           </Form.Item>
           <Form.Item
             name="shipped_note"
-            label={intl.formatMessage({ id: 'account.productOrders.shipment.note' })}
+            label={intl.formatMessage({
+              id: 'account.productOrders.shipment.note',
+            })}
           >
             <Input.TextArea rows={3} />
           </Form.Item>

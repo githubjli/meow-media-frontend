@@ -4,6 +4,11 @@ import {
   markProductOrderSettled,
 } from '@/services/productOrders';
 import type { ProductOrder } from '@/types/productOrder';
+import {
+  getPaymentOrderStatusLabel,
+  getProductOrderStatusLabel,
+  getSellerPayoutStatusLabel,
+} from '@/utils/productOrderStatus';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel } from '@umijs/max';
 import {
@@ -44,11 +49,6 @@ export default function AdminProductOrdersPage() {
         initialState.currentUser.role === 'admin'),
   );
 
-  if (!isAdmin) {
-    history.replace('/home');
-    return null;
-  }
-
   const loadOrders = () => {
     setLoading(true);
     listAdminProductOrders()
@@ -63,8 +63,12 @@ export default function AdminProductOrdersPage() {
   };
 
   useEffect(() => {
+    if (!isAdmin) {
+      history.replace('/home');
+      return;
+    }
     loadOrders();
-  }, []);
+  }, [isAdmin]);
 
   const openDetail = async (orderNo: string) => {
     setDetailOpen(true);
@@ -143,15 +147,16 @@ export default function AdminProductOrdersPage() {
         title: intl.formatMessage({ id: 'account.productOrders.status' }),
         key: 'status',
         render: (_: any, record: ProductOrder) => (
-          <Tag>{String(record.status || '-').toUpperCase()}</Tag>
+          <Tag>{getProductOrderStatusLabel(record.status, intl)}</Tag>
         ),
       },
       {
         title: intl.formatMessage({ id: 'admin.productOrders.payoutStatus' }),
         key: 'payout_status',
         render: (_: any, record: ProductOrder) =>
-          String(
-            record?.seller_payout?.status || record?.payout?.status || '-',
+          getSellerPayoutStatusLabel(
+            record?.seller_payout?.status || record?.payout?.status,
+            intl,
           ),
       },
       {
@@ -209,6 +214,8 @@ export default function AdminProductOrdersPage() {
       selectedOrder?.payment_status ||
       '-',
   );
+
+  if (!isAdmin) return null;
 
   return (
     <PageContainer title={false}>
@@ -288,21 +295,31 @@ export default function AdminProductOrdersPage() {
                   id: 'admin.productOrders.productOrderStatus',
                 })}
               >
-                <Tag>{String(selectedOrder.status || '-').toUpperCase()}</Tag>
+                <Tag>
+                  {getProductOrderStatusLabel(selectedOrder.status, intl)}
+                </Tag>
               </Descriptions.Item>
               <Descriptions.Item
                 label={intl.formatMessage({
                   id: 'admin.productOrders.paymentOrderStatus',
                 })}
               >
-                <Tag>{paymentOrderStatus.toUpperCase()}</Tag>
+                <Tag>
+                  {getPaymentOrderStatusLabel(
+                    paymentOrderStatus,
+                    selectedOrder?.txid,
+                    intl,
+                  )}
+                </Tag>
               </Descriptions.Item>
               <Descriptions.Item
                 label={intl.formatMessage({
                   id: 'admin.productOrders.payoutStatus',
                 })}
               >
-                <Tag>{String(payoutSummary?.status || '-').toUpperCase()}</Tag>
+                <Tag>
+                  {getSellerPayoutStatusLabel(payoutSummary?.status, intl)}
+                </Tag>
               </Descriptions.Item>
             </Descriptions>
 

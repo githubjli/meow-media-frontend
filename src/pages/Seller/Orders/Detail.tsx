@@ -3,6 +3,7 @@ import {
   shipSellerProductOrder,
 } from '@/services/productOrders';
 import type { ProductOrder } from '@/types/productOrder';
+import { getSellerPayoutStatusLabel } from '@/utils/productOrderStatus';
 import { CopyOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useIntl, useModel, useParams } from '@umijs/max';
@@ -126,7 +127,6 @@ export default function SellerOrderDetailPage() {
   );
 
   const normalizedStatus = String(item?.status || '').toLowerCase();
-  const canShip = normalizedStatus === 'paid';
 
   const onShip = async () => {
     if (!item?.order_no) return;
@@ -522,7 +522,7 @@ export default function SellerOrderDetailPage() {
                       id: 'seller.orders.payoutStatus',
                     })}
                   >
-                    {String(payoutSummary?.status || '-').toUpperCase()}
+                    {getSellerPayoutStatusLabel(payoutSummary?.status, intl)}
                   </Descriptions.Item>
                   <Descriptions.Item
                     label={intl.formatMessage({

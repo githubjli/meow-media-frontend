@@ -924,6 +924,7 @@ export default {
 
   'account.productOrders.status.pendingPayment': 'Pending Payment',
   'account.productOrders.status.paid': 'Paid',
+  'account.productOrders.status.paidReadyToShip': 'Paid / Ready to Ship',
   'account.productOrders.status.shipping': 'Shipping',
   'account.productOrders.status.completed': 'Completed',
   'account.productOrders.status.settled': 'Settled',
@@ -983,6 +984,7 @@ export default {
   'seller.orders.payoutFailureNote': 'Payout Failure Note',
   'seller.orders.payout.waitingSettlement': 'Waiting for platform settlement.',
   'seller.orders.payout.settled': 'Settled.',
+  'seller.orders.payout.failed': 'Failed',
   'seller.orders.payout.noRecord': 'No payout record yet.',
   'seller.orders.paymentSummary': 'Payment Summary',
   'seller.orders.paymentOrder': 'Payment Order',
