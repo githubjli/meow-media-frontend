@@ -9,7 +9,7 @@ type QrCodePanelProps = {
   showPayloadText?: boolean;
 };
 
-const resolveQrPayload = (payload?: unknown) => {
+export const resolveQrPayload = (payload?: unknown) => {
   if (typeof payload === 'string') return payload;
   if (!payload) return '';
   try {
@@ -19,7 +19,7 @@ const resolveQrPayload = (payload?: unknown) => {
   }
 };
 
-const buildQrImageUrl = (payload: string, size: number) =>
+export const buildQrImageUrl = (payload: string, size: number) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
     payload,
   )}`;

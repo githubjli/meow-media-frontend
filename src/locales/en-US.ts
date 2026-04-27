@@ -856,6 +856,12 @@ export default {
   'account.productOrders.copyAddress': 'Copy address',
   'account.productOrders.copyAmount': 'Copy amount',
   'account.productOrders.copyQrPayload': 'Copy QR payload',
+  'account.productOrders.saveQrImage': 'Save QR image',
+  'account.productOrders.saveQrImageSuccess':
+    'QR image saved/download started.',
+  'account.productOrders.saveQrImageFailed': 'Unable to save QR image.',
+  'account.productOrders.saveQrImageFallback':
+    'Unable to save QR image directly. Please use your browser save/share options (for example, long-press the image on mobile).',
   'account.productOrders.qrPayload.show': 'Show QR payload',
   'account.productOrders.qrPayload.hide': 'Hide QR payload',
   'account.productOrders.payToAddress': 'Pay to Address',

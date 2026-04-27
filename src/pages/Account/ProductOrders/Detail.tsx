@@ -1,4 +1,8 @@
-import QrCodePanel from '@/components/QrCodePanel';
+import {
+  default as QrCodePanel,
+  buildQrImageUrl,
+  resolveQrPayload,
+} from '@/components/QrCodePanel';
 import {
   confirmProductOrderReceived,
   getProductOrderDetail,
@@ -86,6 +90,11 @@ export default function AccountProductOrderDetailPage() {
     }
   }, [paymentQrPayload]);
   const paymentQrSize = screens.md ? 240 : 200;
+  const qrImageUrl = useMemo(() => {
+    const value = resolveQrPayload(paymentQrPayload);
+    if (!value) return '';
+    return buildQrImageUrl(value, paymentQrSize);
+  }, [paymentQrPayload, paymentQrSize]);
 
   const loadDetail = async () => {
     if (!params.order_no) return;
@@ -125,6 +134,51 @@ export default function AccountProductOrderDetailPage() {
     if (!value) return;
     await navigator.clipboard.writeText(String(value));
     message.success(intl.formatMessage({ id: 'common.copied' }));
+  };
+
+  const onSaveQrImage = async () => {
+    if (!qrImageUrl) {
+      message.error(
+        intl.formatMessage({ id: 'account.productOrders.saveQrImageFailed' }),
+      );
+      return;
+    }
+    const fileName = `meow-payment-qr-${item?.order_no || 'order'}.png`;
+    try {
+      const response = await fetch(qrImageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], fileName, { type: 'image/png' });
+      const canUseShare =
+        typeof navigator !== 'undefined' &&
+        typeof navigator.share === 'function' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] });
+      if (canUseShare) {
+        await navigator.share({ files: [file], title: fileName });
+        message.success(
+          intl.formatMessage({
+            id: 'account.productOrders.saveQrImageSuccess',
+          }),
+        );
+        return;
+      }
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = fileName;
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      message.success(
+        intl.formatMessage({ id: 'account.productOrders.saveQrImageSuccess' }),
+      );
+    } catch (error) {
+      message.error(
+        intl.formatMessage({ id: 'account.productOrders.saveQrImageFallback' }),
+      );
+    }
   };
 
   const onConfirmReceived = async () => {
@@ -217,7 +271,10 @@ export default function AccountProductOrderDetailPage() {
   };
 
   const onPayWithLinkedWallet = async () => {
-    if (!item?.order_no || effectiveTxid) return;
+    const currentTxid = String(
+      item?.payment_order?.txid || item?.txid || submittedTxid || '',
+    );
+    if (!item?.order_no || currentTxid) return;
     const values = await walletPayForm.validateFields();
     setWalletPayLoading(true);
     try {
@@ -441,6 +498,15 @@ export default function AccountProductOrderDetailPage() {
                   >
                     {intl.formatMessage({
                       id: 'account.productOrders.copyQrPayload',
+                    })}
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={onSaveQrImage}
+                    disabled={!qrImageUrl}
+                  >
+                    {intl.formatMessage({
+                      id: 'account.productOrders.saveQrImage',
                     })}
                   </Button>
                 </Space>
