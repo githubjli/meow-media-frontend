@@ -147,7 +147,28 @@ export default defineConfig({
     { path: '/live/create', component: './Live/Create', hideInMenu: true },
     { path: '/live/mine', component: './Live', hideInMenu: true },
     { path: '/live/:id', component: './LiveRoom', hideInMenu: true },
-    { path: '/drama', component: './Drama', hideInMenu: true },
+    {
+      name: 'Drama',
+      path: '/drama',
+      icon: 'PlaySquareOutlined',
+      component: './Drama',
+    },
+    { path: '/creator/dramas', component: './Creator/Drama', hideInMenu: true },
+    {
+      path: '/creator/dramas/new',
+      component: './Creator/Drama/Edit',
+      hideInMenu: true,
+    },
+    {
+      path: '/creator/dramas/:id/edit',
+      component: './Creator/Drama/Edit',
+      hideInMenu: true,
+    },
+    {
+      path: '/creator/dramas/:id/episodes',
+      component: './Creator/Drama/Episodes',
+      hideInMenu: true,
+    },
     { path: '/drama/:id', component: './Drama/Detail', hideInMenu: true },
     {
       path: '/drama/:seriesId/episodes/:episodeId',
