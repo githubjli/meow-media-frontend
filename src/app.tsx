@@ -441,7 +441,7 @@ export const layout: RunTimeLayoutConfig = ({
         stableItems.map((item) => [item.path || '', item]),
       );
 
-      const primaryItems = ['/home', '/browse'].map((path) => ({
+      const primaryItems = ['/home'].map((path) => ({
         ...(stableItemByPath.get(path) || {}),
         path,
         name:
