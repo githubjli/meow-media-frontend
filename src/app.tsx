@@ -238,6 +238,8 @@ const resolveMenuSelectedPath = (pathname: string, search: string) => {
   }
   if (pathname === '/live') return '/live';
   if (pathname.startsWith('/live/')) return '/live';
+  if (pathname === '/drama') return '/drama';
+  if (pathname.startsWith('/drama/')) return '/drama';
   if (pathname.startsWith('/seller/store')) return '/seller/store';
   if (pathname.startsWith('/seller/products')) return '/seller/products';
   return pathname;
@@ -424,6 +426,7 @@ export const layout: RunTimeLayoutConfig = ({
         ['/browse', <CompassOutlined key="icon-browse" />],
         ['/news', <NotificationOutlined key="icon-news" />],
         ['/live', <ThunderboltOutlined key="icon-live" />],
+        ['/drama', <PlaySquareOutlined key="icon-drama" />],
         ['/admin/videos', <SettingOutlined key="icon-admin-videos" />],
       ]);
       const stableItems = menuData.filter(
@@ -543,6 +546,14 @@ export const layout: RunTimeLayoutConfig = ({
         })),
       };
 
+      const dramaItem = {
+        ...(stableItemByPath.get('/drama') || {}),
+        path: '/drama',
+        name: intl.formatMessage({ id: 'menu.drama' }),
+        icon: stableItemMap.get('/drama'),
+        className: 'sidebar-menu-item sidebar-menu-item-primary',
+      };
+
       const sellerItem = isLoggedIn
         ? {
             name: intl.formatMessage({ id: 'menu.seller' }),
@@ -588,6 +599,7 @@ export const layout: RunTimeLayoutConfig = ({
         ...primaryItems,
         newsItem,
         liveItem,
+        dramaItem,
         ...adminItems,
         ...(sellerItem ? [sellerItem] : []),
         { type: 'divider', key: 'sidebar-divider-primary' } as any,

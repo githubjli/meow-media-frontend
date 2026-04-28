@@ -147,6 +147,13 @@ export default defineConfig({
     { path: '/live/create', component: './Live/Create', hideInMenu: true },
     { path: '/live/mine', component: './Live', hideInMenu: true },
     { path: '/live/:id', component: './LiveRoom', hideInMenu: true },
+    { path: '/drama', component: './Drama', hideInMenu: true },
+    { path: '/drama/:id', component: './Drama/Detail', hideInMenu: true },
+    {
+      path: '/drama/:seriesId/episodes/:episodeId',
+      component: './Drama/Watch',
+      hideInMenu: true,
+    },
     { path: '/news', redirect: '/news/channel', hideInMenu: true },
     { path: '/news/live', component: './Live', hideInMenu: true },
     { path: '/news/channel', component: './Channel/News', hideInMenu: true },
