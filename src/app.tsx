@@ -441,18 +441,19 @@ export const layout: RunTimeLayoutConfig = ({
         stableItems.map((item) => [item.path || '', item]),
       );
 
-      const primaryItems = ['/home'].map((path) => ({
-        ...(stableItemByPath.get(path) || {}),
-        path,
-        name:
-          path === '/home'
-            ? intl.formatMessage({ id: 'menu.home' })
-            : path === '/browse'
-            ? intl.formatMessage({ id: 'menu.browse' })
-            : undefined,
-        icon: stableItemMap.get(path),
+      const homeItem = {
+        ...(stableItemByPath.get('/home') || {}),
+        path: '/home',
+        name: intl.formatMessage({ id: 'menu.home' }),
+        icon: stableItemMap.get('/home'),
         className: 'sidebar-menu-item sidebar-menu-item-primary',
-      }));
+      };
+      const browseItem = {
+        path: '/browse',
+        name: intl.formatMessage({ id: 'menu.browse' }),
+        icon: <CompassOutlined />,
+        className: 'sidebar-menu-item sidebar-menu-item-primary',
+      };
 
       const adminItems = isAdmin
         ? [
@@ -608,7 +609,8 @@ export const layout: RunTimeLayoutConfig = ({
         : null;
 
       return [
-        ...primaryItems,
+        homeItem,
+        browseItem,
         newsItem,
         liveItem,
         videosItem,
