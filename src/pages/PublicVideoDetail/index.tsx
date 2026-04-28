@@ -334,6 +334,8 @@ export default function PublicVideoDetailPage() {
   }, [video?.id, intl]);
 
   const isAuthenticated = Boolean(initialState?.currentUser?.email);
+  const isMembershipLocked = Boolean(video?.is_locked || video?.can_watch === false);
+  const canPlayVideo = Boolean(video?.file_url) && !isMembershipLocked;
   const viewsLabel =
     video?.views || video?.view_count
       ? String(video.views || video.view_count)
@@ -746,7 +748,7 @@ export default function PublicVideoDetailPage() {
                   variant="borderless"
                   style={{ borderRadius: 18, overflow: 'hidden' }}
                 >
-                  {video.file_url ? (
+                  {canPlayVideo ? (
                     <video
                       controls
                       style={{
@@ -756,8 +758,39 @@ export default function PublicVideoDetailPage() {
                         aspectRatio: '16/9',
                         display: 'block',
                       }}
-                      src={video.file_url}
+                      src={video?.file_url}
                     />
+                  ) : isMembershipLocked ? (
+                    <Card
+                      size="small"
+                      style={{
+                        borderRadius: 16,
+                        textAlign: 'center',
+                        minHeight: 320,
+                        display: 'grid',
+                        placeItems: 'center',
+                      }}
+                    >
+                      <Space direction="vertical" size={12}>
+                        <Tag color="gold" style={{ marginInline: 'auto' }}>
+                          {intl.formatMessage({ id: 'video.access.membersOnly' })}
+                        </Tag>
+                        <Text>
+                          {intl.formatMessage({
+                            id: 'video.membership.lockedMessage',
+                          })}
+                        </Text>
+                        <Button
+                          type="primary"
+                          loading={subscribeSubmitting}
+                          onClick={() => history.push('/account/subscription')}
+                        >
+                          {intl.formatMessage({
+                            id: 'video.membership.subscribeToUnlock',
+                          })}
+                        </Button>
+                      </Space>
+                    </Card>
                   ) : (
                     <Card
                       size="small"
