@@ -148,6 +148,12 @@ export default defineConfig({
     { path: '/live/mine', component: './Live', hideInMenu: true },
     { path: '/live/:id', component: './LiveRoom', hideInMenu: true },
     {
+      name: 'Videos',
+      path: '/videos',
+      icon: 'AppstoreOutlined',
+      component: './Browse',
+    },
+    {
       name: 'Drama',
       path: '/drama',
       icon: 'PlaySquareOutlined',
@@ -189,6 +195,7 @@ export default defineConfig({
       path: '/browse',
       icon: 'AppstoreOutlined',
       component: './Browse',
+      hideInMenu: true,
     },
     {
       name: 'Live',

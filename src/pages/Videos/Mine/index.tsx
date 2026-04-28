@@ -104,6 +104,8 @@ export default function MyVideosPage() {
       description: video.description || '',
       category: video.category || undefined,
       visibility: video.visibility || 'public',
+      access_type: video.access_type || 'free',
+      preview_seconds: video.preview_seconds || 0,
     });
   };
 
@@ -112,6 +114,8 @@ export default function MyVideosPage() {
     description?: string;
     category?: string;
     visibility: 'public' | 'private';
+    access_type: 'free' | 'membership';
+    preview_seconds?: number;
   }) => {
     if (!editingVideo) {
       return;
@@ -326,6 +330,14 @@ export default function MyVideosPage() {
                                   id: 'video.visibility.public',
                                 })}
                           </Tag>
+                          <Tag color={video.access_type === 'membership' ? 'gold' : 'default'}>
+                            {video.access_type === 'membership'
+                              ? intl.formatMessage({ id: 'video.access.membersOnly' })
+                              : intl.formatMessage({ id: 'video.access.free' })}
+                          </Tag>
+                          {video.is_locked ? (
+                            <Tag>{intl.formatMessage({ id: 'video.access.locked' })}</Tag>
+                          ) : null}
                         </Space>
                         <Text
                           type="secondary"
@@ -388,6 +400,35 @@ export default function MyVideosPage() {
               placeholder="Select a category"
               options={categoryOptions}
             />
+          </Form.Item>
+          <Form.Item
+            label={intl.formatMessage({ id: 'video.access.label' })}
+            name="access_type"
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({ id: 'video.access.required' }),
+              },
+            ]}
+          >
+            <Select
+              options={[
+                {
+                  value: 'free',
+                  label: intl.formatMessage({ id: 'video.access.free' }),
+                },
+                {
+                  value: 'membership',
+                  label: intl.formatMessage({ id: 'video.access.membersOnly' }),
+                },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            label={intl.formatMessage({ id: 'video.access.previewSeconds' })}
+            name="preview_seconds"
+          >
+            <Input type="number" min={0} />
           </Form.Item>
           <Form.Item
             label={intl.formatMessage({ id: 'video.visibility.label' })}

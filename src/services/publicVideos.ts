@@ -11,6 +11,11 @@ export type PublicVideo = {
   owner_avatar_url?: string;
   created_at?: string;
   file_url?: string;
+  access_type?: 'free' | 'membership' | string;
+  preview_seconds?: number;
+  can_watch?: boolean;
+  is_locked?: boolean;
+  lock_reason?: string;
   thumbnail?: string;
   thumbnail_url?: string;
   [key: string]: any;
@@ -23,13 +28,39 @@ export type PublicVideoListResponse = {
   results: PublicVideo[];
 };
 
+const normalizeVideo = (video: any): PublicVideo => {
+  if (!video || typeof video !== 'object') {
+    return {
+      id: '',
+      access_type: 'free',
+      preview_seconds: 0,
+      can_watch: true,
+      is_locked: false,
+      lock_reason: '',
+    };
+  }
+
+  return {
+    ...video,
+    access_type: video.access_type || 'free',
+    preview_seconds: Number.isFinite(Number(video.preview_seconds))
+      ? Number(video.preview_seconds)
+      : 0,
+    can_watch:
+      typeof video.can_watch === 'boolean' ? video.can_watch : true,
+    is_locked:
+      typeof video.is_locked === 'boolean' ? video.is_locked : false,
+    lock_reason: video.lock_reason ? String(video.lock_reason) : '',
+  };
+};
+
 const normalizeListResponse = (payload: any): PublicVideoListResponse => {
   if (Array.isArray(payload)) {
     return {
       count: payload.length,
       next: null,
       previous: null,
-      results: payload,
+      results: payload.map((item) => normalizeVideo(item)),
     };
   }
 
@@ -37,7 +68,9 @@ const normalizeListResponse = (payload: any): PublicVideoListResponse => {
     count: payload?.count || 0,
     next: payload?.next || null,
     previous: payload?.previous || null,
-    results: Array.isArray(payload?.results) ? payload.results : [],
+    results: Array.isArray(payload?.results)
+      ? payload.results.map((item: any) => normalizeVideo(item))
+      : [],
   };
 };
 
@@ -64,7 +97,8 @@ export async function listPublicVideos(
 }
 
 export async function getPublicVideoDetail(id: string) {
-  return requestJson<PublicVideo>(`/api/public/videos/${id}/`, {
+  const payload = await requestJson<PublicVideo>(`/api/public/videos/${id}/`, {
     method: 'GET',
   });
+  return normalizeVideo(payload);
 }
