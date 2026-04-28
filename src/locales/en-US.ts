@@ -84,6 +84,7 @@ export default {
   'menu.home': 'Home',
   'menu.Home': 'Home',
   'menu.browse': 'Browse',
+  'menu.videos': 'Videos',
   'menu.Browse': 'Browse',
   'menu.news': 'News',
   'menu.news.live': 'News Live',

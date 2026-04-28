@@ -82,6 +82,7 @@ export default {
   'menu.home': '首页',
   'menu.Home': '首页',
   'menu.browse': '浏览',
+  'menu.videos': '视频',
   'menu.Browse': '浏览',
   'menu.news': '新闻',
   'menu.news.live': '直播新闻',

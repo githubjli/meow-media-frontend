@@ -238,6 +238,8 @@ const resolveMenuSelectedPath = (pathname: string, search: string) => {
   }
   if (pathname === '/live') return '/live';
   if (pathname.startsWith('/live/')) return '/live';
+  if (pathname === '/videos') return '/videos';
+  if (pathname.startsWith('/videos/')) return '/videos';
   if (pathname === '/drama') return '/drama';
   if (pathname.startsWith('/drama/')) return '/drama';
   if (pathname.startsWith('/seller/store')) return '/seller/store';
@@ -424,6 +426,7 @@ export const layout: RunTimeLayoutConfig = ({
       const stableItemMap = new Map<string, any>([
         ['/home', <VideoCameraOutlined key="icon-home" />],
         ['/browse', <CompassOutlined key="icon-browse" />],
+        ['/videos', <PlayCircleOutlined key="icon-videos" />],
         ['/news', <NotificationOutlined key="icon-news" />],
         ['/live', <ThunderboltOutlined key="icon-live" />],
         ['/drama', <PlaySquareOutlined key="icon-drama" />],
@@ -436,7 +439,7 @@ export const layout: RunTimeLayoutConfig = ({
         stableItems.map((item) => [item.path || '', item]),
       );
 
-      const primaryItems = ['/home', '/browse'].map((path) => ({
+      const primaryItems = ['/home'].map((path) => ({
         ...(stableItemByPath.get(path) || {}),
         path,
         name:
@@ -553,6 +556,13 @@ export const layout: RunTimeLayoutConfig = ({
         icon: stableItemMap.get('/drama'),
         className: 'sidebar-menu-item sidebar-menu-item-primary',
       };
+      const videosItem = {
+        ...(stableItemByPath.get('/videos') || {}),
+        path: '/videos',
+        name: intl.formatMessage({ id: 'menu.videos' }),
+        icon: stableItemMap.get('/videos'),
+        className: 'sidebar-menu-item sidebar-menu-item-primary',
+      };
 
       const sellerItem = isLoggedIn
         ? {
@@ -599,6 +609,7 @@ export const layout: RunTimeLayoutConfig = ({
         ...primaryItems,
         newsItem,
         liveItem,
+        videosItem,
         dramaItem,
         ...adminItems,
         ...(sellerItem ? [sellerItem] : []),

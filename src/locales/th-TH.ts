@@ -82,6 +82,7 @@ export default {
   'menu.home': 'หน้าแรก',
   'menu.Home': 'หน้าแรก',
   'menu.browse': 'เรียกดู',
+  'menu.videos': 'วิดีโอ',
   'menu.Browse': 'เรียกดู',
   'menu.news': 'ข่าว',
   'menu.news.live': 'ข่าวไลฟ์',

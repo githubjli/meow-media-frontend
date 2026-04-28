@@ -83,6 +83,7 @@ export default {
   'menu.home': 'ပင်မ',
   'menu.Home': 'ပင်မ',
   'menu.browse': 'ကြည့်ရန်',
+  'menu.videos': 'ဗီဒီယို',
   'menu.Browse': 'ကြည့်ရန်',
   'menu.news': 'သတင်း',
   'menu.news.live': 'သတင်းတိုက်ရိုက်',
