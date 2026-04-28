@@ -51,6 +51,7 @@ export default function BrowsePage() {
   const search = searchParams.get('search') || '';
   const category = searchParams.get('category') || '';
   const ordering = searchParams.get('ordering') || '-created_at';
+  const accessType = searchParams.get('access_type') || '';
   const orderOptions = [
     {
       label: intl.formatMessage({ id: 'browse.order.latest' }),
@@ -76,6 +77,7 @@ export default function BrowsePage() {
       search,
       category,
       ordering,
+      access_type: accessType || undefined,
       page,
       page_size: PAGE_SIZE,
     })
@@ -91,7 +93,7 @@ export default function BrowsePage() {
         setCount(0);
       })
       .finally(() => setLoading(false));
-  }, [search, category, ordering, page, intl]);
+  }, [search, category, ordering, accessType, page, intl]);
 
   const updateQuery = (next: Record<string, string | number | undefined>) => {
     const merged = new URLSearchParams(searchParams);
@@ -116,12 +118,26 @@ export default function BrowsePage() {
     label: getLocalizedCategoryLabel(intl, item),
     value: item.slug,
   }));
+  const accessOptions = [
+    {
+      label: intl.formatMessage({ id: 'video.access.filter.all' }),
+      value: '',
+    },
+    {
+      label: intl.formatMessage({ id: 'video.access.free' }),
+      value: 'free',
+    },
+    {
+      label: intl.formatMessage({ id: 'video.access.membersOnly' }),
+      value: 'membership',
+    },
+  ];
 
   return (
     <PageContainer title={false}>
       <div style={{ padding: '8px 8px 20px' }}>
         <PageIntroCard
-          title={intl.formatMessage({ id: 'browse.title' })}
+          title={intl.formatMessage({ id: 'videos.title' })}
           description={intl.formatMessage({ id: 'browse.subtitle' })}
         >
           <Space
@@ -159,6 +175,17 @@ export default function BrowsePage() {
               style={{ minWidth: 160 }}
               options={categoryOptions}
               onChange={(value) => updateQuery({ category: value, page: 1 })}
+            />
+            <Select
+              value={accessType}
+              style={{ minWidth: 140 }}
+              options={accessOptions}
+              onChange={(value) =>
+                updateQuery({
+                  access_type: value || undefined,
+                  page: 1,
+                })
+              }
             />
             <Select
               value={ordering}

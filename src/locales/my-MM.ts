@@ -341,6 +341,8 @@ export default {
   'video.membership.lockedMessage': 'This video is available for members only.',
   'video.membership.subscribeToUnlock': 'Subscribe to unlock',
 
+  'videos.title': 'ဗီဒီယိုများ',
+  'video.access.filter.all': 'အားလုံး',
   'categories.fallbackTitle': 'Category',
   'categories.subtitle': 'Browse the latest public videos in this category.',
   'categories.backToAll': 'Back to all videos',

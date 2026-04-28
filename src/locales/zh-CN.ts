@@ -326,6 +326,8 @@ export default {
   'video.membership.lockedMessage': '该视频为会员专享内容，订阅后可观看。',
   'video.membership.subscribeToUnlock': '订阅解锁',
 
+  'videos.title': '视频',
+  'video.access.filter.all': '全部',
   'categories.fallbackTitle': 'Category',
   'categories.subtitle': 'Browse the latest public videos in this category.',
   'categories.backToAll': 'Back to all videos',

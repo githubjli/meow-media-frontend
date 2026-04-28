@@ -329,6 +329,8 @@ export default {
   'video.membership.lockedMessage': 'วิดีโอนี้สำหรับสมาชิกเท่านั้น',
   'video.membership.subscribeToUnlock': 'สมัครสมาชิกเพื่อปลดล็อก',
 
+  'videos.title': 'วิดีโอ',
+  'video.access.filter.all': 'ทั้งหมด',
   'categories.fallbackTitle': 'Category',
   'categories.subtitle': 'Browse the latest public videos in this category.',
   'categories.backToAll': 'Back to all videos',
