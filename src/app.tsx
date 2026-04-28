@@ -851,13 +851,19 @@ export const layout: RunTimeLayoutConfig = ({
                     key: 'meow-points',
                     icon: <DollarOutlined />,
                     label: intl.formatMessage({ id: 'nav.meowPoints' }),
-                    onClick: () => history.push('/account/subscription'),
+                    onClick: () => history.push('/meow-points'),
                   },
                   {
                     key: 'recharge-meow-points',
                     icon: <DollarOutlined />,
                     label: intl.formatMessage({ id: 'nav.rechargeMeowPoints' }),
-                    onClick: () => history.push('/account/subscription'),
+                    onClick: () => history.push('/meow-points'),
+                  },
+                  {
+                    key: 'meow-points-ledger',
+                    icon: <ReadOutlined />,
+                    label: intl.formatMessage({ id: 'nav.meowPointsLedger' }),
+                    onClick: () => history.push('/meow-points/ledger'),
                   },
                   {
                     key: 'my-subscription',
