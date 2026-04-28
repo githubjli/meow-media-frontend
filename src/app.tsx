@@ -238,6 +238,8 @@ const resolveMenuSelectedPath = (pathname: string, search: string) => {
   }
   if (pathname === '/live') return '/live';
   if (pathname.startsWith('/live/')) return '/live';
+  if (pathname === '/browse') return '/browse';
+  if (pathname.startsWith('/browse/')) return '/browse';
   if (pathname === '/videos') return '/videos';
   if (pathname.startsWith('/videos/')) return '/videos';
   if (pathname === '/drama') return '/drama';
