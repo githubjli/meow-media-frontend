@@ -140,7 +140,10 @@ export default function MeowPointsPage() {
           title={intl.formatMessage({ id: 'meowPoints.title' })}
           description={intl.formatMessage({ id: 'meowPoints.subtitle' })}
           extra={
-            <Button icon={<DollarOutlined />} disabled>
+            <Button
+              icon={<DollarOutlined />}
+              onClick={() => history.push('/meow-points/recharge')}
+            >
               {intl.formatMessage({ id: 'meowPoints.actions.recharge' })}
             </Button>
           }

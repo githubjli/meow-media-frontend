@@ -1,7 +1,10 @@
 import { getValidAccessToken, requestJson } from '@/services/auth';
 import type {
+  CreateMeowPointOrderResponse,
   MeowPointLedgerEntry,
   MeowPointLedgerParams,
+  MeowPointOrder,
+  MeowPointOrderListParams,
   MeowPointPackage,
   MeowPointWallet,
 } from '@/types/meowPoints';
@@ -52,4 +55,41 @@ export async function getMeowPointLedger(params?: MeowPointLedgerParams) {
     },
   );
   return normalizeList<MeowPointLedgerEntry>(payload);
+}
+
+export async function createMeowPointOrder(packageCode: string) {
+  return requestJson<CreateMeowPointOrderResponse>('/api/meow-points/orders/', {
+    method: 'POST',
+    headers: await withAuth(),
+    body: JSON.stringify({ package_code: packageCode }),
+  });
+}
+
+export async function listMeowPointOrders(params?: MeowPointOrderListParams) {
+  const payload = await requestJson<any>(
+    `/api/meow-points/orders/${buildQuery(params)}`,
+    {
+      method: 'GET',
+      headers: await withAuth(),
+    },
+  );
+  return normalizeList<MeowPointOrder>(payload);
+}
+
+export async function getMeowPointOrder(orderNo: string) {
+  return requestJson<MeowPointOrder>(`/api/meow-points/orders/${orderNo}/`, {
+    method: 'GET',
+    headers: await withAuth(),
+  });
+}
+
+export async function submitMeowPointTxHint(orderNo: string, txid: string) {
+  return requestJson<MeowPointOrder>(
+    `/api/meow-points/orders/${orderNo}/tx-hint/`,
+    {
+      method: 'POST',
+      headers: await withAuth(),
+      body: JSON.stringify({ txid }),
+    },
+  );
 }

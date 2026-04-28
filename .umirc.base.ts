@@ -77,8 +77,18 @@ export default defineConfig({
     },
     { path: '/meow-points', component: './MeowPoints', hideInMenu: true },
     {
+      path: '/meow-points/recharge',
+      component: './MeowPoints/Recharge',
+      hideInMenu: true,
+    },
+    {
       path: '/meow-points/ledger',
       component: './MeowPoints',
+      hideInMenu: true,
+    },
+    {
+      path: '/meow-points/orders/:orderNo',
+      component: './MeowPoints/OrderDetail',
       hideInMenu: true,
     },
     { path: '/profile', component: './Account/Profile', hideInMenu: true },

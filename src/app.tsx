@@ -900,7 +900,7 @@ export const layout: RunTimeLayoutConfig = ({
                         label: intl.formatMessage({
                           id: 'nav.rechargeMeowPoints',
                         }),
-                        disabled: true,
+                        onClick: () => history.push('/meow-points/recharge'),
                       },
                       {
                         key: 'meow-points-ledger',
