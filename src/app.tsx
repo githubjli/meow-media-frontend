@@ -324,7 +324,8 @@ export const layout: RunTimeLayoutConfig = ({
     isCreator || currentUser?.can_create_live,
   );
   const canAccessSellerMenu = Boolean(
-    currentUser && (currentUser.is_seller || currentUser.can_manage_store),
+    currentUser &&
+      (currentUser.is_seller || currentUser.can_manage_store || sellerHasStore),
   );
   const canAccessAdminMenu = Boolean(currentUser?.is_admin);
   const displayName =
@@ -804,10 +805,10 @@ export const layout: RunTimeLayoutConfig = ({
                   ...(canAccessCreatorMenu
                     ? ([
                         {
-                          key: 'creator-center',
-                          icon: <VideoCameraOutlined />,
+                          key: 'video-creator',
+                          icon: <PlaySquareOutlined />,
                           label: intl.formatMessage({
-                            id: 'nav.creatorCenter',
+                            id: 'nav.videoCreator',
                           }),
                           children: [
                             {
@@ -824,6 +825,15 @@ export const layout: RunTimeLayoutConfig = ({
                               }),
                               onClick: () => history.push('/videos/upload'),
                             },
+                          ],
+                        },
+                        {
+                          key: 'live-creator',
+                          icon: <VideoCameraOutlined />,
+                          label: intl.formatMessage({
+                            id: 'nav.liveCreator',
+                          }),
+                          children: [
                             {
                               key: 'go-live',
                               icon: <VideoCameraOutlined />,
@@ -849,22 +859,30 @@ export const layout: RunTimeLayoutConfig = ({
                               label: intl.formatMessage({ id: 'nav.myLive' }),
                               onClick: () => history.push('/live/mine'),
                             },
-                            ...(isCreator
-                              ? ([
-                                  {
-                                    key: 'my-drama',
-                                    icon: <PlaySquareOutlined />,
-                                    label: intl.formatMessage({
-                                      id: 'nav.myDrama',
-                                    }),
-                                    onClick: () => history.push('/videos/mine'),
-                                  },
-                                ] as const)
-                              : []),
+                          ],
+                        },
+                        {
+                          key: 'drama-creator',
+                          icon: <ReadOutlined />,
+                          label: intl.formatMessage({
+                            id: 'nav.dramaCreator',
+                          }),
+                          children: [
+                            {
+                              key: 'my-drama',
+                              icon: <PlaySquareOutlined />,
+                              label: intl.formatMessage({
+                                id: 'nav.myDrama',
+                              }),
+                              onClick: () => history.push('/videos/mine'),
+                            },
                           ],
                         },
                       ] as const)
                     : []),
+                  {
+                    type: 'divider',
+                  },
                   {
                     key: 'wallet-billing',
                     icon: <DollarOutlined />,
@@ -899,6 +917,12 @@ export const layout: RunTimeLayoutConfig = ({
                         onClick: () => history.push('/account/subscription'),
                       },
                       {
+                        key: 'linked-wallet',
+                        icon: <SettingOutlined />,
+                        label: intl.formatMessage({ id: 'nav.linkedWallet' }),
+                        onClick: () => history.push('/settings'),
+                      },
+                      {
                         key: 'my-payment-orders',
                         icon: <DollarOutlined />,
                         label: intl.formatMessage({
@@ -930,6 +954,14 @@ export const layout: RunTimeLayoutConfig = ({
                                 id: 'nav.sellerOrders',
                               }),
                               onClick: () => history.push('/seller/orders'),
+                            },
+                            {
+                              key: 'seller-products',
+                              icon: <ShopOutlined />,
+                              label: intl.formatMessage({
+                                id: 'menu.seller.products',
+                              }),
+                              onClick: () => history.push('/seller/products'),
                             },
                             {
                               key: 'seller-payout-addresses',
@@ -1024,15 +1056,6 @@ export const layout: RunTimeLayoutConfig = ({
                               }),
                               onClick: () =>
                                 history.push('/admin/product-orders'),
-                            },
-                            {
-                              key: 'admin-refund-requests',
-                              icon: <NotificationOutlined />,
-                              label: intl.formatMessage({
-                                id: 'admin.refundRequests.title',
-                              }),
-                              onClick: () =>
-                                history.push('/admin/refund-requests'),
                             },
                           ],
                         },
