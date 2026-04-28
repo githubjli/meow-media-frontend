@@ -147,7 +147,12 @@ export default defineConfig({
     { path: '/live/create', component: './Live/Create', hideInMenu: true },
     { path: '/live/mine', component: './Live', hideInMenu: true },
     { path: '/live/:id', component: './LiveRoom', hideInMenu: true },
-    { path: '/drama', component: './Drama', hideInMenu: true },
+    {
+      name: 'Drama',
+      path: '/drama',
+      icon: 'PlaySquareOutlined',
+      component: './Drama',
+    },
     { path: '/drama/:id', component: './Drama/Detail', hideInMenu: true },
     {
       path: '/drama/:seriesId/episodes/:episodeId',
