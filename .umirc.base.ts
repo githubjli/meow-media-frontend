@@ -153,6 +153,22 @@ export default defineConfig({
       icon: 'PlaySquareOutlined',
       component: './Drama',
     },
+    { path: '/creator/dramas', component: './Creator/Drama', hideInMenu: true },
+    {
+      path: '/creator/dramas/new',
+      component: './Creator/Drama/Edit',
+      hideInMenu: true,
+    },
+    {
+      path: '/creator/dramas/:id/edit',
+      component: './Creator/Drama/Edit',
+      hideInMenu: true,
+    },
+    {
+      path: '/creator/dramas/:id/episodes',
+      component: './Creator/Drama/Episodes',
+      hideInMenu: true,
+    },
     { path: '/drama/:id', component: './Drama/Detail', hideInMenu: true },
     {
       path: '/drama/:seriesId/episodes/:episodeId',

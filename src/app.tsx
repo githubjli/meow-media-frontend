@@ -886,7 +886,16 @@ export const layout: RunTimeLayoutConfig = ({
                               label: intl.formatMessage({
                                 id: 'nav.myDrama',
                               }),
-                              onClick: () => history.push('/videos/mine'),
+                              onClick: () => history.push('/creator/dramas'),
+                            },
+                            {
+                              key: 'upload-drama',
+                              icon: <UploadOutlined />,
+                              label: intl.formatMessage({
+                                id: 'nav.uploadDrama',
+                              }),
+                              onClick: () =>
+                                history.push('/creator/dramas/new'),
                             },
                           ],
                         },
