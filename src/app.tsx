@@ -324,12 +324,9 @@ export const layout: RunTimeLayoutConfig = ({
     isCreator || currentUser?.can_create_live,
   );
   const canAccessSellerMenu = Boolean(
-    currentUser &&
-      (currentUser.is_seller ||
-        currentUser.can_manage_store ||
-        currentUser.can_accept_payments ||
-        sellerHasStore),
+    currentUser && (currentUser.is_seller || currentUser.can_manage_store),
   );
+  const canAccessAdminMenu = Boolean(currentUser?.is_admin);
   const displayName =
     currentUser?.display_name ||
     currentUser?.name ||
@@ -770,146 +767,191 @@ export const layout: RunTimeLayoutConfig = ({
                     type: 'divider',
                   },
                   {
-                    key: 'my-videos',
-                    icon: <PlaySquareOutlined />,
-                    label: intl.formatMessage({ id: 'nav.myVideos' }),
-                    onClick: () => history.push('/videos/mine'),
+                    key: 'profile-dashboard',
+                    icon: <UserOutlined />,
+                    label: intl.formatMessage({ id: 'nav.profile' }),
+                    onClick: () => history.push('/profile'),
                   },
                   {
-                    key: 'upload-video',
-                    icon: <UploadOutlined />,
-                    label: intl.formatMessage({ id: 'nav.uploadVideo' }),
-                    onClick: () => history.push('/videos/upload'),
-                  },
-                  {
-                    key: 'go-live',
-                    icon: <VideoCameraOutlined />,
-                    label: !canCreateLive ? (
-                      <Tooltip
-                        title={intl.formatMessage({
-                          id: 'nav.goLive.disabledHint',
-                        })}
-                      >
-                        <span>{intl.formatMessage({ id: 'nav.goLive' })}</span>
-                      </Tooltip>
-                    ) : (
-                      intl.formatMessage({ id: 'nav.goLive' })
-                    ),
-                    onClick: handleGoLiveClick,
-                    disabled: !canCreateLive,
-                  },
-                  {
-                    type: 'divider',
-                  },
-                  {
-                    key: 'continue-watching',
+                    key: 'my-library',
                     icon: <PlayCircleOutlined />,
-                    label: intl.formatMessage({ id: 'nav.continueWatching' }),
-                    onClick: () => history.push('/videos/mine'),
-                  },
-                  {
-                    key: 'favorite-drama',
-                    icon: <ReadOutlined />,
-                    label: intl.formatMessage({ id: 'nav.favoriteDrama' }),
-                    onClick: () => history.push('/browse'),
-                  },
-                  {
-                    key: 'unlocked-episodes',
-                    icon: <ThunderboltOutlined />,
-                    label: intl.formatMessage({ id: 'nav.unlockedEpisodes' }),
-                    onClick: () => history.push('/account/subscription'),
+                    label: intl.formatMessage({ id: 'nav.myLibrary' }),
+                    children: [
+                      {
+                        key: 'continue-watching',
+                        icon: <PlayCircleOutlined />,
+                        label: intl.formatMessage({
+                          id: 'nav.continueWatching',
+                        }),
+                        onClick: () => history.push('/videos/mine'),
+                      },
+                      {
+                        key: 'favorite-drama',
+                        icon: <ReadOutlined />,
+                        label: intl.formatMessage({ id: 'nav.favoriteDrama' }),
+                        onClick: () => history.push('/browse'),
+                      },
+                      {
+                        key: 'unlocked-episodes',
+                        icon: <ThunderboltOutlined />,
+                        label: intl.formatMessage({
+                          id: 'nav.unlockedEpisodes',
+                        }),
+                        onClick: () => history.push('/account/subscription'),
+                      },
+                    ],
                   },
                   ...(canAccessCreatorMenu
-                    ? [
+                    ? ([
                         {
-                          type: 'divider',
-                        },
-                        {
-                          key: 'my-live',
+                          key: 'creator-center',
                           icon: <VideoCameraOutlined />,
-                          label: intl.formatMessage({ id: 'nav.myLive' }),
-                          onClick: () => history.push('/live/mine'),
-                        } as const,
-                        ...(isCreator
-                          ? ([
-                              {
-                                key: 'my-drama',
-                                icon: <PlaySquareOutlined />,
-                                label: intl.formatMessage({
-                                  id: 'nav.myDrama',
-                                }),
-                                onClick: () => history.push('/videos/mine'),
-                              } as const,
-                            ] as const)
-                          : []),
-                      ]
+                          label: intl.formatMessage({
+                            id: 'nav.creatorCenter',
+                          }),
+                          children: [
+                            {
+                              key: 'my-videos',
+                              icon: <PlaySquareOutlined />,
+                              label: intl.formatMessage({ id: 'nav.myVideos' }),
+                              onClick: () => history.push('/videos/mine'),
+                            },
+                            {
+                              key: 'upload-video',
+                              icon: <UploadOutlined />,
+                              label: intl.formatMessage({
+                                id: 'nav.uploadVideo',
+                              }),
+                              onClick: () => history.push('/videos/upload'),
+                            },
+                            {
+                              key: 'go-live',
+                              icon: <VideoCameraOutlined />,
+                              label: !canCreateLive ? (
+                                <Tooltip
+                                  title={intl.formatMessage({
+                                    id: 'nav.goLive.disabledHint',
+                                  })}
+                                >
+                                  <span>
+                                    {intl.formatMessage({ id: 'nav.goLive' })}
+                                  </span>
+                                </Tooltip>
+                              ) : (
+                                intl.formatMessage({ id: 'nav.goLive' })
+                              ),
+                              onClick: handleGoLiveClick,
+                              disabled: !canCreateLive,
+                            },
+                            {
+                              key: 'my-live',
+                              icon: <VideoCameraOutlined />,
+                              label: intl.formatMessage({ id: 'nav.myLive' }),
+                              onClick: () => history.push('/live/mine'),
+                            },
+                            ...(isCreator
+                              ? ([
+                                  {
+                                    key: 'my-drama',
+                                    icon: <PlaySquareOutlined />,
+                                    label: intl.formatMessage({
+                                      id: 'nav.myDrama',
+                                    }),
+                                    onClick: () => history.push('/videos/mine'),
+                                  },
+                                ] as const)
+                              : []),
+                          ],
+                        },
+                      ] as const)
                     : []),
                   {
-                    type: 'divider',
-                  },
-                  {
-                    key: 'meow-points',
+                    key: 'wallet-billing',
                     icon: <DollarOutlined />,
-                    label: intl.formatMessage({ id: 'nav.meowPoints' }),
-                    onClick: () => history.push('/meow-points'),
-                  },
-                  {
-                    key: 'recharge-meow-points',
-                    icon: <DollarOutlined />,
-                    label: intl.formatMessage({ id: 'nav.rechargeMeowPoints' }),
-                    onClick: () => history.push('/meow-points'),
-                  },
-                  {
-                    key: 'meow-points-ledger',
-                    icon: <ReadOutlined />,
-                    label: intl.formatMessage({ id: 'nav.meowPointsLedger' }),
-                    onClick: () => history.push('/meow-points/ledger'),
-                  },
-                  {
-                    key: 'my-subscription',
-                    icon: <DollarOutlined />,
-                    label: intl.formatMessage({ id: 'nav.mySubscription' }),
-                    onClick: () => history.push('/account/subscription'),
-                  },
-                  {
-                    key: 'my-payment-orders',
-                    icon: <DollarOutlined />,
-                    label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
-                    onClick: () => history.push('/account/payment-orders'),
+                    label: intl.formatMessage({ id: 'nav.walletBilling' }),
+                    children: [
+                      {
+                        key: 'meow-points',
+                        icon: <DollarOutlined />,
+                        label: intl.formatMessage({ id: 'nav.meowPoints' }),
+                        onClick: () => history.push('/meow-points'),
+                      },
+                      {
+                        key: 'recharge-meow-points',
+                        icon: <DollarOutlined />,
+                        label: intl.formatMessage({
+                          id: 'nav.rechargeMeowPoints',
+                        }),
+                        disabled: true,
+                      },
+                      {
+                        key: 'meow-points-ledger',
+                        icon: <ReadOutlined />,
+                        label: intl.formatMessage({
+                          id: 'nav.meowPointsLedger',
+                        }),
+                        onClick: () => history.push('/meow-points/ledger'),
+                      },
+                      {
+                        key: 'my-subscription',
+                        icon: <DollarOutlined />,
+                        label: intl.formatMessage({ id: 'nav.mySubscription' }),
+                        onClick: () => history.push('/account/subscription'),
+                      },
+                      {
+                        key: 'my-payment-orders',
+                        icon: <DollarOutlined />,
+                        label: intl.formatMessage({
+                          id: 'nav.myPaymentOrders',
+                        }),
+                        onClick: () => history.push('/account/payment-orders'),
+                      },
+                    ],
                   },
                   ...(canAccessSellerMenu
-                    ? [
+                    ? ([
                         {
-                          key: 'seller-center',
+                          key: 'seller-center-group',
                           icon: <ShopOutlined />,
                           label: intl.formatMessage({ id: 'nav.sellerCenter' }),
-                          onClick: () => history.push('/seller/store'),
-                        } as const,
-                        {
-                          key: 'seller-orders',
-                          icon: <ShoppingOutlined />,
-                          label: intl.formatMessage({ id: 'nav.sellerOrders' }),
-                          onClick: () => history.push('/seller/orders'),
-                        } as const,
-                        {
-                          key: 'seller-payout-addresses',
-                          icon: <DollarOutlined />,
-                          label: intl.formatMessage({
-                            id: 'nav.sellerPayoutAddresses',
-                          }),
-                          onClick: () =>
-                            history.push('/seller/payout-addresses'),
-                        } as const,
-                        {
-                          key: 'seller-refund-requests',
-                          icon: <NotificationOutlined />,
-                          label: intl.formatMessage({
-                            id: 'nav.sellerRefundRequests',
-                          }),
-                          onClick: () =>
-                            history.push('/seller/refund-requests'),
-                        } as const,
-                      ]
+                          children: [
+                            {
+                              key: 'seller-center',
+                              icon: <ShopOutlined />,
+                              label: intl.formatMessage({
+                                id: 'nav.sellerCenter',
+                              }),
+                              onClick: () => history.push('/seller/store'),
+                            },
+                            {
+                              key: 'seller-orders',
+                              icon: <ShoppingOutlined />,
+                              label: intl.formatMessage({
+                                id: 'nav.sellerOrders',
+                              }),
+                              onClick: () => history.push('/seller/orders'),
+                            },
+                            {
+                              key: 'seller-payout-addresses',
+                              icon: <DollarOutlined />,
+                              label: intl.formatMessage({
+                                id: 'nav.sellerPayoutAddresses',
+                              }),
+                              onClick: () =>
+                                history.push('/seller/payout-addresses'),
+                            },
+                            {
+                              key: 'seller-refund-requests',
+                              icon: <NotificationOutlined />,
+                              label: intl.formatMessage({
+                                id: 'nav.sellerRefundRequests',
+                              }),
+                              onClick: () =>
+                                history.push('/seller/refund-requests'),
+                            },
+                          ],
+                        },
+                      ] as const)
                     : []),
                   {
                     type: 'divider',
@@ -956,32 +998,43 @@ export const layout: RunTimeLayoutConfig = ({
                     icon: <QuestionCircleOutlined />,
                     label: intl.formatMessage({ id: 'nav.help' }),
                   },
-                  ...(isAdmin
+                  ...(canAccessAdminMenu
                     ? ([
                         {
                           type: 'divider',
                         },
                         {
-                          key: 'all-videos',
+                          key: 'admin-center',
                           icon: <SettingOutlined />,
-                          label: intl.formatMessage({ id: 'nav.allVideos' }),
-                          onClick: () => history.push('/admin/videos'),
-                        },
-                        {
-                          key: 'admin-product-orders',
-                          icon: <ShoppingOutlined />,
-                          label: intl.formatMessage({
-                            id: 'admin.productOrders.title',
-                          }),
-                          onClick: () => history.push('/admin/product-orders'),
-                        },
-                        {
-                          key: 'admin-refund-requests',
-                          icon: <NotificationOutlined />,
-                          label: intl.formatMessage({
-                            id: 'admin.refundRequests.title',
-                          }),
-                          onClick: () => history.push('/admin/refund-requests'),
+                          label: intl.formatMessage({ id: 'nav.adminCenter' }),
+                          children: [
+                            {
+                              key: 'all-videos',
+                              icon: <SettingOutlined />,
+                              label: intl.formatMessage({
+                                id: 'nav.allVideos',
+                              }),
+                              onClick: () => history.push('/admin/videos'),
+                            },
+                            {
+                              key: 'admin-product-orders',
+                              icon: <ShoppingOutlined />,
+                              label: intl.formatMessage({
+                                id: 'admin.productOrders.title',
+                              }),
+                              onClick: () =>
+                                history.push('/admin/product-orders'),
+                            },
+                            {
+                              key: 'admin-refund-requests',
+                              icon: <NotificationOutlined />,
+                              label: intl.formatMessage({
+                                id: 'admin.refundRequests.title',
+                              }),
+                              onClick: () =>
+                                history.push('/admin/refund-requests'),
+                            },
+                          ],
                         },
                       ] as const)
                     : []),
