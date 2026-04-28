@@ -13,7 +13,7 @@ import {
   PictureOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel, useParams } from '@umijs/max';
+import { history, useIntl, useModel, useParams } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -35,6 +35,7 @@ import { useEffect, useState } from 'react';
 const { Title, Text, Paragraph } = Typography;
 
 export default function VideoDetailPage() {
+  const intl = useIntl();
   const { id } = useParams<{ id: string }>();
   const { initialState } = useModel('@@initialState');
   const categoryOptions = (initialState?.publicCategories || []).map(
@@ -109,6 +110,8 @@ export default function VideoDetailPage() {
       title: video.title || video.name || '',
       description: video.description || '',
       category: video.category || undefined,
+      access_type: video.access_type || 'free',
+      preview_seconds: video.preview_seconds || 0,
     });
     setEditing(true);
   };
@@ -117,6 +120,8 @@ export default function VideoDetailPage() {
     title: string;
     description?: string;
     category?: string;
+    access_type?: 'free' | 'membership';
+    preview_seconds?: number;
   }) => {
     if (!video) {
       return;
@@ -154,6 +159,8 @@ export default function VideoDetailPage() {
   };
 
   const thumbnail = getPreferredThumbnail(video);
+  const isMembershipLocked = Boolean(video?.is_locked || video?.can_watch === false);
+  const canPlayVideo = Boolean(video?.file_url) && !isMembershipLocked;
 
   return (
     <PageContainer title={false}>
@@ -185,6 +192,11 @@ export default function VideoDetailPage() {
                 </Title>
                 <Space wrap>
                   <Tag color="processing">My video</Tag>
+                  <Tag color={video.access_type === 'membership' ? 'gold' : 'default'}>
+                    {video.access_type === 'membership'
+                      ? intl.formatMessage({ id: 'video.access.membersOnly' })
+                      : intl.formatMessage({ id: 'video.access.free' })}
+                  </Tag>
                   {video.category_display ? (
                     <Tag>{video.category_display}</Tag>
                   ) : null}
@@ -257,7 +269,7 @@ export default function VideoDetailPage() {
               </div>
             </div>
 
-            {video.file_url ? (
+            {canPlayVideo ? (
               <video
                 controls
                 style={{
@@ -268,6 +280,37 @@ export default function VideoDetailPage() {
                 }}
                 src={video.file_url}
               />
+            ) : isMembershipLocked ? (
+              <Card
+                size="small"
+                style={{
+                  marginBottom: 20,
+                  borderRadius: 16,
+                  textAlign: 'center',
+                  minHeight: 200,
+                  display: 'grid',
+                  placeItems: 'center',
+                }}
+              >
+                <Space direction="vertical" size={10}>
+                  <Tag color="gold">
+                    {intl.formatMessage({ id: 'video.access.membersOnly' })}
+                  </Tag>
+                  <Text>
+                    {intl.formatMessage({
+                      id: 'video.membership.lockedMessage',
+                    })}
+                  </Text>
+                  <Button
+                    type="primary"
+                    onClick={() => history.push('/account/subscription')}
+                  >
+                    {intl.formatMessage({
+                      id: 'video.membership.subscribeToUnlock',
+                    })}
+                  </Button>
+                </Space>
+              </Card>
             ) : (
               <Card
                 size="small"
@@ -339,6 +382,29 @@ export default function VideoDetailPage() {
               placeholder="Select a category"
               options={categoryOptions}
             />
+          </Form.Item>
+          <Form.Item
+            label={intl.formatMessage({ id: 'video.access.label' })}
+            name="access_type"
+          >
+            <Select
+              options={[
+                {
+                  value: 'free',
+                  label: intl.formatMessage({ id: 'video.access.free' }),
+                },
+                {
+                  value: 'membership',
+                  label: intl.formatMessage({ id: 'video.access.membersOnly' }),
+                },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            label={intl.formatMessage({ id: 'video.access.previewSeconds' })}
+            name="preview_seconds"
+          >
+            <Input type="number" min={0} />
           </Form.Item>
         </Form>
       </Modal>

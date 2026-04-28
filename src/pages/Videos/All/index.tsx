@@ -13,7 +13,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -64,6 +64,7 @@ const formatDate = (value?: string) => {
 };
 
 export default function AllVideosPage() {
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const [form] = Form.useForm();
   const [videos, setVideos] = useState<VideoItem[]>([]);
@@ -147,6 +148,8 @@ export default function AllVideosPage() {
       title: video.title || video.name || '',
       description: video.description || '',
       category: video.category || undefined,
+      access_type: video.access_type || 'free',
+      preview_seconds: video.preview_seconds || 0,
     });
   };
 
@@ -154,6 +157,8 @@ export default function AllVideosPage() {
     title: string;
     description?: string;
     category?: string;
+    access_type?: 'free' | 'membership';
+    preview_seconds?: number;
   }) => {
     if (!editingVideo) {
       return;
@@ -266,6 +271,17 @@ export default function AllVideosPage() {
         },
       },
       {
+        title: 'Access',
+        key: 'access_type',
+        render: (_, record) => (
+          <Tag color={record.access_type === 'membership' ? 'gold' : 'default'}>
+            {record.access_type === 'membership'
+              ? intl.formatMessage({ id: 'video.access.membersOnly' })
+              : intl.formatMessage({ id: 'video.access.free' })}
+          </Tag>
+        ),
+      },
+      {
         title: 'Created',
         dataIndex: 'created_at',
         key: 'created_at',
@@ -321,7 +337,7 @@ export default function AllVideosPage() {
         ),
       },
     ],
-    [deletingId],
+    [deletingId, intl],
   );
 
   return (
@@ -471,6 +487,29 @@ export default function AllVideosPage() {
             </Form.Item>
             <Form.Item label="Category" name="category">
               <Select allowClear options={categoryOptions} />
+            </Form.Item>
+            <Form.Item
+              label={intl.formatMessage({ id: 'video.access.label' })}
+              name="access_type"
+            >
+              <Select
+                options={[
+                  {
+                    value: 'free',
+                    label: intl.formatMessage({ id: 'video.access.free' }),
+                  },
+                  {
+                    value: 'membership',
+                    label: intl.formatMessage({ id: 'video.access.membersOnly' }),
+                  },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item
+              label={intl.formatMessage({ id: 'video.access.previewSeconds' })}
+              name="preview_seconds"
+            >
+              <Input type="number" min={0} />
             </Form.Item>
           </Form>
         </Modal>
