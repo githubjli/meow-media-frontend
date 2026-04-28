@@ -318,7 +318,18 @@ export const layout: RunTimeLayoutConfig = ({
   const isAdmin = isAdminUser(currentUser);
   const isCreator = isCreatorUser(currentUser);
   const sellerHasStore = Boolean(initialState?.sellerHasStore);
-  const canUseGoLive = !isLoggedIn || isCreator;
+  const canCreateLive = Boolean(isCreator || currentUser?.can_create_live);
+  const canUseGoLive = !isLoggedIn || canCreateLive;
+  const canAccessCreatorMenu = Boolean(
+    isCreator || currentUser?.can_create_live,
+  );
+  const canAccessSellerMenu = Boolean(
+    currentUser &&
+      (currentUser.is_seller ||
+        currentUser.can_manage_store ||
+        currentUser.can_accept_payments ||
+        sellerHasStore),
+  );
   const displayName =
     currentUser?.display_name ||
     currentUser?.name ||
@@ -367,7 +378,7 @@ export const layout: RunTimeLayoutConfig = ({
   initializeLocaleOnce();
 
   const handleGoLiveClick = () => {
-    if (isLoggedIn && !isCreator) {
+    if (isLoggedIn && !canCreateLive) {
       message.info(intl.formatMessage({ id: 'live.creatorRequired' }));
       return;
     }
@@ -759,12 +770,6 @@ export const layout: RunTimeLayoutConfig = ({
                     type: 'divider',
                   },
                   {
-                    key: 'profile-dashboard',
-                    icon: <UserOutlined />,
-                    label: intl.formatMessage({ id: 'nav.profile' }),
-                    onClick: () => history.push('/profile'),
-                  },
-                  {
                     key: 'my-videos',
                     icon: <PlaySquareOutlined />,
                     label: intl.formatMessage({ id: 'nav.myVideos' }),
@@ -779,19 +784,99 @@ export const layout: RunTimeLayoutConfig = ({
                   {
                     key: 'go-live',
                     icon: <VideoCameraOutlined />,
-                    label: intl.formatMessage({ id: 'nav.goLive' }),
+                    label: !canCreateLive ? (
+                      <Tooltip
+                        title={intl.formatMessage({
+                          id: 'nav.goLive.disabledHint',
+                        })}
+                      >
+                        <span>{intl.formatMessage({ id: 'nav.goLive' })}</span>
+                      </Tooltip>
+                    ) : (
+                      intl.formatMessage({ id: 'nav.goLive' })
+                    ),
                     onClick: handleGoLiveClick,
-                    disabled: !isCreator,
+                    disabled: !canCreateLive,
                   },
                   {
                     type: 'divider',
                   },
-                  ...(sellerHasStore
+                  {
+                    key: 'continue-watching',
+                    icon: <PlayCircleOutlined />,
+                    label: intl.formatMessage({ id: 'nav.continueWatching' }),
+                    onClick: () => history.push('/videos/mine'),
+                  },
+                  {
+                    key: 'favorite-drama',
+                    icon: <ReadOutlined />,
+                    label: intl.formatMessage({ id: 'nav.favoriteDrama' }),
+                    onClick: () => history.push('/browse'),
+                  },
+                  {
+                    key: 'unlocked-episodes',
+                    icon: <ThunderboltOutlined />,
+                    label: intl.formatMessage({ id: 'nav.unlockedEpisodes' }),
+                    onClick: () => history.push('/account/subscription'),
+                  },
+                  ...(canAccessCreatorMenu
+                    ? [
+                        {
+                          type: 'divider',
+                        },
+                        {
+                          key: 'my-live',
+                          icon: <VideoCameraOutlined />,
+                          label: intl.formatMessage({ id: 'nav.myLive' }),
+                          onClick: () => history.push('/live/mine'),
+                        } as const,
+                        ...(isCreator
+                          ? ([
+                              {
+                                key: 'my-drama',
+                                icon: <PlaySquareOutlined />,
+                                label: intl.formatMessage({
+                                  id: 'nav.myDrama',
+                                }),
+                                onClick: () => history.push('/videos/mine'),
+                              } as const,
+                            ] as const)
+                          : []),
+                      ]
+                    : []),
+                  {
+                    type: 'divider',
+                  },
+                  {
+                    key: 'meow-points',
+                    icon: <DollarOutlined />,
+                    label: intl.formatMessage({ id: 'nav.meowPoints' }),
+                    onClick: () => history.push('/account/subscription'),
+                  },
+                  {
+                    key: 'recharge-meow-points',
+                    icon: <DollarOutlined />,
+                    label: intl.formatMessage({ id: 'nav.rechargeMeowPoints' }),
+                    onClick: () => history.push('/account/subscription'),
+                  },
+                  {
+                    key: 'my-subscription',
+                    icon: <DollarOutlined />,
+                    label: intl.formatMessage({ id: 'nav.mySubscription' }),
+                    onClick: () => history.push('/account/subscription'),
+                  },
+                  {
+                    key: 'my-payment-orders',
+                    icon: <DollarOutlined />,
+                    label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
+                    onClick: () => history.push('/account/payment-orders'),
+                  },
+                  ...(canAccessSellerMenu
                     ? [
                         {
                           key: 'seller-center',
                           icon: <ShopOutlined />,
-                          label: intl.formatMessage({ id: 'nav.myStore' }),
+                          label: intl.formatMessage({ id: 'nav.sellerCenter' }),
                           onClick: () => history.push('/seller/store'),
                         } as const,
                         {
@@ -820,30 +905,6 @@ export const layout: RunTimeLayoutConfig = ({
                         } as const,
                       ]
                     : []),
-                  {
-                    key: 'my-payment-orders',
-                    icon: <DollarOutlined />,
-                    label: intl.formatMessage({ id: 'nav.myPaymentOrders' }),
-                    onClick: () => history.push('/account/payment-orders'),
-                  },
-                  {
-                    key: 'my-subscription',
-                    icon: <DollarOutlined />,
-                    label: intl.formatMessage({ id: 'nav.mySubscription' }),
-                    onClick: () => history.push('/account/subscription'),
-                  },
-                  {
-                    key: 'my-shipping-addresses',
-                    icon: <HomeOutlined />,
-                    label: intl.formatMessage({ id: 'nav.shippingAddresses' }),
-                    onClick: () => history.push('/account/shipping-addresses'),
-                  },
-                  {
-                    key: 'my-product-orders',
-                    icon: <ShoppingOutlined />,
-                    label: intl.formatMessage({ id: 'nav.productOrders' }),
-                    onClick: () => history.push('/account/product-orders'),
-                  },
                   {
                     type: 'divider',
                   },
