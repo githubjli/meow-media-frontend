@@ -1,4 +1,5 @@
 import { requestJson } from '@/services/auth';
+import { getAccessToken } from '@/utils/auth';
 
 export type PublicVideo = {
   id: number | string;
@@ -97,8 +98,16 @@ export async function listPublicVideos(
 }
 
 export async function getPublicVideoDetail(id: string) {
+  const accessToken = getAccessToken();
   const payload = await requestJson<PublicVideo>(`/api/public/videos/${id}/`, {
     method: 'GET',
+    ...(accessToken
+      ? {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      : {}),
   });
   return normalizeVideo(payload);
 }
