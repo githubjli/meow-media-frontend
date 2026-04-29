@@ -59,6 +59,8 @@ export default {
   'auth.login.createOne': 'ยังไม่มีบัญชี? สมัครเลย',
   'auth.login.error.tokens': 'เข้าสู่ระบบสำเร็จแต่ไม่ได้รับโทเค็น',
   'auth.login.error.unavailable': 'ไม่สามารถเข้าสู่ระบบได้ในขณะนี้',
+  'auth.login.dailyReward':
+    'ได้รับรางวัลล็อกอินรายวัน +{points} Meow Points แล้ว',
   'auth.register.welcome': 'สร้างบัญชี',
   'auth.register.title': 'เข้าร่วม Meow Media Stream',
   'auth.register.subtitle': 'สมัครด้วยอีเมลของคุณเพื่อเริ่มต้น',

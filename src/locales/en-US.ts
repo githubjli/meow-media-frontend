@@ -60,6 +60,8 @@ export default {
   'auth.login.createOne': 'Need an account? Create one',
   'auth.login.error.tokens': 'Login succeeded but tokens were not returned.',
   'auth.login.error.unavailable': 'Unable to log in right now.',
+  'auth.login.dailyReward':
+    '+{points} Meow Points daily login reward received.',
   'auth.register.welcome': 'Create account',
   'auth.register.title': 'Join Media Stream',
   'auth.register.subtitle': 'Register with your email to get started.',

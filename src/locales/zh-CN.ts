@@ -59,6 +59,7 @@ export default {
   'auth.login.createOne': '还没有账号？立即注册',
   'auth.login.error.tokens': '登录成功但未返回令牌。',
   'auth.login.error.unavailable': '当前无法登录，请稍后重试。',
+  'auth.login.dailyReward': '已获得 +{points} 喵点数每日登录奖励。',
   'auth.register.welcome': '创建账号',
   'auth.register.title': '加入喵流媒体',
   'auth.register.subtitle': '使用你的邮箱注册并开始使用。',

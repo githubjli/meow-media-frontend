@@ -60,6 +60,8 @@ export default {
   'auth.login.createOne': 'အကောင့်မရှိသေးဘူးလား? အကောင့်ဖွင့်ပါ',
   'auth.login.error.tokens': 'ဝင်ရောက်မှုအောင်မြင်သော်လည်း token မရရှိပါ',
   'auth.login.error.unavailable': 'ယခုအချိန်တွင် ဝင်ရောက်၍ မရနိုင်ပါ',
+  'auth.login.dailyReward':
+    'နေ့စဉ် login ဆုအဖြစ် +{points} Meow Points ရရှိပါသည်။',
   'auth.register.welcome': 'အကောင့်ဖန်တီးရန်',
   'auth.register.title': 'Meow Media Stream သို့ ပါဝင်ပါ',
   'auth.register.subtitle': 'စတင်ရန် သင့်အီးမေးလ်ဖြင့် အကောင့်ဖွင့်ပါ',

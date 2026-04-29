@@ -2,7 +2,16 @@ import { getCurrentUser, loginWithEmail } from '@/services/auth';
 import { setStoredTokens } from '@/utils/auth';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { history, useIntl, useLocation, useModel } from '@umijs/max';
-import { Alert, Button, Card, Form, Input, Space, Typography } from 'antd';
+import {
+  Alert,
+  Button,
+  Card,
+  Form,
+  Input,
+  Space,
+  Typography,
+  message,
+} from 'antd';
 import { useEffect, useState } from 'react';
 
 const { Title, Text } = Typography;
@@ -52,6 +61,15 @@ export default function LoginPage() {
         currentUser,
         authLoading: false,
       }));
+
+      if (authResponse.daily_login_reward?.granted) {
+        message.success(
+          intl.formatMessage(
+            { id: 'auth.login.dailyReward' },
+            { points: authResponse.daily_login_reward.points_amount ?? 0 },
+          ),
+        );
+      }
 
       history.push(redirectTarget);
     } catch (error: any) {
