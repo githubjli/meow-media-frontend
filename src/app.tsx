@@ -1,5 +1,11 @@
 import HeaderSearchWithQr from '@/components/layout/HeaderSearchWithQr';
+import NotificationBell from '@/components/notifications/NotificationBell';
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
+import { claimDailyLoginReward } from '@/services/meowPoints';
+import {
+  addNotification,
+  getNotificationUserKey,
+} from '@/services/localNotifications';
 import { claimDailyLoginReward } from '@/services/meowPoints';
 import {
   listPublicCategories,
@@ -321,6 +327,27 @@ export async function getInitialState(): Promise<InitialState> {
                   { points: payload.points_amount ?? 0 },
                 ),
               );
+              const rewardDate =
+                payload.reward_date || new Date().toISOString().slice(0, 10);
+              const userKey = getNotificationUserKey(currentUser);
+              addNotification(userKey, {
+                id: `daily_reward_${userKey}_${rewardDate}`,
+                type: 'daily_reward',
+                title: intl.formatMessage({
+                  id: 'notifications.dailyReward.title',
+                }),
+                body: intl.formatMessage(
+                  { id: 'notifications.dailyReward.body' },
+                  { points: payload.points_amount ?? 0 },
+                ),
+                createdAt: new Date().toISOString(),
+                read: false,
+                data: {
+                  points_amount: payload.points_amount ?? 0,
+                  reward_date: rewardDate,
+                  url: '/meow-points',
+                },
+              });
             }
             localStorage.setItem(checkedKey, '1');
           })
@@ -389,6 +416,7 @@ export const layout: RunTimeLayoutConfig = ({
       ? { key: 'profile-hint-admin', label: 'nav.profile.role.admin' }
       : null,
   ].filter(Boolean) as Array<{ key: string; label: string }>;
+  const notificationUserKey = getNotificationUserKey(currentUser);
   const languageMenuItems = [
     {
       key: 'lang-en-us',
@@ -731,6 +759,19 @@ export const layout: RunTimeLayoutConfig = ({
               {intl.formatMessage({ id: 'nav.goLive' })}
             </Button>
           </Tooltip>
+          <Dropdown
+            trigger={['click']}
+            menu={{ items: languageMenuItems as any }}
+          >
+            <Button
+              type="text"
+              icon={<GlobalOutlined style={{ fontSize: 16 }} />}
+              style={{
+                ...utilityButtonStyle,
+                color: isDark ? '#EFBC5C' : '#4b5563',
+              }}
+            />
+          </Dropdown>
           <Button
             type="text"
             icon={
@@ -747,19 +788,7 @@ export const layout: RunTimeLayoutConfig = ({
             }}
             onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
           />
-          <Dropdown
-            trigger={['click']}
-            menu={{ items: languageMenuItems as any }}
-          >
-            <Button
-              type="text"
-              icon={<GlobalOutlined style={{ fontSize: 16 }} />}
-              style={{
-                ...utilityButtonStyle,
-                color: isDark ? '#EFBC5C' : '#4b5563',
-              }}
-            />
-          </Dropdown>
+          <NotificationBell userKey={notificationUserKey} />
           {isLoggedIn ? (
             <Dropdown
               trigger={['click']}

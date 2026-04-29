@@ -1,4 +1,8 @@
 import { getCurrentUser, loginWithEmail } from '@/services/auth';
+import {
+  addNotification,
+  getNotificationUserKey,
+} from '@/services/localNotifications';
 import { setStoredTokens } from '@/utils/auth';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { history, useIntl, useLocation, useModel } from '@umijs/max';
@@ -76,6 +80,23 @@ export default function LoginPage() {
           `meow_daily_reward_checked_${rewardDate}_${rewardIdentity}`,
           '1',
         );
+        const userKey = getNotificationUserKey(currentUser);
+        addNotification(userKey, {
+          id: `daily_reward_${userKey}_${rewardDate}`,
+          type: 'daily_reward',
+          title: intl.formatMessage({ id: 'notifications.dailyReward.title' }),
+          body: intl.formatMessage(
+            { id: 'notifications.dailyReward.body' },
+            { points: authResponse.daily_login_reward.points_amount ?? 0 },
+          ),
+          createdAt: new Date().toISOString(),
+          read: false,
+          data: {
+            points_amount: authResponse.daily_login_reward.points_amount ?? 0,
+            reward_date: rewardDate,
+            url: '/meow-points',
+          },
+        });
         message.success(
           intl.formatMessage(
             { id: 'auth.login.dailyReward' },
