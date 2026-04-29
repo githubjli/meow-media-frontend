@@ -13,3 +13,6 @@
 .swc
 .turbopack
 .umirc.local.ts
+
+# JetBrains IDE
+.idea/
