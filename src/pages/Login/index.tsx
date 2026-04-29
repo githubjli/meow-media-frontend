@@ -63,6 +63,19 @@ export default function LoginPage() {
       }));
 
       if (authResponse.daily_login_reward?.granted) {
+        const rewardDate =
+          authResponse.daily_login_reward.reward_date ||
+          new Date().toISOString().slice(0, 10);
+        const rewardIdentity = String(
+          currentUser?.id ||
+            currentUser?.email ||
+            currentUser?.username ||
+            values.email,
+        );
+        localStorage.setItem(
+          `meow_daily_reward_checked_${rewardDate}_${rewardIdentity}`,
+          '1',
+        );
         message.success(
           intl.formatMessage(
             { id: 'auth.login.dailyReward' },
