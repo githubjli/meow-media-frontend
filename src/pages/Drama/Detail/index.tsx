@@ -99,6 +99,7 @@ export default function DramaDetailPage() {
 
   const cover =
     series?.cover_url ||
+    series?.cover ||
     series?.poster_url ||
     series?.thumbnail_url ||
     '/logo_black.svg';
