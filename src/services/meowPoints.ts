@@ -1,6 +1,7 @@
 import { getValidAccessToken, requestJson } from '@/services/auth';
 import type {
   CreateMeowPointOrderResponse,
+  DailyLoginRewardResponse,
   MeowPointLedgerEntry,
   MeowPointLedgerParams,
   MeowPointOrder,
@@ -90,6 +91,16 @@ export async function submitMeowPointTxHint(orderNo: string, txid: string) {
       method: 'POST',
       headers: await withAuth(),
       body: JSON.stringify({ txid }),
+    },
+  );
+}
+
+export async function claimDailyLoginReward() {
+  return requestJson<DailyLoginRewardResponse>(
+    '/api/meow-points/daily-login-reward/',
+    {
+      method: 'POST',
+      headers: await withAuth(),
     },
   );
 }
