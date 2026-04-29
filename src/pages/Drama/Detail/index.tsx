@@ -1,11 +1,14 @@
 import EpisodeGrid from '@/components/drama/EpisodeGrid';
+import UnlockEpisodeModal from '@/components/drama/UnlockEpisodeModal';
 import PageIntroCard from '@/components/PageIntroCard';
 import {
   favoriteDrama,
   getDramaDetail,
   getDramaEpisodes,
   unfavoriteDrama,
+  unlockDramaEpisode,
 } from '@/services/drama';
+import { getMeowPointWallet } from '@/services/meowPoints';
 import type { DramaEpisode, DramaSeries } from '@/types/drama';
 import { HeartFilled, HeartOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
@@ -36,6 +39,9 @@ export default function DramaDetailPage() {
   const [series, setSeries] = useState<DramaSeries | null>(null);
   const [episodes, setEpisodes] = useState<DramaEpisode[]>([]);
   const [togglingFavorite, setTogglingFavorite] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockTarget, setUnlockTarget] = useState<DramaEpisode | null>(null);
 
   useEffect(() => {
     if (!dramaId) return;
@@ -60,6 +66,24 @@ export default function DramaDetailPage() {
   const firstWatchableEpisode = useMemo(() => {
     return episodes.find((episode) => episode.can_watch) || episodes[0] || null;
   }, [episodes]);
+  const unlockTargetPoints = useMemo(() => {
+    const value =
+      unlockTarget?.meow_points_price ??
+      unlockTarget?.points_price ??
+      unlockTarget?.coin_price;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }, [unlockTarget]);
+
+  useEffect(() => {
+    if (!unlockTarget || !isLoggedIn) return;
+    getMeowPointWallet()
+      .then((wallet) => {
+        const value = Number(wallet?.balance ?? wallet?.available_balance);
+        setWalletBalance(Number.isFinite(value) ? value : null);
+      })
+      .catch(() => setWalletBalance(null));
+  }, [isLoggedIn, unlockTarget]);
 
   const onToggleFavorite = async () => {
     if (!isLoggedIn) {
@@ -97,11 +121,43 @@ export default function DramaDetailPage() {
     }
   };
 
+  const onLockedEpisodeClick = (episode: DramaEpisode) => {
+    if (!isLoggedIn) {
+      history.push(
+        `/login?redirect=${encodeURIComponent(`/drama/${dramaId}`)}`,
+      );
+      return;
+    }
+    setUnlockTarget(episode);
+  };
+
+  const onUnlock = async () => {
+    if (!unlockTarget?.id || unlocking) return;
+    setUnlocking(true);
+    try {
+      await unlockDramaEpisode(unlockTarget.id);
+      const latestEpisodes = await getDramaEpisodes(dramaId);
+      setEpisodes(latestEpisodes || []);
+      message.success(intl.formatMessage({ id: 'drama.unlock.success' }));
+      history.push(`/drama/${dramaId}/episodes/${unlockTarget.id}`);
+    } catch (error: any) {
+      message.error(
+        error?.message || intl.formatMessage({ id: 'drama.unlock.failed' }),
+      );
+    } finally {
+      setUnlocking(false);
+      setUnlockTarget(null);
+    }
+  };
+
   const cover =
     series?.cover_url ||
+    series?.cover ||
     series?.poster_url ||
     series?.thumbnail_url ||
     '/logo_black.svg';
+  const totalEpisodes = Number(series?.total_episodes);
+  const fallbackEpisodesCount = Number(series?.episodes_count);
 
   return (
     <PageContainer title={false}>
@@ -156,9 +212,11 @@ export default function DramaDetailPage() {
                   </Text>
                   <Text>
                     {intl.formatMessage({ id: 'drama.totalEpisodes' })}:{' '}
-                    {series.total_episodes ||
-                      series.episodes_count ||
-                      episodes.length}
+                    {totalEpisodes > 0
+                      ? totalEpisodes
+                      : fallbackEpisodesCount > 0
+                      ? fallbackEpisodesCount
+                      : episodes.length}
                   </Text>
                   <Text>
                     {intl.formatMessage({ id: 'drama.views' })}:{' '}
@@ -197,12 +255,32 @@ export default function DramaDetailPage() {
                   })}
                 />
               ) : (
-                <EpisodeGrid seriesId={series.id} episodes={episodes} />
+                <EpisodeGrid
+                  seriesId={series.id}
+                  episodes={episodes}
+                  onLockedClick={onLockedEpisodeClick}
+                />
               )}
             </Card>
           </>
         )}
       </Space>
+      <UnlockEpisodeModal
+        open={Boolean(unlockTarget)}
+        episodeTitle={
+          unlockTarget?.title ||
+          intl.formatMessage(
+            { id: 'drama.episode.numberLabel' },
+            { number: unlockTarget?.episode_no || '-' },
+          )
+        }
+        requiredPoints={unlockTargetPoints}
+        walletBalance={walletBalance}
+        unlocking={unlocking}
+        onConfirm={onUnlock}
+        onRecharge={() => history.push('/meow-points/recharge')}
+        onCancel={() => setUnlockTarget(null)}
+      />
     </PageContainer>
   );
 }

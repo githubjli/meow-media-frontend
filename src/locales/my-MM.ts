@@ -176,6 +176,9 @@ export default {
   'drama.watch.notFound': 'Episode မတွေ့ပါ။',
   'drama.watch.locked': 'ဤ episode သည် locked ဖြစ်နေသည်။',
   'drama.watch.noPlayback': 'Playback မရနိုင်သေးပါ။',
+  'drama.watch.swipeHint': 'Episode ပြောင်းရန် ဘယ်/ညာ swipe လုပ်ပါ',
+  'drama.watch.firstEpisode': 'ဤ episode သည် ပထမဆုံးဖြစ်သည်။',
+  'drama.watch.latestEpisode': 'ဤ episode သည် နောက်ဆုံးဖြစ်သည်။',
   'drama.unlock.title': 'Episode Unlock',
   'drama.unlock.episode': 'Episode',
   'drama.unlock.requiredPoints': 'လိုအပ်သော Meow Points',
@@ -184,6 +187,10 @@ export default {
   'drama.unlock.recharge': 'Meow Points ဖြည့်သွင်းမည်',
   'drama.unlock.success': 'Episode unlock အောင်မြင်သည်။',
   'drama.unlock.failed': 'Episode unlock မအောင်မြင်ပါ။',
+  'drama.episode.numberLabel': 'Episode {number}',
+  'drama.episode.unlockForPoints': '{points} Meow Points ဖြင့် unlock လုပ်မည်',
+  'drama.episode.lockedTooltip':
+    'Episode {number} locked ဖြစ်နေသည်၊ {points} Meow Points လိုအပ်သည်',
   'drama.creator.list.title': 'ကျွန်ုပ်၏ ဒရာမာ',
   'drama.creator.list.subtitle':
     'Short drama series များကို ဖန်တီးပြီး စီမံပါ။',
@@ -787,8 +794,10 @@ export default {
   'account.subscription.currentPlan': 'Current Plan',
   'account.subscription.choosePlan': 'Choose Plan',
   'account.subscription.changePlan': 'Change Plan',
-  'account.subscription.planChangeUnavailable': 'Plan changes are unavailable during your current membership period.',
-  'account.subscription.activeMembershipExists': 'You already have an active membership.',
+  'account.subscription.planChangeUnavailable':
+    'Plan changes are unavailable during your current membership period.',
+  'account.subscription.activeMembershipExists':
+    'You already have an active membership.',
   'account.subscription.create.success': 'Subscription updated successfully.',
   'account.subscription.create.error': 'Unable to start subscription.',
 
@@ -796,7 +805,7 @@ export default {
   'account.subscription.current.remainingDays': '{days} days left',
   'account.subscription.plan.durationDays': '{days} days',
 
-    'account.subscription.plan.price': 'Price',
+  'account.subscription.plan.price': 'Price',
   'account.subscription.plan.current': 'Current Plan',
   'account.subscription.plan.change': 'Change Plan',
   'account.subscription.plan.duration': 'Duration',
