@@ -195,6 +195,7 @@ export default defineConfig({
       path: '/browse',
       icon: 'AppstoreOutlined',
       component: './Browse',
+      hideInMenu: true,
     },
     {
       name: 'Live',
