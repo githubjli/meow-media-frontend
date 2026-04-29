@@ -1,4 +1,8 @@
 import { getCurrentUser, loginWithEmail } from '@/services/auth';
+import {
+  addNotification,
+  getNotificationUserKey,
+} from '@/services/localNotifications';
 import { setStoredTokens } from '@/utils/auth';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { history, useIntl, useLocation, useModel } from '@umijs/max';
