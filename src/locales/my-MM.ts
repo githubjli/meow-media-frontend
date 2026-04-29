@@ -169,6 +169,7 @@ export default {
   'drama.detail.title': 'Drama Detail',
   'drama.detail.subtitle': 'Episode များကိုရွေးပြီး ကြည့်ရှုပါ။',
   'drama.detail.favorite': 'Favorite',
+  'drama.detail.favorited': 'Favorited',
   'drama.detail.unfavorite': 'Unfavorite',
   'drama.detail.startWatching': 'Start Watching',
   'drama.detail.episodes': 'Episodes',

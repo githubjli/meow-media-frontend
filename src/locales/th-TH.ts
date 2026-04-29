@@ -165,6 +165,7 @@ export default {
   'drama.detail.title': 'รายละเอียดดรามา',
   'drama.detail.subtitle': 'เลือกตอนและเริ่มรับชม',
   'drama.detail.favorite': 'เพิ่มรายการโปรด',
+  'drama.detail.favorited': 'อยู่ในรายการโปรด',
   'drama.detail.unfavorite': 'ยกเลิกรายการโปรด',
   'drama.detail.startWatching': 'เริ่มรับชม',
   'drama.detail.episodes': 'ตอน',

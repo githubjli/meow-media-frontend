@@ -164,6 +164,7 @@ export default {
   'drama.detail.title': '剧集详情',
   'drama.detail.subtitle': '浏览分集并开始观看。',
   'drama.detail.favorite': '收藏',
+  'drama.detail.favorited': '已收藏',
   'drama.detail.unfavorite': '取消收藏',
   'drama.detail.startWatching': '开始观看',
   'drama.detail.episodes': '分集',

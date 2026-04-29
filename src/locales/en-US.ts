@@ -170,6 +170,7 @@ export default {
   'drama.detail.title': 'Drama Detail',
   'drama.detail.subtitle': 'Browse episodes and start watching.',
   'drama.detail.favorite': 'Favorite',
+  'drama.detail.favorited': 'Favorited',
   'drama.detail.unfavorite': 'Unfavorite',
   'drama.detail.startWatching': 'Start Watching',
   'drama.detail.episodes': 'Episodes',

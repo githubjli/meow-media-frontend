@@ -167,21 +167,6 @@ export default function DramaDetailPage() {
             series?.title || intl.formatMessage({ id: 'drama.detail.title' })
           }
           description={intl.formatMessage({ id: 'drama.detail.subtitle' })}
-          extra={
-            isLoggedIn ? (
-              <Button
-                loading={togglingFavorite}
-                icon={
-                  series?.is_favorited ? <HeartFilled /> : <HeartOutlined />
-                }
-                onClick={onToggleFavorite}
-              >
-                {series?.is_favorited
-                  ? intl.formatMessage({ id: 'drama.detail.unfavorite' })
-                  : intl.formatMessage({ id: 'drama.detail.favorite' })}
-              </Button>
-            ) : null
-          }
         />
 
         {errorMessage ? (
@@ -227,18 +212,37 @@ export default function DramaDetailPage() {
                   <Paragraph style={{ marginTop: 4 }}>
                     {series.description || '-'}
                   </Paragraph>
-                  {firstWatchableEpisode ? (
+                  <Space size={8} wrap>
+                    {firstWatchableEpisode ? (
+                      <Button
+                        type="primary"
+                        onClick={() =>
+                          history.push(
+                            `/drama/${series.id}/episodes/${firstWatchableEpisode.id}`,
+                          )
+                        }
+                      >
+                        {intl.formatMessage({
+                          id: 'drama.detail.startWatching',
+                        })}
+                      </Button>
+                    ) : null}
                     <Button
-                      type="primary"
-                      onClick={() =>
-                        history.push(
-                          `/drama/${series.id}/episodes/${firstWatchableEpisode.id}`,
+                      loading={togglingFavorite}
+                      icon={
+                        series?.is_favorited ? (
+                          <HeartFilled />
+                        ) : (
+                          <HeartOutlined />
                         )
                       }
+                      onClick={onToggleFavorite}
                     >
-                      {intl.formatMessage({ id: 'drama.detail.startWatching' })}
+                      {series?.is_favorited
+                        ? intl.formatMessage({ id: 'drama.detail.favorited' })
+                        : intl.formatMessage({ id: 'drama.detail.favorite' })}
                     </Button>
-                  ) : null}
+                  </Space>
                 </Space>
               </Space>
             </Card>
