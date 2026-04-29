@@ -238,6 +238,10 @@ const resolveMenuSelectedPath = (pathname: string, search: string) => {
   }
   if (pathname === '/live') return '/live';
   if (pathname.startsWith('/live/')) return '/live';
+  if (pathname === '/browse') return '/browse';
+  if (pathname.startsWith('/browse/')) return '/browse';
+  if (pathname === '/videos') return '/videos';
+  if (pathname.startsWith('/videos/')) return '/videos';
   if (pathname === '/drama') return '/drama';
   if (pathname.startsWith('/drama/')) return '/drama';
   if (pathname.startsWith('/seller/store')) return '/seller/store';
@@ -424,6 +428,7 @@ export const layout: RunTimeLayoutConfig = ({
       const stableItemMap = new Map<string, any>([
         ['/home', <VideoCameraOutlined key="icon-home" />],
         ['/browse', <CompassOutlined key="icon-browse" />],
+        ['/videos', <PlayCircleOutlined key="icon-videos" />],
         ['/news', <NotificationOutlined key="icon-news" />],
         ['/live', <ThunderboltOutlined key="icon-live" />],
         ['/drama', <PlaySquareOutlined key="icon-drama" />],
@@ -436,18 +441,19 @@ export const layout: RunTimeLayoutConfig = ({
         stableItems.map((item) => [item.path || '', item]),
       );
 
-      const primaryItems = ['/home', '/browse'].map((path) => ({
-        ...(stableItemByPath.get(path) || {}),
-        path,
-        name:
-          path === '/home'
-            ? intl.formatMessage({ id: 'menu.home' })
-            : path === '/browse'
-            ? intl.formatMessage({ id: 'menu.browse' })
-            : undefined,
-        icon: stableItemMap.get(path),
+      const homeItem = {
+        ...(stableItemByPath.get('/home') || {}),
+        path: '/home',
+        name: intl.formatMessage({ id: 'menu.home' }),
+        icon: stableItemMap.get('/home'),
         className: 'sidebar-menu-item sidebar-menu-item-primary',
-      }));
+      };
+      const browseItem = {
+        path: '/browse',
+        name: intl.formatMessage({ id: 'menu.browse' }),
+        icon: <CompassOutlined />,
+        className: 'sidebar-menu-item sidebar-menu-item-primary',
+      };
 
       const adminItems = isAdmin
         ? [
@@ -553,6 +559,13 @@ export const layout: RunTimeLayoutConfig = ({
         icon: stableItemMap.get('/drama'),
         className: 'sidebar-menu-item sidebar-menu-item-primary',
       };
+      const videosItem = {
+        ...(stableItemByPath.get('/videos') || {}),
+        path: '/videos',
+        name: intl.formatMessage({ id: 'menu.videos' }),
+        icon: stableItemMap.get('/videos'),
+        className: 'sidebar-menu-item sidebar-menu-item-primary',
+      };
 
       const sellerItem = isLoggedIn
         ? {
@@ -596,9 +609,11 @@ export const layout: RunTimeLayoutConfig = ({
         : null;
 
       return [
-        ...primaryItems,
+        homeItem,
+        browseItem,
         newsItem,
         liveItem,
+        videosItem,
         dramaItem,
         ...adminItems,
         ...(sellerItem ? [sellerItem] : []),
