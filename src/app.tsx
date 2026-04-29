@@ -1,5 +1,4 @@
 import HeaderSearchWithQr from '@/components/layout/HeaderSearchWithQr';
-import NotificationBell from '@/components/notifications/NotificationBell';
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import { claimDailyLoginReward } from '@/services/meowPoints';
 import {
@@ -390,7 +389,6 @@ export const layout: RunTimeLayoutConfig = ({
       ? { key: 'profile-hint-admin', label: 'nav.profile.role.admin' }
       : null,
   ].filter(Boolean) as Array<{ key: string; label: string }>;
-  const notificationUserKey = getNotificationUserKey(currentUser);
   const languageMenuItems = [
     {
       key: 'lang-en-us',
@@ -733,19 +731,6 @@ export const layout: RunTimeLayoutConfig = ({
               {intl.formatMessage({ id: 'nav.goLive' })}
             </Button>
           </Tooltip>
-          <Dropdown
-            trigger={['click']}
-            menu={{ items: languageMenuItems as any }}
-          >
-            <Button
-              type="text"
-              icon={<GlobalOutlined style={{ fontSize: 16 }} />}
-              style={{
-                ...utilityButtonStyle,
-                color: isDark ? '#EFBC5C' : '#4b5563',
-              }}
-            />
-          </Dropdown>
           <Button
             type="text"
             icon={
@@ -762,7 +747,19 @@ export const layout: RunTimeLayoutConfig = ({
             }}
             onClick={() => applyThemeMode(isDark ? 'light' : 'dark')}
           />
-          <NotificationBell userKey={notificationUserKey} />
+          <Dropdown
+            trigger={['click']}
+            menu={{ items: languageMenuItems as any }}
+          >
+            <Button
+              type="text"
+              icon={<GlobalOutlined style={{ fontSize: 16 }} />}
+              style={{
+                ...utilityButtonStyle,
+                color: isDark ? '#EFBC5C' : '#4b5563',
+              }}
+            />
+          </Dropdown>
           {isLoggedIn ? (
             <Dropdown
               trigger={['click']}
