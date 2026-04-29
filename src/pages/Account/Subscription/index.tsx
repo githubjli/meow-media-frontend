@@ -380,6 +380,17 @@ export default function AccountSubscriptionPage() {
   );
 
   const membershipActive = getMembershipActive(membership);
+  const currentMembershipPlanId = String(
+    membership?.plan_id || membership?.plan?.id || '',
+  );
+  const currentMembershipPlanCode = String(
+    membership?.plan_code || membership?.plan?.code || '',
+  ).toLowerCase();
+  const currentMembershipPlanNameNormalized = String(
+    membership?.plan_name || membership?.plan?.name || '',
+  )
+    .trim()
+    .toLowerCase();
   const membershipPlanName =
     membership?.plan_name ||
     membership?.plan?.name ||
@@ -554,6 +565,16 @@ export default function AccountSubscriptionPage() {
               <Space direction="vertical" size={12} style={{ width: '100%' }}>
                 {sortedPlans.map((plan) => {
                   const planId = String(plan.id);
+                  const isCurrentPlan = Boolean(
+                    membershipActive &&
+                      ((currentMembershipPlanId && currentMembershipPlanId === planId) ||
+                        (currentMembershipPlanCode &&
+                          currentMembershipPlanCode ===
+                            String(plan.code || '').toLowerCase()) ||
+                        (currentMembershipPlanNameNormalized &&
+                          currentMembershipPlanNameNormalized ===
+                            String(plan.name || '').trim().toLowerCase())),
+                  );
                   return (
                     <Card
                       key={planId}
@@ -573,6 +594,13 @@ export default function AccountSubscriptionPage() {
                             <Title level={5} style={{ margin: 0 }}>
                               {plan.name || `Plan ${planId}`}
                             </Title>
+                            {isCurrentPlan ? (
+                            <Tag color="green">
+                              {intl.formatMessage({
+                                  id: 'account.subscription.currentPlan',
+                              })}
+                            </Tag>
+                            ) : null}
                           </Space>
                           <Paragraph
                             type="secondary"
@@ -626,6 +654,17 @@ export default function AccountSubscriptionPage() {
                             icon={<DollarOutlined />}
                             loading={submittingPlanId === planId}
                             onClick={async () => {
+                              if (isCurrentPlan) {
+                                return;
+                              }
+                              if (membershipActive) {
+                                message.info(
+                                  intl.formatMessage({
+                                    id: 'account.subscription.planChangeUnavailable',
+                                  }),
+                                );
+                                return;
+                              }
                               setSubmittingPlanId(planId);
                               setOrderError('');
                               setCapturedTxid('');
@@ -652,11 +691,19 @@ export default function AccountSubscriptionPage() {
                                 setCopyAddressCopied(false);
                                 setOrderUiOpen(true);
                               } catch (error: any) {
+                                const isActiveMembershipConflict =
+                                  error?.status === 409 &&
+                                  String(error?.data?.code || '').toLowerCase() ===
+                                    'active_membership_exists';
                                 const errorText =
-                                  error?.message ||
-                                  intl.formatMessage({
-                                    id: 'account.subscription.create.error',
-                                  });
+                                  isActiveMembershipConflict
+                                    ? intl.formatMessage({
+                                        id: 'account.subscription.activeMembershipExists',
+                                      })
+                                    : error?.message ||
+                                      intl.formatMessage({
+                                        id: 'account.subscription.create.error',
+                                      });
                                 setOrderError(errorText);
                                 message.error(errorText);
                               } finally {
@@ -664,9 +711,17 @@ export default function AccountSubscriptionPage() {
                               }
                             }}
                           >
-                            {intl.formatMessage({
-                              id: 'account.subscription.create.cta',
-                            })}
+                            {membershipActive
+                              ? intl.formatMessage({
+                                  id: 'account.subscription.changePlan',
+                                })
+                              : isCurrentPlan
+                              ? intl.formatMessage({
+                                  id: 'account.subscription.currentPlan',
+                                })
+                              : intl.formatMessage({
+                                  id: 'account.subscription.choosePlan',
+                                })}
                           </Button>
                         </Space>
                       </Space>

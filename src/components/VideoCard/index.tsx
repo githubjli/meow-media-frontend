@@ -1,4 +1,4 @@
-import { CheckCircleFilled } from '@ant-design/icons';
+import { CheckCircleFilled, LockOutlined } from '@ant-design/icons';
 import { history, useIntl, useModel } from '@umijs/max';
 import { Avatar, Tag, Typography } from 'antd';
 
@@ -175,6 +175,9 @@ export default ({ data }: { data: any }) => {
   const isEnded = normalizedStatus === 'ended';
   const isStarting = normalizedStatus === 'waiting_for_signal';
   const isReady = normalizedStatus === 'ready';
+  const accessType =
+    data.access_type === 'membership' ? 'membership' : 'free';
+  const isLocked = Boolean(data.is_locked);
 
   const statusLabel = data.status_label
     ? String(data.status_label)
@@ -268,6 +271,30 @@ export default ({ data }: { data: any }) => {
           >
             {statusLabel}
           </Tag>
+        ) : null}
+        {accessType === 'membership' || isLocked ? (
+          <div
+            style={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              display: 'flex',
+              gap: 6,
+              alignItems: 'center',
+            }}
+          >
+            {accessType === 'membership' ? (
+              <Tag color="gold" style={{ margin: 0, borderRadius: 999 }}>
+                {intl.formatMessage({ id: 'video.access.vip' })}
+              </Tag>
+            ) : null}
+            {isLocked ? (
+              <Tag style={{ margin: 0, borderRadius: 999 }}>
+                <LockOutlined />{' '}
+                {intl.formatMessage({ id: 'video.locked' })}
+              </Tag>
+            ) : null}
+          </div>
         ) : null}
         <div
           style={{
