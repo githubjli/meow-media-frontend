@@ -72,12 +72,18 @@ export type DramaListResponse = {
   results: DramaSeries[];
 };
 
+export type DramaViewTrackResponse = {
+  series_id: number;
+  view_count: number;
+  counted: boolean;
+};
+
 export type CreatorDramaSeriesPayload = {
   title: string;
   description?: string;
   cover?: File | string | null;
   cover_url?: string;
-  category?: string;
+  category?: number | string;
   tags?: string[];
   status?: 'draft' | 'published' | 'archived' | string;
   visibility?: 'public' | 'private' | 'unlisted' | string;
