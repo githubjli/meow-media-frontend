@@ -60,6 +60,8 @@ export default {
   'auth.login.createOne': 'Need an account? Create one',
   'auth.login.error.tokens': 'Login succeeded but tokens were not returned.',
   'auth.login.error.unavailable': 'Unable to log in right now.',
+  'auth.login.dailyReward':
+    '+{points} Meow Points daily login reward received.',
   'auth.register.welcome': 'Create account',
   'auth.register.title': 'Join Media Stream',
   'auth.register.subtitle': 'Register with your email to get started.',
@@ -170,6 +172,7 @@ export default {
   'drama.detail.title': 'Drama Detail',
   'drama.detail.subtitle': 'Browse episodes and start watching.',
   'drama.detail.favorite': 'Favorite',
+  'drama.detail.favorited': 'Favorited',
   'drama.detail.unfavorite': 'Unfavorite',
   'drama.detail.startWatching': 'Start Watching',
   'drama.detail.episodes': 'Episodes',
@@ -177,6 +180,9 @@ export default {
   'drama.watch.notFound': 'Episode not found.',
   'drama.watch.locked': 'This episode is locked.',
   'drama.watch.noPlayback': 'Playback is not available.',
+  'drama.watch.swipeHint': 'Swipe left/right to switch episodes',
+  'drama.watch.firstEpisode': 'This is the first episode.',
+  'drama.watch.latestEpisode': 'This is the latest episode.',
   'drama.unlock.title': 'Unlock Episode',
   'drama.unlock.episode': 'Episode',
   'drama.unlock.requiredPoints': 'Required Meow Points',
@@ -185,6 +191,10 @@ export default {
   'drama.unlock.recharge': 'Recharge Meow Points',
   'drama.unlock.success': 'Episode unlocked successfully.',
   'drama.unlock.failed': 'Unable to unlock this episode.',
+  'drama.episode.numberLabel': 'Episode {number}',
+  'drama.episode.unlockForPoints': 'Unlock for {points} Meow Points',
+  'drama.episode.lockedTooltip':
+    'Episode {number}, locked, {points} Meow Points',
   'drama.creator.list.title': 'My Drama',
   'drama.creator.list.subtitle': 'Create and manage short drama series.',
   'drama.creator.list.empty': 'No drama series created yet.',
@@ -780,8 +790,10 @@ export default {
   'account.subscription.currentPlan': 'Current Plan',
   'account.subscription.choosePlan': 'Choose Plan',
   'account.subscription.changePlan': 'Change Plan',
-  'account.subscription.planChangeUnavailable': 'Plan changes are unavailable during your current membership period.',
-  'account.subscription.activeMembershipExists': 'You already have an active membership.',
+  'account.subscription.planChangeUnavailable':
+    'Plan changes are unavailable during your current membership period.',
+  'account.subscription.activeMembershipExists':
+    'You already have an active membership.',
   'account.subscription.create.success': 'Subscription updated successfully.',
   'account.subscription.create.error': 'Unable to start subscription.',
 
@@ -789,7 +801,7 @@ export default {
   'account.subscription.current.remainingDays': '{days} days left',
   'account.subscription.plan.durationDays': '{days} days',
 
-    'account.subscription.plan.price': 'Price',
+  'account.subscription.plan.price': 'Price',
   'account.subscription.plan.current': 'Current Plan',
   'account.subscription.plan.change': 'Change Plan',
   'account.subscription.plan.duration': 'Duration',
