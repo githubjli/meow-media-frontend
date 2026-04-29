@@ -99,9 +99,12 @@ export default function DramaDetailPage() {
 
   const cover =
     series?.cover_url ||
+    series?.cover ||
     series?.poster_url ||
     series?.thumbnail_url ||
     '/logo_black.svg';
+  const totalEpisodes = Number(series?.total_episodes);
+  const fallbackEpisodesCount = Number(series?.episodes_count);
 
   return (
     <PageContainer title={false}>
@@ -156,9 +159,11 @@ export default function DramaDetailPage() {
                   </Text>
                   <Text>
                     {intl.formatMessage({ id: 'drama.totalEpisodes' })}:{' '}
-                    {series.total_episodes ||
-                      series.episodes_count ||
-                      episodes.length}
+                    {totalEpisodes > 0
+                      ? totalEpisodes
+                      : fallbackEpisodesCount > 0
+                      ? fallbackEpisodesCount
+                      : episodes.length}
                   </Text>
                   <Text>
                     {intl.formatMessage({ id: 'drama.views' })}:{' '}

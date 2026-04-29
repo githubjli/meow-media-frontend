@@ -65,7 +65,10 @@ export default function DramaWatchPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const selectedEpisode = useMemo(
-    () => episodes.find((item) => String(item.id) === episodeId) || null,
+    () =>
+      episodes.find((item) => String(item.id) === episodeId) ||
+      episodes.find((item) => String(item.episode_no) === episodeId) ||
+      null,
     [episodeId, episodes],
   );
 
@@ -109,28 +112,39 @@ export default function DramaWatchPage() {
 
   const reportProgress = useCallback(async () => {
     if (
+      !isLoggedIn ||
+      !seriesId ||
       !selectedEpisode?.id ||
       !videoRef.current ||
-      !selectedEpisode?.can_watch
+      !selectedEpisode?.can_watch ||
+      !playbackUrl
     )
       return;
 
-    const currentTime = Math.max(
+    const watchedSeconds = Math.max(
       0,
       Math.floor(videoRef.current.currentTime || 0),
     );
     const duration = Math.max(0, Math.floor(videoRef.current.duration || 0));
-    if (!currentTime) return;
+    if (!watchedSeconds) return;
+    const completed = Boolean(duration > 0 && watchedSeconds >= duration);
 
     try {
-      await updateDramaProgress(selectedEpisode.id, {
-        watched_seconds: currentTime,
-        duration_seconds: duration,
+      await updateDramaProgress(seriesId, {
+        episode_id: selectedEpisode.id,
+        progress_seconds: watchedSeconds,
+        completed,
       });
     } catch (error) {
       // silent by design
     }
-  }, [selectedEpisode?.can_watch, selectedEpisode?.id]);
+  }, [
+    isLoggedIn,
+    playbackUrl,
+    selectedEpisode?.can_watch,
+    selectedEpisode?.id,
+    seriesId,
+  ]);
 
   useEffect(() => {
     if (!selectedEpisode?.can_watch) return;

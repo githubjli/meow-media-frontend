@@ -77,7 +77,7 @@ export type CreatorDramaSeriesPayload = {
   description?: string;
   cover?: File | string | null;
   cover_url?: string;
-  category?: string;
+  category?: number | string;
   tags?: string[];
   status?: 'draft' | 'published' | 'archived' | string;
   visibility?: 'public' | 'private' | 'unlisted' | string;
