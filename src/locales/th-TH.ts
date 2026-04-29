@@ -165,6 +165,7 @@ export default {
   'drama.detail.title': 'รายละเอียดดรามา',
   'drama.detail.subtitle': 'เลือกตอนและเริ่มรับชม',
   'drama.detail.favorite': 'เพิ่มรายการโปรด',
+  'drama.detail.favorited': 'อยู่ในรายการโปรด',
   'drama.detail.unfavorite': 'ยกเลิกรายการโปรด',
   'drama.detail.startWatching': 'เริ่มรับชม',
   'drama.detail.episodes': 'ตอน',
@@ -172,6 +173,9 @@ export default {
   'drama.watch.notFound': 'ไม่พบตอนที่เลือก',
   'drama.watch.locked': 'ตอนนี้ถูกล็อก',
   'drama.watch.noPlayback': 'ยังไม่มีลิงก์รับชม',
+  'drama.watch.swipeHint': 'ปัดซ้าย/ขวาเพื่อเปลี่ยนตอน',
+  'drama.watch.firstEpisode': 'นี่คือตอนแรกแล้ว',
+  'drama.watch.latestEpisode': 'นี่คือตอนล่าสุดแล้ว',
   'drama.unlock.title': 'ปลดล็อกตอน',
   'drama.unlock.episode': 'ตอน',
   'drama.unlock.requiredPoints': 'Meow Points ที่ต้องใช้',
@@ -180,6 +184,10 @@ export default {
   'drama.unlock.recharge': 'เติม Meow Points',
   'drama.unlock.success': 'ปลดล็อกตอนสำเร็จ',
   'drama.unlock.failed': 'ปลดล็อกไม่สำเร็จ',
+  'drama.episode.numberLabel': 'ตอน {number}',
+  'drama.episode.unlockForPoints': 'ปลดล็อกด้วย {points} Meow Points',
+  'drama.episode.lockedTooltip':
+    'ตอน {number} ถูกล็อก ใช้ {points} Meow Points',
   'drama.creator.list.title': 'ละครของฉัน',
   'drama.creator.list.subtitle': 'สร้างและจัดการซีรีส์ดรามาสั้น',
   'drama.creator.list.empty': 'ยังไม่มีซีรีส์ที่สร้าง',
@@ -758,8 +766,10 @@ export default {
   'account.subscription.currentPlan': 'Current Plan',
   'account.subscription.choosePlan': 'Choose Plan',
   'account.subscription.changePlan': 'Change Plan',
-  'account.subscription.planChangeUnavailable': 'Plan changes are unavailable during your current membership period.',
-  'account.subscription.activeMembershipExists': 'You already have an active membership.',
+  'account.subscription.planChangeUnavailable':
+    'Plan changes are unavailable during your current membership period.',
+  'account.subscription.activeMembershipExists':
+    'You already have an active membership.',
   'account.subscription.create.success': 'Subscription updated successfully.',
   'account.subscription.create.error': 'Unable to start subscription.',
 
@@ -767,7 +777,7 @@ export default {
   'account.subscription.current.remainingDays': '{days} days left',
   'account.subscription.plan.durationDays': '{days} days',
 
-    'account.subscription.plan.price': 'ราคา',
+  'account.subscription.plan.price': 'ราคา',
   'account.subscription.plan.current': 'แพ็กเกจปัจจุบัน',
   'account.subscription.plan.change': 'เปลี่ยนแพ็กเกจ',
   'account.subscription.plan.duration': 'Duration',
