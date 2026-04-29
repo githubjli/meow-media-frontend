@@ -80,7 +80,7 @@ const buildDramaSeriesPayloadBody = (payload: CreatorDramaSeriesPayload) => {
     : [];
 
   if (tags.length > 0) {
-    tags.forEach((tag) => formData.append('tags', tag));
+    formData.append('tags', JSON.stringify(tags));
   }
 
   const hasFile = Boolean(coverFile);
