@@ -179,6 +179,9 @@ export default {
   'drama.unlock.recharge': '充值喵点数',
   'drama.unlock.success': '解锁成功。',
   'drama.unlock.failed': '解锁失败，请稍后重试。',
+  'drama.episode.numberLabel': '第 {number} 集',
+  'drama.episode.unlockForPoints': '使用 {points} 喵点数解锁',
+  'drama.episode.lockedTooltip': '第 {number} 集，已锁定，需要 {points} 喵点数',
   'drama.creator.list.title': '我的剧集',
   'drama.creator.list.subtitle': '创建并管理短剧系列。',
   'drama.creator.list.empty': '还没有创建剧集。',
@@ -758,7 +761,7 @@ export default {
   'account.subscription.current.remainingDays': '{days} days left',
   'account.subscription.plan.durationDays': '{days} days',
 
-    'account.subscription.plan.price': '价格',
+  'account.subscription.plan.price': '价格',
   'account.subscription.plan.current': '当前套餐',
   'account.subscription.plan.change': '更换套餐',
   'account.subscription.plan.duration': 'Duration',

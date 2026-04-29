@@ -258,7 +258,12 @@ export default function DramaWatchPage() {
                   })}
                 />
               ) : (
-                <EpisodeGrid seriesId={seriesId} episodes={episodes} />
+                <EpisodeGrid
+                  seriesId={seriesId}
+                  episodes={episodes}
+                  selectedEpisodeId={episodeId}
+                  onLockedClick={() => setUnlockOpen(true)}
+                />
               )}
             </Card>
           </>
