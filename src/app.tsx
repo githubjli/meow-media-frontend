@@ -1,5 +1,6 @@
 import HeaderSearchWithQr from '@/components/layout/HeaderSearchWithQr';
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
+import { claimDailyLoginReward } from '@/services/meowPoints';
 import {
   listPublicCategories,
   type PublicCategory,
@@ -75,6 +76,12 @@ const resolveSystemDarkTheme = () => {
   }
 
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
+};
+
+const buildDailyRewardCheckedKey = (user?: CurrentUser | null) => {
+  const date = new Date().toISOString().slice(0, 10);
+  const identity = String(user?.id || user?.email || user?.username || 'guest');
+  return `meow_daily_reward_checked_${date}_${identity}`;
 };
 
 const getCategoryIcon = () => {
@@ -299,6 +306,31 @@ export async function getInitialState(): Promise<InitialState> {
       sellerHasStore = true;
     } catch (error: any) {
       sellerHasStore = false;
+    }
+
+    if (typeof window !== 'undefined') {
+      const intl = getIntl();
+      const checkedKey = buildDailyRewardCheckedKey(currentUser);
+      if (!localStorage.getItem(checkedKey)) {
+        claimDailyLoginReward()
+          .then((payload) => {
+            if (payload?.granted) {
+              message.success(
+                intl.formatMessage(
+                  { id: 'auth.login.dailyReward' },
+                  { points: payload.points_amount ?? 0 },
+                ),
+              );
+            }
+            localStorage.setItem(checkedKey, '1');
+          })
+          .catch(() => {
+            if (process.env.NODE_ENV === 'development') {
+              // eslint-disable-next-line no-console
+              console.warn('daily reward bootstrap claim failed');
+            }
+          });
+      }
     }
   }
 

@@ -19,6 +19,12 @@ export type CurrentUser = {
 
 export type AuthResponse = Partial<AuthTokens> & {
   user?: CurrentUser;
+  daily_login_reward?: {
+    granted?: boolean;
+    points_amount?: number;
+    reward_date?: string;
+    [key: string]: any;
+  };
   detail?: string;
   message?: string;
   non_field_errors?: string[];
