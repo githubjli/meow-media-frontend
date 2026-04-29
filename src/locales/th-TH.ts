@@ -762,6 +762,9 @@ export default {
   'account.subscription.current.remainingDays': '{days} days left',
   'account.subscription.plan.durationDays': '{days} days',
 
+    'account.subscription.plan.price': 'ราคา',
+  'account.subscription.plan.current': 'แพ็กเกจปัจจุบัน',
+  'account.subscription.plan.change': 'เปลี่ยนแพ็กเกจ',
   'account.subscription.plan.duration': 'Duration',
   'account.subscription.plan.payWithLtt': 'Pay with LTT',
   'account.subscription.plan.settlementCurrency': 'Settlement currency',

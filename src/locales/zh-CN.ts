@@ -753,6 +753,9 @@ export default {
   'account.subscription.current.remainingDays': '{days} days left',
   'account.subscription.plan.durationDays': '{days} days',
 
+    'account.subscription.plan.price': '价格',
+  'account.subscription.plan.current': '当前套餐',
+  'account.subscription.plan.change': '更换套餐',
   'account.subscription.plan.duration': 'Duration',
   'account.subscription.plan.payWithLtt': 'Pay with LTT',
   'account.subscription.plan.settlementCurrency': 'Settlement currency',

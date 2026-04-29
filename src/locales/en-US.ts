@@ -784,6 +784,9 @@ export default {
   'account.subscription.current.remainingDays': '{days} days left',
   'account.subscription.plan.durationDays': '{days} days',
 
+    'account.subscription.plan.price': 'Price',
+  'account.subscription.plan.current': 'Current Plan',
+  'account.subscription.plan.change': 'Change Plan',
   'account.subscription.plan.duration': 'Duration',
   'account.subscription.plan.payWithLtt': 'Pay with LTT',
   'account.subscription.plan.settlementCurrency': 'Settlement currency',
