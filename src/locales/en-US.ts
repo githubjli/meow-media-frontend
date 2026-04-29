@@ -185,6 +185,10 @@ export default {
   'drama.unlock.recharge': 'Recharge Meow Points',
   'drama.unlock.success': 'Episode unlocked successfully.',
   'drama.unlock.failed': 'Unable to unlock this episode.',
+  'drama.episode.numberLabel': 'Episode {number}',
+  'drama.episode.unlockForPoints': 'Unlock for {points} Meow Points',
+  'drama.episode.lockedTooltip':
+    'Episode {number}, locked, {points} Meow Points',
   'drama.creator.list.title': 'My Drama',
   'drama.creator.list.subtitle': 'Create and manage short drama series.',
   'drama.creator.list.empty': 'No drama series created yet.',
@@ -780,8 +784,10 @@ export default {
   'account.subscription.currentPlan': 'Current Plan',
   'account.subscription.choosePlan': 'Choose Plan',
   'account.subscription.changePlan': 'Change Plan',
-  'account.subscription.planChangeUnavailable': 'Plan changes are unavailable during your current membership period.',
-  'account.subscription.activeMembershipExists': 'You already have an active membership.',
+  'account.subscription.planChangeUnavailable':
+    'Plan changes are unavailable during your current membership period.',
+  'account.subscription.activeMembershipExists':
+    'You already have an active membership.',
   'account.subscription.create.success': 'Subscription updated successfully.',
   'account.subscription.create.error': 'Unable to start subscription.',
 
@@ -789,7 +795,7 @@ export default {
   'account.subscription.current.remainingDays': '{days} days left',
   'account.subscription.plan.durationDays': '{days} days',
 
-    'account.subscription.plan.price': 'Price',
+  'account.subscription.plan.price': 'Price',
   'account.subscription.plan.current': 'Current Plan',
   'account.subscription.plan.change': 'Change Plan',
   'account.subscription.plan.duration': 'Duration',

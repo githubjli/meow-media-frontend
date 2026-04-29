@@ -49,6 +49,7 @@ const normalizeArray = <T>(payload: any): T[] => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.results)) return payload.results;
   if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.episodes)) return payload.episodes;
   return [];
 };
 
@@ -80,7 +81,7 @@ const buildDramaSeriesPayloadBody = (payload: CreatorDramaSeriesPayload) => {
     : [];
 
   if (tags.length > 0) {
-    tags.forEach((tag) => formData.append('tags', tag));
+    formData.append('tags', JSON.stringify(tags));
   }
 
   const hasFile = Boolean(coverFile);
@@ -219,11 +220,17 @@ export async function unlockDramaEpisode(episodeId: string | number) {
   });
 }
 
+export type DramaProgressPayload = {
+  episode_id: number | string;
+  progress_seconds: number;
+  completed: boolean;
+};
+
 export async function updateDramaProgress(
-  episodeId: string | number,
-  payload: Record<string, any>,
+  seriesId: string | number,
+  payload: DramaProgressPayload,
 ) {
-  return requestJson<any>(`/api/dramas/episodes/${episodeId}/progress/`, {
+  return requestJson<any>(`/api/dramas/${seriesId}/progress/`, {
     method: 'POST',
     headers: await withAuth(),
     body: JSON.stringify(payload),

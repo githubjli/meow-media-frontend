@@ -30,7 +30,7 @@ const { Text, Title } = Typography;
 type DramaFormValues = {
   title: string;
   description?: string;
-  category?: string;
+  category?: number | string;
   tags?: string;
   status?: string;
   visibility?: string;
@@ -48,8 +48,9 @@ export default function CreatorDramaEditPage() {
   const [coverFileList, setCoverFileList] = useState<UploadFile[]>([]);
   const [item, setItem] = useState<DramaSeries | null>(null);
   const [categories, setCategories] = useState<
-    { label: string; value: string }[]
+    { label: string; value: number }[]
   >([]);
+  const [hasCategoryPk, setHasCategoryPk] = useState(false);
 
   const isEditMode = Boolean(params.id);
   const isLoggedIn = Boolean(initialState?.currentUser?.email);
@@ -67,13 +68,15 @@ export default function CreatorDramaEditPage() {
           (list || [])
             .map((item) => ({
               label: item.name || item.slug || '',
-              value: item.slug || item.name || '',
+              value: Number(item.id),
             }))
-            .filter((item) => item.value),
+            .filter((item) => Number.isFinite(item.value)),
         );
+        setHasCategoryPk((list || []).some((item) => item?.id !== undefined));
       })
       .catch(() => {
         setCategories([]);
+        setHasCategoryPk(false);
       });
   }, []);
 
@@ -161,11 +164,19 @@ export default function CreatorDramaEditPage() {
     const payload: CreatorDramaSeriesPayload = {
       title: values.title,
       description: values.description,
-      category: values.category,
-      status: values.status,
-      visibility: values.visibility,
+      status: String(values.status || 'draft').toLowerCase(),
       tags,
     };
+    if (
+      values.category !== undefined &&
+      values.category !== null &&
+      values.category !== ''
+    ) {
+      payload.category = values.category;
+    }
+    if (values.visibility) {
+      payload.visibility = values.visibility;
+    }
 
     if (coverFileList[0]?.originFileObj) {
       payload.cover = coverFileList[0].originFileObj as File;
@@ -191,6 +202,35 @@ export default function CreatorDramaEditPage() {
         history.push('/creator/dramas');
       }
     } catch (error: any) {
+      const backendFields =
+        error?.data && typeof error.data === 'object' ? error.data : null;
+      if (backendFields) {
+        const formFieldErrors = Object.entries(backendFields)
+          .filter(
+            ([key, value]) =>
+              Array.isArray(value) &&
+              [
+                'title',
+                'description',
+                'category',
+                'tags',
+                'status',
+                'visibility',
+              ].includes(key),
+          )
+          .map(([name, errors]) => ({
+            name,
+            errors: (errors as any[]).map((item) => String(item)),
+          }));
+        if (formFieldErrors.length > 0) {
+          form.setFields(formFieldErrors as any);
+          setErrorMessage(
+            formFieldErrors
+              .map((item) => `${item.name}: ${item.errors.join(' ')}`)
+              .join(' | '),
+          );
+        }
+      }
       message.error(
         error?.message ||
           intl.formatMessage({ id: 'drama.creator.form.error.submit' }),
@@ -302,20 +342,22 @@ export default function CreatorDramaEditPage() {
                 </Form.Item>
 
                 <Space size={12} style={{ width: '100%' }} wrap>
-                  <Form.Item
-                    name="category"
-                    label={intl.formatMessage({
-                      id: 'drama.creator.fields.category',
-                    })}
-                    style={{ minWidth: 220, flex: 1 }}
-                  >
-                    <Select
-                      allowClear
-                      showSearch
-                      options={categories}
-                      optionFilterProp="label"
-                    />
-                  </Form.Item>
+                  {hasCategoryPk ? (
+                    <Form.Item
+                      name="category"
+                      label={intl.formatMessage({
+                        id: 'drama.creator.fields.category',
+                      })}
+                      style={{ minWidth: 220, flex: 1 }}
+                    >
+                      <Select
+                        allowClear
+                        showSearch
+                        options={categories}
+                        optionFilterProp="label"
+                      />
+                    </Form.Item>
+                  ) : null}
 
                   <Form.Item
                     name="status"
