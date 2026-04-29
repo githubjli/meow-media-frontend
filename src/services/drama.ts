@@ -219,11 +219,17 @@ export async function unlockDramaEpisode(episodeId: string | number) {
   });
 }
 
+export type DramaProgressPayload = {
+  episode_id: number | string;
+  progress_seconds: number;
+  completed: boolean;
+};
+
 export async function updateDramaProgress(
-  episodeId: string | number,
-  payload: Record<string, any>,
+  seriesId: string | number,
+  payload: DramaProgressPayload,
 ) {
-  return requestJson<any>(`/api/dramas/episodes/${episodeId}/progress/`, {
+  return requestJson<any>(`/api/dramas/${seriesId}/progress/`, {
     method: 'POST',
     headers: await withAuth(),
     body: JSON.stringify(payload),
