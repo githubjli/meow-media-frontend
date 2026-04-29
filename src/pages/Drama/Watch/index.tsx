@@ -65,7 +65,10 @@ export default function DramaWatchPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const selectedEpisode = useMemo(
-    () => episodes.find((item) => String(item.id) === episodeId) || null,
+    () =>
+      episodes.find((item) => String(item.id) === episodeId) ||
+      episodes.find((item) => String(item.episode_no) === episodeId) ||
+      null,
     [episodeId, episodes],
   );
 
