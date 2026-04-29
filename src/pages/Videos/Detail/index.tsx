@@ -298,7 +298,7 @@ export default function VideoDetailPage() {
                   </Tag>
                   <Text>
                     {intl.formatMessage({
-                      id: 'video.membership.lockedMessage',
+                      id: 'video.memberOnlyDescription',
                     })}
                   </Text>
                   <Button
@@ -306,7 +306,7 @@ export default function VideoDetailPage() {
                     onClick={() => history.push('/account/subscription')}
                   >
                     {intl.formatMessage({
-                      id: 'video.membership.subscribeToUnlock',
+                      id: 'video.subscribeToUnlock',
                     })}
                   </Button>
                 </Space>

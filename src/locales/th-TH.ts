@@ -329,6 +329,12 @@ export default {
   'video.access.previewSeconds': 'วินาทีพรีวิว',
   'video.membership.lockedMessage': 'วิดีโอนี้สำหรับสมาชิกเท่านั้น',
   'video.membership.subscribeToUnlock': 'สมัครสมาชิกเพื่อปลดล็อก',
+  'video.memberOnly': 'เฉพาะสมาชิก',
+  'video.locked': 'ล็อก',
+  'video.subscribeToUnlock': 'สมัครสมาชิกเพื่อปลดล็อก',
+  'video.memberOnlyDescription': 'วิดีโอนี้สำหรับสมาชิกเท่านั้น',
+  'video.free': 'ฟรี',
+  'video.access.membership': 'เฉพาะสมาชิก',
 
   'videos.title': 'วิดีโอ',
   'video.access.filter.all': 'ทั้งหมด',

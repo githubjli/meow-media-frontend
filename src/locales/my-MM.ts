@@ -341,6 +341,12 @@ export default {
   'video.access.previewSeconds': 'Preview seconds',
   'video.membership.lockedMessage': 'This video is available for members only.',
   'video.membership.subscribeToUnlock': 'Subscribe to unlock',
+  'video.memberOnly': 'အသင်းဝင်များသာ',
+  'video.locked': 'လော့ခ်ထားသည်',
+  'video.subscribeToUnlock': 'Subscribe to unlock',
+  'video.memberOnlyDescription': 'This video is available for members only.',
+  'video.free': 'အခမဲ့',
+  'video.access.membership': 'အသင်းဝင်များသာ',
 
   'videos.title': 'ဗီဒီယိုများ',
   'video.access.filter.all': 'အားလုံး',

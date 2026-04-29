@@ -338,6 +338,12 @@ export default {
   'video.access.previewSeconds': 'Preview seconds',
   'video.membership.lockedMessage': 'This video is available for members only.',
   'video.membership.subscribeToUnlock': 'Subscribe to unlock',
+  'video.memberOnly': 'Members only',
+  'video.locked': 'Locked',
+  'video.subscribeToUnlock': 'Subscribe to unlock',
+  'video.memberOnlyDescription': 'This video is available for members only.',
+  'video.free': 'Free',
+  'video.access.membership': 'Members only',
 
   'videos.title': 'Videos',
   'video.access.filter.all': 'All',

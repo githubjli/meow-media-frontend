@@ -291,7 +291,7 @@ export default ({ data }: { data: any }) => {
             {isLocked ? (
               <Tag style={{ margin: 0, borderRadius: 999 }}>
                 <LockOutlined />{' '}
-                {intl.formatMessage({ id: 'video.access.locked' })}
+                {intl.formatMessage({ id: 'video.locked' })}
               </Tag>
             ) : null}
           </div>
