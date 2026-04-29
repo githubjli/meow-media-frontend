@@ -19,6 +19,7 @@ export default function DramaCard({ item }: { item: DramaSeries }) {
   const intl = useIntl();
   const cover =
     item.cover_url ||
+    item.cover ||
     item.poster_url ||
     item.thumbnail_url ||
     '/logo_black.svg';

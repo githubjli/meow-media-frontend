@@ -93,3 +93,10 @@ export type MeowPointOrderListParams = {
 };
 
 export type CreateMeowPointOrderResponse = MeowPointOrder;
+
+export type DailyLoginRewardResponse = {
+  granted: boolean;
+  points_amount: number;
+  reward_date: string;
+  [key: string]: any;
+};
