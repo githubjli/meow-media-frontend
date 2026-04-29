@@ -755,6 +755,11 @@ export default {
   'account.subscription.qr.title': 'Payment QR',
   'account.subscription.qr.empty': 'Wallet address is not available.',
   'account.subscription.create.cta': 'Choose Plan',
+  'account.subscription.currentPlan': 'Current Plan',
+  'account.subscription.choosePlan': 'Choose Plan',
+  'account.subscription.changePlan': 'Change Plan',
+  'account.subscription.planChangeUnavailable': 'Plan changes are unavailable during your current membership period.',
+  'account.subscription.activeMembershipExists': 'You already have an active membership.',
   'account.subscription.create.success': 'Subscription updated successfully.',
   'account.subscription.create.error': 'Unable to start subscription.',
 

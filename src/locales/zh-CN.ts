@@ -746,6 +746,11 @@ export default {
   'account.subscription.qr.title': 'Payment QR',
   'account.subscription.qr.empty': 'Wallet address is not available.',
   'account.subscription.create.cta': 'Choose Plan',
+  'account.subscription.currentPlan': '当前套餐',
+  'account.subscription.choosePlan': '选择套餐',
+  'account.subscription.changePlan': '更换套餐',
+  'account.subscription.planChangeUnavailable': '当前会员期内暂不可更换套餐。',
+  'account.subscription.activeMembershipExists': '你已有生效中的会员套餐。',
   'account.subscription.create.success': 'Subscription updated successfully.',
   'account.subscription.create.error': 'Unable to start subscription.',
 

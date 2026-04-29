@@ -595,11 +595,11 @@ export default function AccountSubscriptionPage() {
                               {plan.name || `Plan ${planId}`}
                             </Title>
                             {isCurrentPlan ? (
-                              <Tag color="green">
-                                {intl.formatMessage({
-                                  id: 'account.subscription.plan.current',
-                                })}
-                              </Tag>
+                            <Tag color="green">
+                              {intl.formatMessage({
+                                  id: 'account.subscription.currentPlan',
+                              })}
+                            </Tag>
                             ) : null}
                           </Space>
                           <Paragraph
@@ -658,6 +658,14 @@ export default function AccountSubscriptionPage() {
                               if (isCurrentPlan) {
                                 return;
                               }
+                              if (membershipActive) {
+                                message.info(
+                                  intl.formatMessage({
+                                    id: 'account.subscription.planChangeUnavailable',
+                                  }),
+                                );
+                                return;
+                              }
                               setSubmittingPlanId(planId);
                               setOrderError('');
                               setCapturedTxid('');
@@ -684,11 +692,19 @@ export default function AccountSubscriptionPage() {
                                 setCopyAddressCopied(false);
                                 setOrderUiOpen(true);
                               } catch (error: any) {
+                                const isActiveMembershipConflict =
+                                  error?.status === 409 &&
+                                  String(error?.data?.code || '').toLowerCase() ===
+                                    'active_membership_exists';
                                 const errorText =
-                                  error?.message ||
-                                  intl.formatMessage({
-                                    id: 'account.subscription.create.error',
-                                  });
+                                  isActiveMembershipConflict
+                                    ? intl.formatMessage({
+                                        id: 'account.subscription.activeMembershipExists',
+                                      })
+                                    : error?.message ||
+                                      intl.formatMessage({
+                                        id: 'account.subscription.create.error',
+                                      });
                                 setOrderError(errorText);
                                 message.error(errorText);
                               } finally {
@@ -696,12 +712,16 @@ export default function AccountSubscriptionPage() {
                               }
                             }}
                           >
-                            {isCurrentPlan
+                            {membershipActive
                               ? intl.formatMessage({
-                                  id: 'account.subscription.plan.current',
+                                  id: 'account.subscription.changePlan',
+                                })
+                              : isCurrentPlan
+                              ? intl.formatMessage({
+                                  id: 'account.subscription.currentPlan',
                                 })
                               : intl.formatMessage({
-                                  id: 'account.subscription.plan.change',
+                                  id: 'account.subscription.choosePlan',
                                 })}
                           </Button>
                         </Space>
