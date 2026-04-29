@@ -62,14 +62,6 @@ export default {
   'auth.login.error.unavailable': 'ယခုအချိန်တွင် ဝင်ရောက်၍ မရနိုင်ပါ',
   'auth.login.dailyReward':
     'နေ့စဉ် login ဆုအဖြစ် +{points} Meow Points ရရှိပါသည်။',
-  'notifications.title': 'အသိပေးချက်များ',
-  'notifications.empty': 'အသိပေးချက် မရှိသေးပါ။',
-  'notifications.markAllRead': 'အားလုံးကို ဖတ်ပြီးအဖြစ် သတ်မှတ်မည်',
-  'notifications.dailyReward.title': 'နေ့စဉ်ဆု ရရှိပြီး',
-  'notifications.dailyReward.body': '+{points} Meow Points',
-  'notifications.dramaUnlock.title': 'Episode unlock ပြီးပါပြီ',
-  'notifications.dramaUnlock.body':
-    'Episode {episode} ကို unlock လုပ်ပြီးပါပြီ။',
   'auth.register.welcome': 'အကောင့်ဖန်တီးရန်',
   'auth.register.title': 'Meow Media Stream သို့ ပါဝင်ပါ',
   'auth.register.subtitle': 'စတင်ရန် သင့်အီးမေးလ်ဖြင့် အကောင့်ဖွင့်ပါ',

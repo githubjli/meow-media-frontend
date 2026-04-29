@@ -62,13 +62,6 @@ export default {
   'auth.login.error.unavailable': 'Unable to log in right now.',
   'auth.login.dailyReward':
     '+{points} Meow Points daily login reward received.',
-  'notifications.title': 'Notifications',
-  'notifications.empty': 'No notifications yet.',
-  'notifications.markAllRead': 'Mark all as read',
-  'notifications.dailyReward.title': 'Daily reward received',
-  'notifications.dailyReward.body': '+{points} Meow Points',
-  'notifications.dramaUnlock.title': 'Episode unlocked',
-  'notifications.dramaUnlock.body': 'You unlocked Episode {episode}.',
   'auth.register.welcome': 'Create account',
   'auth.register.title': 'Join Media Stream',
   'auth.register.subtitle': 'Register with your email to get started.',

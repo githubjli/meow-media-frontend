@@ -61,13 +61,6 @@ export default {
   'auth.login.error.unavailable': 'ไม่สามารถเข้าสู่ระบบได้ในขณะนี้',
   'auth.login.dailyReward':
     'ได้รับรางวัลล็อกอินรายวัน +{points} Meow Points แล้ว',
-  'notifications.title': 'การแจ้งเตือน',
-  'notifications.empty': 'ยังไม่มีการแจ้งเตือน',
-  'notifications.markAllRead': 'ทำเครื่องหมายว่าอ่านแล้วทั้งหมด',
-  'notifications.dailyReward.title': 'ได้รับรางวัลรายวันแล้ว',
-  'notifications.dailyReward.body': '+{points} Meow Points',
-  'notifications.dramaUnlock.title': 'ปลดล็อกตอนแล้ว',
-  'notifications.dramaUnlock.body': 'คุณปลดล็อกตอนที่ {episode} แล้ว',
   'auth.register.welcome': 'สร้างบัญชี',
   'auth.register.title': 'เข้าร่วม Meow Media Stream',
   'auth.register.subtitle': 'สมัครด้วยอีเมลของคุณเพื่อเริ่มต้น',

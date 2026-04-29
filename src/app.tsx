@@ -3,11 +3,6 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
 import { claimDailyLoginReward } from '@/services/meowPoints';
 import {
-  addNotification,
-  getNotificationUserKey,
-} from '@/services/localNotifications';
-import { claimDailyLoginReward } from '@/services/meowPoints';
-import {
   listPublicCategories,
   type PublicCategory,
 } from '@/services/publicCategories';
@@ -327,27 +322,6 @@ export async function getInitialState(): Promise<InitialState> {
                   { points: payload.points_amount ?? 0 },
                 ),
               );
-              const rewardDate =
-                payload.reward_date || new Date().toISOString().slice(0, 10);
-              const userKey = getNotificationUserKey(currentUser);
-              addNotification(userKey, {
-                id: `daily_reward_${userKey}_${rewardDate}`,
-                type: 'daily_reward',
-                title: intl.formatMessage({
-                  id: 'notifications.dailyReward.title',
-                }),
-                body: intl.formatMessage(
-                  { id: 'notifications.dailyReward.body' },
-                  { points: payload.points_amount ?? 0 },
-                ),
-                createdAt: new Date().toISOString(),
-                read: false,
-                data: {
-                  points_amount: payload.points_amount ?? 0,
-                  reward_date: rewardDate,
-                  url: '/meow-points',
-                },
-              });
             }
             localStorage.setItem(checkedKey, '1');
           })
