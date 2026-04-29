@@ -6,6 +6,7 @@ import type {
   DramaEpisode,
   DramaListResponse,
   DramaSeries,
+  DramaViewTrackResponse,
 } from '@/types/drama';
 
 const withAuth = async () => ({
@@ -234,6 +235,13 @@ export async function updateDramaProgress(
     method: 'POST',
     headers: await withAuth(),
     body: JSON.stringify(payload),
+  });
+}
+
+export async function recordDramaView(seriesId: string | number) {
+  return requestJson<DramaViewTrackResponse>(`/api/dramas/${seriesId}/view/`, {
+    method: 'POST',
+    headers: await withAuth().catch(() => ({})),
   });
 }
 

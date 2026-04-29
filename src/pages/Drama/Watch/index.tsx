@@ -2,6 +2,7 @@ import EpisodeGrid from '@/components/drama/EpisodeGrid';
 import UnlockEpisodeModal from '@/components/drama/UnlockEpisodeModal';
 import {
   getDramaEpisodes,
+  recordDramaView,
   unlockDramaEpisode,
   updateDramaProgress,
 } from '@/services/drama';
@@ -68,6 +69,7 @@ export default function DramaWatchPage() {
     useState<DramaEpisode | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const trackedViewRef = useRef<string>('');
 
   const selectedEpisode = useMemo(
     () =>
@@ -106,6 +108,15 @@ export default function DramaWatchPage() {
   useEffect(() => {
     void loadEpisodes();
   }, [loadEpisodes]);
+
+  useEffect(() => {
+    if (!seriesId) return;
+    if (trackedViewRef.current === seriesId) return;
+    trackedViewRef.current = seriesId;
+    recordDramaView(seriesId).catch(() => {
+      // non-blocking by design
+    });
+  }, [seriesId]);
 
   useEffect(() => {
     if (!unlockOpen || !isLoggedIn) return;

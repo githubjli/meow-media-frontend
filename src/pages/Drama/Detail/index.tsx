@@ -5,6 +5,7 @@ import {
   favoriteDrama,
   getDramaDetail,
   getDramaEpisodes,
+  recordDramaView,
   unfavoriteDrama,
   unlockDramaEpisode,
 } from '@/services/drama';
@@ -23,7 +24,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const { Paragraph, Text, Title } = Typography;
 
@@ -42,6 +43,7 @@ export default function DramaDetailPage() {
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [unlocking, setUnlocking] = useState(false);
   const [unlockTarget, setUnlockTarget] = useState<DramaEpisode | null>(null);
+  const trackedViewRef = useRef<string>('');
 
   useEffect(() => {
     if (!dramaId) return;
@@ -62,6 +64,28 @@ export default function DramaDetailPage() {
       })
       .finally(() => setLoading(false));
   }, [dramaId, intl]);
+
+  useEffect(() => {
+    if (!dramaId) return;
+    if (trackedViewRef.current === dramaId) return;
+    trackedViewRef.current = dramaId;
+
+    recordDramaView(dramaId)
+      .then((payload) => {
+        if (typeof payload?.view_count !== 'number') return;
+        setSeries((prev) =>
+          prev
+            ? {
+                ...prev,
+                view_count: payload.view_count,
+              }
+            : prev,
+        );
+      })
+      .catch(() => {
+        // non-blocking by design
+      });
+  }, [dramaId]);
 
   const firstWatchableEpisode = useMemo(() => {
     return episodes.find((episode) => episode.can_watch) || episodes[0] || null;

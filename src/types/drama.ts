@@ -72,6 +72,12 @@ export type DramaListResponse = {
   results: DramaSeries[];
 };
 
+export type DramaViewTrackResponse = {
+  series_id: number;
+  view_count: number;
+  counted: boolean;
+};
+
 export type CreatorDramaSeriesPayload = {
   title: string;
   description?: string;
