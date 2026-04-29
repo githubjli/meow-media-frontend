@@ -1,6 +1,7 @@
 import HeaderSearchWithQr from '@/components/layout/HeaderSearchWithQr';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { CurrentUser, resolveCurrentUser } from '@/services/auth';
+import { claimDailyLoginReward } from '@/services/meowPoints';
 import {
   addNotification,
   getNotificationUserKey,
