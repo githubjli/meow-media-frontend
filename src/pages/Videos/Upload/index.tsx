@@ -8,6 +8,7 @@ import {
   Card,
   Form,
   Input,
+  InputNumber,
   Select,
   Typography,
   Upload,
@@ -47,6 +48,8 @@ export default function UploadVideoPage() {
     description?: string;
     category?: string;
     visibility: 'public' | 'private';
+    access_type: 'free' | 'membership';
+    preview_seconds: number;
   }) => {
     if (!fileList[0]?.originFileObj) {
       setErrorMessage(intl.formatMessage({ id: 'upload.validation.file' }));
@@ -62,6 +65,8 @@ export default function UploadVideoPage() {
         description: values.description,
         category: values.category,
         visibility: values.visibility,
+        access_type: values.access_type,
+        preview_seconds: values.preview_seconds,
         file: fileList[0].originFileObj as File,
       });
       message.success(intl.formatMessage({ id: 'upload.success' }));
@@ -97,7 +102,11 @@ export default function UploadVideoPage() {
             form={form}
             layout="vertical"
             onFinish={handleFinish}
-            initialValues={{ visibility: 'public' }}
+            initialValues={{
+              visibility: 'public',
+              access_type: 'free',
+              preview_seconds: 0,
+            }}
             requiredMark={false}
             style={{ marginTop: 24 }}
           >
@@ -182,6 +191,35 @@ export default function UploadVideoPage() {
                   id: 'upload.placeholder.visibility',
                 })}
               />
+            </Form.Item>
+            <Form.Item
+              label={intl.formatMessage({ id: 'video.access.label' })}
+              name="access_type"
+              rules={[
+                {
+                  required: true,
+                  message: intl.formatMessage({ id: 'video.access.required' }),
+                },
+              ]}
+            >
+              <Select
+                options={[
+                  {
+                    value: 'free',
+                    label: intl.formatMessage({ id: 'video.access.free' }),
+                  },
+                  {
+                    value: 'membership',
+                    label: intl.formatMessage({ id: 'video.access.membersOnly' }),
+                  },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item
+              label={intl.formatMessage({ id: 'video.access.previewSeconds' })}
+              name="preview_seconds"
+            >
+              <InputNumber min={0} precision={0} style={{ width: '100%' }} />
             </Form.Item>
             <Form.Item
               label={intl.formatMessage({ id: 'upload.label.file' })}
