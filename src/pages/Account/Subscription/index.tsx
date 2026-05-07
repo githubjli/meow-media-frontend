@@ -653,7 +653,7 @@ export default function AccountSubscriptionPage() {
                             type="primary"
                             icon={<DollarOutlined />}
                             loading={submittingPlanId === planId && !isCurrentPlan}
-                            disabled
+                            disabled={isCurrentPlan || Boolean(submittingPlanId)}
                             onClick={async () => {
                               if (isCurrentPlan) {
                                 return;
